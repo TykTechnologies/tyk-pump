@@ -8,6 +8,8 @@ affected_requirements:
     - SW-REQ-048
     - SW-REQ-051
     - SW-REQ-068
+evidence_manifests:
+    - .proof/evidence/ki-external-pump-endpoints-no-ssrf-allowlist.yaml
 severity: medium
 severity_basis: risk
 risk: compliance
@@ -36,3 +38,7 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T14:43:15Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest

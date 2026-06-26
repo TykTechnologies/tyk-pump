@@ -1,0 +1,25 @@
+schema_version: proof.evidence_profile.v1
+profile: known_issue_reproducer
+requirements:
+    - SW-REQ-029
+    - SW-REQ-046
+    - SW-REQ-047
+    - SW-REQ-048
+    - SW-REQ-051
+    - SW-REQ-068
+command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n "ConnectionString|Addr string|CollectorURL|ElasticsearchURL|SetUrl|NewHTTPClient|NewClientWithOptions|SetURL|NewTCPClient|NewTLSClient|url.Parse|Dial\\(\"tcp\"" pumps/hybrid.go pumps/influx.go pumps/influx2.go pumps/splunk.go pumps/logzio.go pumps/elasticsearch.go
+status: pass
+observed_result: known_issue_reproduced
+executed_at: "2026-06-26T14:43:37Z"
+input_set:
+    - KI external-pump-endpoints-no-ssrf-allowlist static outbound endpoint scan
+freshness_hashes:
+    proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
+    pumps/elasticsearch.go: sha256:fab94fff687bde542a18b3237d8dbed48b3313178e6d57c4b14a5faae3d70cf4
+    pumps/hybrid.go: sha256:a72ff419688735e44d3af62d34baed2027efc7ffaed65dfa5eaaebe75e2db7a2
+    pumps/influx.go: sha256:5f47f56b241e5d875a041d458dc705ddb636ba22ec8cc287b196cc0344cdda47
+    pumps/influx2.go: sha256:6ae1cf74fc76fdf8c55eaf8d15a5eeaa2f0fac54a448e4894cb2b320e5786af5
+    pumps/logzio.go: sha256:b912c5b3b49ac3b0ab31ffc01b97d7bb6598324c599cf776e48541fe75b2a949
+    pumps/splunk.go: sha256:e95f1a88f9c739245280836c3dce55ae95d1266f59dc67d7126620639a753288
+known_issues:
+    - external-pump-endpoints-no-ssrf-allowlist

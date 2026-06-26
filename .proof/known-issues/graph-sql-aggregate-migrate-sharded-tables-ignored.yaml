@@ -8,6 +8,7 @@ commands:
     - rg -n "HandleTableMigration|MigrateAllShardedTables|if !s.SQLConf.TableSharding" pumps/graph_sql_aggregate.go pumps/graph_sql.go
 evidence_manifests:
     - source:pumps/graph_sql_aggregate.go:78
+    - .proof/evidence/ki-graph-sql-aggregate-migrate-sharded-tables-ignored.yaml
 severity: medium
 severity_basis: risk
 risk: data_integrity
@@ -28,3 +29,7 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T14:43:15Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest

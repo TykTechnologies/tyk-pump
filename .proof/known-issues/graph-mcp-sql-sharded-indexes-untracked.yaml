@@ -2,10 +2,12 @@ id: graph-mcp-sql-sharded-indexes-untracked
 title: Graph and MCP SQL sharded tables have no explicit per-shard index contract
 description: Graph SQL and MCP SQL sharded write paths create date-suffixed tables via AutoMigrate, and the aggregate variants create sharded aggregate tables directly, but these paths do not declare or witness a per-shard index set comparable to standard SQL's tyk_analytics shard indexes or SQL Aggregate's dimension index. The current tests assert shard tables and records, not expected indexes. This leaves TT-13421-style shard-index regressions unmodeled for Graph/MCP SQL variants.
 affected_requirements:
-  - SW-REQ-042
-  - SW-REQ-043
-  - SW-REQ-044
-  - SW-REQ-045
+    - SW-REQ-042
+    - SW-REQ-043
+    - SW-REQ-044
+    - SW-REQ-045
+evidence_manifests:
+    - .proof/evidence/ki-graph-mcp-sql-sharded-indexes-untracked.yaml
 severity: low
 severity_basis: risk
 risk: performance
@@ -18,7 +20,11 @@ review_date: "2026-11-30"
 release_disposition: ship_with_known_issue
 status: open
 history:
-  - at: "2026-06-25T00:00:00Z"
-    by: agent:codex
-    action: created
-    detail: Product-fix-history review of 544ccb3 found standard SQL shard-index coverage but no equivalent per-shard index contract for Graph/MCP SQL variants.
+    - at: "2026-06-25T00:00:00Z"
+      by: agent:codex
+      action: created
+      detail: Product-fix-history review of 544ccb3 found standard SQL shard-index coverage but no equivalent per-shard index contract for Graph/MCP SQL variants.
+    - at: "2026-06-26T14:43:15Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest

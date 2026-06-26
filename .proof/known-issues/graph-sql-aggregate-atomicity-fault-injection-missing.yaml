@@ -3,6 +3,8 @@ title: Graph SQL aggregate upsert atomicity obligation lacks a transaction/failu
 description: SW-REQ-043 uses a single GORM Create call with clause.OnConflict to express an INSERT ... ON CONFLICT DO UPDATE upsert for Graph SQL aggregate rows, and the requirement promises per-batch errors are returned. Existing tests prove successful sequential writes, sharding, and API partitioning, but they do not inject database transaction failures, serialization/deadlock failures, concurrent writers, or forced tx.Error paths to prove the atomicity, transaction isolation, and error-propagation obligations. The missing evidence is a proof-harness gap; it should not be replaced by a broad comment that merely says ON CONFLICT exists.
 affected_requirements:
     - SW-REQ-043
+evidence_manifests:
+    - .proof/evidence/ki-graph-sql-aggregate-atomicity-fault-injection-missing.yaml
 severity: low
 severity_basis: risk
 risk: data_integrity
@@ -22,3 +24,7 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T14:43:15Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest

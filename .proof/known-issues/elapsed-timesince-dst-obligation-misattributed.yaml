@@ -6,6 +6,8 @@ affected_requirements:
     - SW-REQ-021
     - SW-REQ-030
     - SW-REQ-055
+evidence_manifests:
+    - .proof/evidence/ki-elapsed-timesince-dst-obligation-misattributed.yaml
 severity: low
 severity_basis: risk
 risk: correctness
@@ -34,3 +36,7 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T14:43:15Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest
