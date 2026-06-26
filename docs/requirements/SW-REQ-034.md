@@ -20,8 +20,11 @@ same-key/different-name `logBrowserIndex` conflict remains tracked under
 `mongo-standard-logbrowser-compatible-index-conflict`. A separate current
 KnownIssue, `mongo-standard-final-skipped-record-drops-pending-batch`, tracks
 the final-skipped-input flush gap and is not claimed fixed by this requirement
-hardening. Derived from SYS-REQ-004 (independent per-backend delivery) via the
-Phase A decomposition of the previous family req SW-REQ-018.
+hardening. `mongo-standard-insert-error-double-send-goroutine-leak` tracks the
+current multi-batch insert-error resource-lifetime gap: the first insert error
+is returned, but later failing insert goroutines can still block on errCh.
+Derived from SYS-REQ-004 (independent per-backend delivery) via the Phase A
+decomposition of the previous family req SW-REQ-018.
 
 ## Motivation
 Phase 0 grouped six MongoDB pumps under one family req. The standard pump is
@@ -46,8 +49,9 @@ classes).
   preserved.
 - `pumps/mongo.go:402` — `WriteData`; per-batch goroutines fan-out through an
   `errCh`, returning the first non-nil error.
-- `main.go:209` and `pumps/mongo.go:391` — configured pump timeout is applied
-  before `Init` and passed to `persistent.ClientOpts.ConnectionTimeout`.
+- `main.go:209` and `pumps/mongo.go:391` — `PumpConfig.Timeout` is passed to
+  `SetTimeout` before `Init` and then to
+  `persistent.ClientOpts.ConnectionTimeout`.
 - `pumps/mongo.go:464` — `AccumulateSet`; the per-batch size bookkeeping.
 - `pumps/mongo.go:519` — `getItemSizeBytes`; exact standard Mongo size
   estimate `len(RawRequest)+len(RawResponse)+1024`.
@@ -70,7 +74,8 @@ classes).
   proves a document whose estimate is exactly at the threshold is preserved,
   while a document over the threshold is still retained with raw bodies
   rewritten.
-- `pumps/mongo_timeout_config_test.go` proves timeout setup order and
+- `pumps/mongo_timeout_config_test.go` proves `pmp.Timeout` is passed to
+  `SetTimeout` before `Init(pmp.Meta)` and proves
   `ConnectionTimeout: m.timeout` propagation without starting MongoDB.
 - `pumps/mongo_mcdc_100_test.go:TestMongoPump_EnsureIndexes_CollectionExistsShortCircuit`
   covers StandardMongo idempotent existing-collection index setup.
@@ -93,7 +98,10 @@ collection-exists shortcut and must attempt foreground baseline indexes unless
   tracked by the existing known-issue `mongo-pump-ignores-caller-context`
   (extended to cover all four mongo writers in Phase A).
 - Only the *first* non-nil per-batch error is returned; multi-error behaviour
-  is currently lossy.
+  is currently lossy. When multiple batch goroutines fail, the current
+  double-send error path can also leave later goroutines blocked after the
+  caller returns; tracked by
+  `mongo-standard-insert-error-double-send-goroutine-leak`.
 - `capCollection` requires a 64-bit host; behaviour on a 32-bit build is
   silent no-op.
 - Non-StandardMongo `logBrowserIndex` same-key/different-name conflicts are

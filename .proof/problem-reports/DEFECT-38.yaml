@@ -72,6 +72,7 @@ disposition:
         - mongo-pump-writeuptime-nil-on-bad-msgpack
         - mongo-selective-final-skipped-record-drops-pending-batch
         - mongo-standard-final-skipped-record-drops-pending-batch
+        - mongo-standard-insert-error-double-send-goroutine-leak
         - mongo-standard-logbrowser-compatible-index-conflict
         - pump-no-timeout-can-block-purge-cycle
         - pump-writedata-swallows-per-batch-errors

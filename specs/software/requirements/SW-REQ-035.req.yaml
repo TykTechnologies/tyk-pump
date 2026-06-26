@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: when org_id_present pumps_mongo_selective shall always satisfy record_routed_to_org_collection
-description: The MongoSelective pump shall partition incoming non-MCP HTTP analytics records by OrgID and route each org's records into a per-organisation collection named z_tyk_analyticz_<orgid>, dropping records with empty OrgID and excluding TCP/error records represented by ResponseCode == -1; for each org collection it shall ensure baseline indexes (apiid, TTL on expireAt (skipped for CosmosDB), and a composite logBrowserIndex), treating an equivalent logBrowserIndex that already exists under a different name as idempotent success, and then insert records in size-bounded batches up to MaxInsertBatchSizeBytes (default 10 MiB), skipping individual documents larger than MaxDocumentSizeBytes. During initialization, an omitted Mongo driver value shall resolve to the supported v1.9+ default driver mongo-go while explicit mongo-go and mgo values remain preserved for the storage client; the configured pump timeout shall be applied before Init builds the Mongo client and propagated to persistent.ClientOpts.ConnectionTimeout.
+description: The MongoSelective pump shall partition incoming non-MCP HTTP analytics records by OrgID and route each org's records into a per-organisation collection named z_tyk_analyticz_<orgid>, dropping records with empty OrgID and excluding TCP/error records represented by ResponseCode == -1; for each org collection it shall ensure baseline indexes (apiid, TTL on expireAt (skipped for CosmosDB), and a composite logBrowserIndex), treating an equivalent logBrowserIndex that already exists under a different name as idempotent success, and then insert records in size-bounded batches up to MaxInsertBatchSizeBytes (default 10 MiB), skipping individual documents larger than MaxDocumentSizeBytes. During initialization, an omitted Mongo driver value shall resolve to the supported v1.9+ default driver mongo-go while explicit mongo-go and mgo values remain preserved for the storage client; the configured per-pump timeout value from PumpConfig.Timeout shall be applied through SetTimeout before Init builds the Mongo client and propagated to persistent.ClientOpts.ConnectionTimeout.
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-25T20:58:09Z"
-        comment: 'Reviewed 956b66a hardening: MongoSelective now explicitly specifies blank driver selection as the v1.9+ mongo-go default with explicit mongo-go/mgo values preserved; evidence remains code-annotated only.'
-        fingerprint: sha256:e5f5cb205c35047f56a144f1078b847e6ece22df7092b2c5f914163f09f2871f
+        reviewed_at: "2026-06-26T00:32:55Z"
+        comment: 'Reviewed TT-695 follow-up: MongoSelective timeout evidence now proves pmp.Timeout is passed to SetTimeout before Init(pmp.Meta), and connect propagates m.timeout to persistent.ClientOpts.ConnectionTimeout. Residual write/query timeout debt remains KI-linked.'
+        fingerprint: sha256:9c9867f6b5e3198e1e57c96e1328906ed272dfafdc0831b01e758f00d0a7a445
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:34:43Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-25T20:58:09Z"
+    last_modified_at: "2026-06-26T00:32:55Z"
 obligation_checklist:
     - backend_connection_timeout_propagated
     - boundary
@@ -174,4 +174,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T20:11:59Z comment="Reviewed aa7a88e hardening: SW-REQ-035 now explicitly excludes ResponseCode==-1 TCP/error records from selective Mongo batches, with AccumulateSet evidence; final-skipped-item output-cardinality debt remains KI-linked.")'
+          changed_by: human:buger
+        - date: "2026-06-26T00:32:55Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T20:58:09Z comment="Reviewed 956b66a hardening: MongoSelective now explicitly specifies blank driver selection as the v1.9+ mongo-go default with explicit mongo-go/mgo values preserved; evidence remains code-annotated only.")'
           changed_by: human:buger

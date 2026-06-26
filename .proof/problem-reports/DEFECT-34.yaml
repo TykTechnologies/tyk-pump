@@ -77,6 +77,7 @@ disposition:
         - mongo-pump-ignores-caller-context
         - mongo-aggregate-last-document-query-ignores-timeout
         - mongo-standard-final-skipped-record-drops-pending-batch
+        - mongo-standard-insert-error-double-send-goroutine-leak
         - mongo-standard-logbrowser-compatible-index-conflict
         - pump-no-timeout-can-block-purge-cycle
         - pumps-logfatal-on-config-decode
@@ -88,6 +89,16 @@ disposition:
             - pumps/mongo_timeout_config_test.go:TestMongoPumpsPropagateConfiguredConnectionTimeout
             - pumps/mongo_timeout_config_test.go:TestInitialisePumpsAppliesTimeoutBeforeInit
             - pumps/mongo_mcdc_100_test.go:TestMongoPump_WriteData_InsertErr
+        notes: |
+            Timeout setup evidence now checks both ordering and value flow:
+            initialisePumps must pass pmp.Timeout into SetTimeout before it
+            calls Init(pmp.Meta), and each Mongo connect path must pass
+            m.timeout into persistent.ClientOpts.ConnectionTimeout. Standard
+            Mongo first-insert-error observation remains covered, but a
+            separate multi-batch double-send goroutine-lifetime issue is
+            tracked as KI
+            mongo-standard-insert-error-double-send-goroutine-leak rather than
+            claimed fixed.
         obligation_evidence:
             - requirement: SW-REQ-034
               obligation_class: backend_connection_timeout_propagated
@@ -132,3 +143,19 @@ history:
         Recorded TT-695 as fixed historical Mongo timeout configurability and
         standard Mongo insert-goroutine error-observation behavior. Residual
         caller-context and zero-timeout behavior remains KnownIssue debt.
+    - at: "2026-06-26T00:32:31Z"
+      by: agent:codex
+      action: strengthened_evidence
+      detail: |
+        Tightened timeout setup evidence so the loader witness proves
+        pmp.Timeout is the value passed to SetTimeout before Init(pmp.Meta),
+        not merely that some SetTimeout call appears earlier in initialisePumps.
+    - at: "2026-06-26T00:32:31Z"
+      by: agent:codex
+      action: linked_known_issue
+      detail: |
+        Linked mongo-standard-insert-error-double-send-goroutine-leak after
+        review found the standard Mongo insert goroutine sends err and then nil
+        on the same error path while WriteData returns after the first error.
+        This does not reopen the fixed TT-695 first-error-observation defect;
+        it records remaining multi-batch resource-lifetime debt.

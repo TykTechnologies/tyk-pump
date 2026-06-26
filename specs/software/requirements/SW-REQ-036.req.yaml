@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: ""
-description: The MongoAggregate pump shall aggregate non-MCP analytics records into per-organisation aggregate documents and upsert them into MongoDB; during initialization, an omitted Mongo driver value shall resolve to the supported v1.9+ default driver mongo-go while explicit mongo-go and mgo values remain preserved for the storage client, and the configured pump timeout shall be applied before Init builds the Mongo client and propagated to persistent.ClientOpts.ConnectionTimeout. The substantive behaviors (windowing, sharding, $inc semantics, tag bounding, self-healing, index ensure) are decomposed into the six mongo-aggregate sub-reqs below.
+description: The MongoAggregate pump shall aggregate non-MCP analytics records into per-organisation aggregate documents and upsert them into MongoDB; during initialization, an omitted Mongo driver value shall resolve to the supported v1.9+ default driver mongo-go while explicit mongo-go and mgo values remain preserved for the storage client, and the configured per-pump timeout value from PumpConfig.Timeout shall be applied through SetTimeout before Init builds the Mongo client and propagated to persistent.ClientOpts.ConnectionTimeout. The substantive behaviors (windowing, sharding, $inc semantics, tag bounding, self-healing, index ensure) are decomposed into the six mongo-aggregate sub-reqs below.
 formalization_strategy: informal
 informal_verification:
     method: ""
@@ -29,15 +29,15 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-25T20:58:10Z"
-        comment: 'Reviewed 956b66a hardening: MongoAggregate now explicitly specifies blank driver selection as the v1.9+ mongo-go default with explicit mongo-go/mgo values preserved; evidence remains code-annotated only.'
-        fingerprint: sha256:c5d726523f84b02cda5a16d40afaddd150bc22cb257c912a25343594d2a84340
+        reviewed_at: "2026-06-26T00:32:55Z"
+        comment: 'Reviewed TT-695 follow-up: MongoAggregate timeout evidence now proves pmp.Timeout is passed to SetTimeout before Init(pmp.Meta), and connect propagates m.timeout to persistent.ClientOpts.ConnectionTimeout. Residual write/query timeout debt remains KI-linked.'
+        fingerprint: sha256:b8b4ade570e6035aca01e0c409c76c1de9cc74a99ca2af3d66b2727af1112cc8
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:34:49Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-25T20:58:10Z"
+    last_modified_at: "2026-06-26T00:32:55Z"
 obligation_checklist:
     - backend_connection_timeout_propagated
     - config_schema_strict
@@ -134,4 +134,9 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T18:57:11Z comment="TT-695 hardening: MongoAggregate connection timeout propagation is now specified and witnessed; residual write/query timeout debt remains KI-linked.")'
+          changed_by: human:buger
+        - date: "2026-06-26T00:32:55Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T20:58:10Z comment="Reviewed 956b66a hardening: MongoAggregate now explicitly specifies blank driver selection as the v1.9+ mongo-go default with explicit mongo-go/mgo values preserved; evidence remains code-annotated only.")'
           changed_by: human:buger

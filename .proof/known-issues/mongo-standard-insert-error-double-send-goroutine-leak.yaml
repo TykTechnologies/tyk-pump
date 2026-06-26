@@ -1,0 +1,33 @@
+id: mongo-standard-insert-error-double-send-goroutine-leak
+title: Standard Mongo WriteData can leave insert goroutines blocked after a batch insert error
+description: |
+  MongoPump.WriteData creates errCh with capacity len(accumulateSet), starts one
+  goroutine per accumulated batch, and returns as soon as the caller reads the
+  first non-nil error. Inside the insert goroutine, the error path sends the
+  insert error to errCh and then falls through to an unconditional errCh <- nil.
+  When multiple batches fail, the caller can return after the first error while
+  later goroutines are still trying to send their second value into a channel no
+  longer being drained. This preserves the TT-695 "first error is observable"
+  behavior, but leaves a resource-lifetime/concurrency gap for multi-batch
+  failure cases.
+affected_requirements:
+    - INT-REQ-004
+    - SW-REQ-034
+evidence_manifests:
+    - test:pumps/mongo_timeout_config_test.go:TestMongoPump_WriteData_InsertErrDoubleSend_KI
+severity: medium
+severity_basis: risk
+risk: resource_exhaustion
+reproducer_command: go test -count=1 -timeout 60s -run '^TestMongoPump_WriteData_InsertErrDoubleSend_KI$' ./pumps
+introduced_in: 14ccaba
+mitigation: Keep Mongo batch counts small where practical and investigate repeated standard Mongo insert failures promptly; the first failure is returned, but blocked insert goroutines can still accumulate under multi-batch failure storms.
+remediation: Make each insert goroutine send exactly one result, or keep draining all goroutine results before returning a collected first error. Add a multi-batch failure test that proves no goroutine remains blocked after WriteData returns.
+owner: tyk-team
+review_date: "2026-11-30"
+release_disposition: ship_with_known_issue
+status: open
+history:
+    - at: "2026-06-26T00:32:31Z"
+      by: agent:codex
+      action: created
+      detail: Found during TT-695 commit-level proof review; recorded as current product debt rather than changing product behavior.

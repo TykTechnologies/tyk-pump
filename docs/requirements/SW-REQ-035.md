@@ -46,8 +46,8 @@ The honest req description above reflects this gap.
   `:AccumulateSet` — selective HTTP-record filtering and size-bounded batching.
 - `pumps/mongo_selective.go:getItemSizeBytes` — exact document-size estimate
   for SW-REQ-092.
-- `main.go:209` and `pumps/mongo_selective.go:134` — configured pump timeout
-  is applied before `Init` and passed to
+- `main.go:209` and `pumps/mongo_selective.go:134` — `PumpConfig.Timeout` is
+  passed to `SetTimeout` before `Init` and then to
   `persistent.ClientOpts.ConnectionTimeout`.
 
 ## Evidence
@@ -58,7 +58,8 @@ The honest req description above reflects this gap.
   blank-driver default for the selective pump path.
 - `pumps/mongo_selective_test.go:TestMongoSelectivePump_GetItemSizeBytes_CountsRawRequestAndResponseOnce`
   covers SW-REQ-092 exact document-size arithmetic.
-- `pumps/mongo_timeout_config_test.go` proves timeout setup order and
+- `pumps/mongo_timeout_config_test.go` proves `pmp.Timeout` is passed to
+  `SetTimeout` before `Init(pmp.Meta)` and proves
   `ConnectionTimeout: m.timeout` propagation without starting MongoDB.
 - `pumps/mongo_mcdc_100_test.go:TestMongoSelectivePump_EnsureIndexes_LogBrowserDifferentName_FakeStore`
   proves same-key/different-name `logBrowserIndex` conflicts are idempotent.

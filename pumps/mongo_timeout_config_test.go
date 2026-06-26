@@ -51,6 +51,8 @@ func TestInitialisePumpsAppliesTimeoutBeforeInit(t *testing.T) {
 
 	setTimeoutPos := token.NoPos
 	initPos := token.NoPos
+	setTimeoutUsesConfiguredValue := false
+	initUsesMeta := false
 	ast.Inspect(fn.Body, func(n ast.Node) bool {
 		call, ok := n.(*ast.CallExpr)
 		if !ok {
@@ -62,16 +64,32 @@ func TestInitialisePumpsAppliesTimeoutBeforeInit(t *testing.T) {
 		}
 		if isIdent(sel.X, "thisPmp") && sel.Sel.Name == "SetTimeout" && setTimeoutPos == token.NoPos {
 			setTimeoutPos = call.Pos()
+			setTimeoutUsesConfiguredValue = len(call.Args) == 1 && isSelector(call.Args[0], "pmp", "Timeout")
 		}
 		if isIdent(sel.X, "thisPmp") && sel.Sel.Name == "Init" && initPos == token.NoPos {
 			initPos = call.Pos()
+			initUsesMeta = len(call.Args) == 1 && isSelector(call.Args[0], "pmp", "Meta")
 		}
 		return true
 	})
 
 	require.NotEqual(t, token.NoPos, setTimeoutPos, "initialisePumps must call thisPmp.SetTimeout")
 	require.NotEqual(t, token.NoPos, initPos, "initialisePumps must call thisPmp.Init")
+	require.True(t, setTimeoutUsesConfiguredValue, "initialisePumps must pass pmp.Timeout into thisPmp.SetTimeout")
+	require.True(t, initUsesMeta, "initialisePumps must pass pmp.Meta into thisPmp.Init")
 	require.Less(t, int(setTimeoutPos), int(initPos), "initialisePumps must apply timeout before Init builds backend clients")
+}
+
+// Verifies: KI:mongo-standard-insert-error-double-send-goroutine-leak
+// Reproduces: mongo-standard-insert-error-double-send-goroutine-leak
+func TestMongoPump_WriteData_InsertErrDoubleSend_KI(t *testing.T) {
+	file := parseGoFile(t, "mongo.go")
+	fn := findMethod(t, file, "MongoPump", "WriteData")
+
+	require.True(t, hasInsertErrDoubleSendPattern(fn),
+		"KI active: insert goroutine sends errCh <- err and then falls through to an unconditional errCh <- nil")
+	require.True(t, returnsOnFirstErrChError(fn),
+		"KI active: WriteData returns as soon as it reads the first non-nil errCh value")
 }
 
 func parseGoFile(t *testing.T, path string) *ast.File {
@@ -151,4 +169,89 @@ func isSelector(expr ast.Expr, objectName, fieldName string) bool {
 func isIdent(expr ast.Expr, name string) bool {
 	ident, ok := expr.(*ast.Ident)
 	return ok && ident.Name == name
+}
+
+func hasInsertErrDoubleSendPattern(fn *ast.FuncDecl) bool {
+	found := false
+	ast.Inspect(fn.Body, func(n ast.Node) bool {
+		lit, ok := n.(*ast.FuncLit)
+		if !ok {
+			return true
+		}
+
+		errSendInBranch := false
+		nilSendAfterBranch := false
+		for _, stmt := range lit.Body.List {
+			if ifStmt, ok := stmt.(*ast.IfStmt); ok && isErrNotNil(ifStmt.Cond) && blockSends(ifStmt.Body, "errCh", "err") {
+				errSendInBranch = true
+				continue
+			}
+			if errSendInBranch {
+				send, ok := stmt.(*ast.SendStmt)
+				if ok && isIdent(send.Chan, "errCh") && isIdent(send.Value, "nil") {
+					nilSendAfterBranch = true
+				}
+			}
+		}
+
+		if errSendInBranch && nilSendAfterBranch {
+			found = true
+			return false
+		}
+		return true
+	})
+	return found
+}
+
+func returnsOnFirstErrChError(fn *ast.FuncDecl) bool {
+	found := false
+	ast.Inspect(fn.Body, func(n ast.Node) bool {
+		caseClause, ok := n.(*ast.CommClause)
+		if !ok || caseClause.Comm == nil {
+			return true
+		}
+		comm, ok := caseClause.Comm.(*ast.AssignStmt)
+		if !ok || len(comm.Rhs) != 1 {
+			return true
+		}
+		recv, ok := comm.Rhs[0].(*ast.UnaryExpr)
+		if !ok || recv.Op != token.ARROW || !isIdent(recv.X, "errCh") {
+			return true
+		}
+		for _, stmt := range caseClause.Body {
+			if ifStmt, ok := stmt.(*ast.IfStmt); ok && isErrNotNil(ifStmt.Cond) && blockReturnsIdent(ifStmt.Body, "err") {
+				found = true
+				return false
+			}
+		}
+		return true
+	})
+	return found
+}
+
+func isErrNotNil(expr ast.Expr) bool {
+	bin, ok := expr.(*ast.BinaryExpr)
+	return ok && bin.Op == token.NEQ && isIdent(bin.X, "err") && isIdent(bin.Y, "nil")
+}
+
+func blockSends(block *ast.BlockStmt, chanName, valueName string) bool {
+	for _, stmt := range block.List {
+		if send, ok := stmt.(*ast.SendStmt); ok && isIdent(send.Chan, chanName) && isIdent(send.Value, valueName) {
+			return true
+		}
+	}
+	return false
+}
+
+func blockReturnsIdent(block *ast.BlockStmt, name string) bool {
+	for _, stmt := range block.List {
+		ret, ok := stmt.(*ast.ReturnStmt)
+		if !ok || len(ret.Results) != 1 {
+			continue
+		}
+		if isIdent(ret.Results[0], name) {
+			return true
+		}
+	}
+	return false
 }

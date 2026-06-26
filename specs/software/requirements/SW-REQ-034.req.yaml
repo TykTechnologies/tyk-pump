@@ -5,7 +5,7 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: when mcp_record_present pumps_mongo_standard shall always satisfy record_filtered_out
-description: 'The standard MongoDB pump shall, on each purge, filter out MCP-classified analytics records, accumulate the remaining records into batches bounded by MaxInsertBatchSizeBytes (default 10 MiB) while computing each analytics document size as len(RawRequest)+len(RawResponse)+1024 metadata bytes and rewriting raw bodies, rather than skipping the whole record, when that estimate exceeds MaxDocumentSizeBytes; it shall then concurrently insert each batch into the single configured collection, returning the first per-batch insert error to the caller. When CollectionCapEnable is true on a 64-bit host with a non-existing collection, it shall create the collection as a capped collection of CollectionCapMaxSizeBytes (default 5 GiB). During initialization, an omitted Mongo driver value shall resolve to the supported v1.9+ default driver mongo-go while explicit mongo-go and mgo values remain preserved for the storage client; the configured pump timeout shall be applied before Init builds the Mongo client and propagated to persistent.ClientOpts.ConnectionTimeout. StandardMongo index setup shall be idempotent for already-existing collections by skipping index creation when the collection exists; non-StandardMongo compatible logBrowserIndex conflict behavior remains KI-backed. Known issues affecting this requirement: mongo-pump-ignores-caller-context (ctx propagation gap; see SW-REQ-072), pumps-logfatal-on-config-decode (log.Fatalf on config decode error), mongo-standard-final-skipped-record-drops-pending-batch, and mongo-standard-logbrowser-compatible-index-conflict.'
+description: 'The standard MongoDB pump shall, on each purge, filter out MCP-classified analytics records, accumulate the remaining records into batches bounded by MaxInsertBatchSizeBytes (default 10 MiB) while computing each analytics document size as len(RawRequest)+len(RawResponse)+1024 metadata bytes and rewriting raw bodies, rather than skipping the whole record, when that estimate exceeds MaxDocumentSizeBytes; it shall then concurrently insert each batch into the single configured collection, returning the first per-batch insert error to the caller. When CollectionCapEnable is true on a 64-bit host with a non-existing collection, it shall create the collection as a capped collection of CollectionCapMaxSizeBytes (default 5 GiB). During initialization, an omitted Mongo driver value shall resolve to the supported v1.9+ default driver mongo-go while explicit mongo-go and mgo values remain preserved for the storage client; the configured per-pump timeout value from PumpConfig.Timeout shall be applied through SetTimeout before Init builds the Mongo client and propagated to persistent.ClientOpts.ConnectionTimeout. StandardMongo index setup shall be idempotent for already-existing collections by skipping index creation when the collection exists; non-StandardMongo compatible logBrowserIndex conflict behavior remains KI-backed. Known issues affecting this requirement: mongo-pump-ignores-caller-context (ctx propagation gap; see SW-REQ-072), pumps-logfatal-on-config-decode (log.Fatalf on config decode error), mongo-standard-final-skipped-record-drops-pending-batch, mongo-standard-insert-error-double-send-goroutine-leak, and mongo-standard-logbrowser-compatible-index-conflict.'
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -29,19 +29,20 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-25T20:58:09Z"
-        comment: 'Reviewed 956b66a hardening: standard Mongo now explicitly specifies blank driver selection as the v1.9+ mongo-go default with explicit mongo-go/mgo values preserved; evidence remains code-annotated only.'
-        fingerprint: sha256:219b58fd156a168faad491829860f4a197800c8fba5d866f28767cb4cc9e65af
+        reviewed_at: "2026-06-26T00:35:31Z"
+        comment: 'Reviewed TT-695 follow-up: standard Mongo timeout evidence proves pmp.Timeout reaches SetTimeout before Init(pmp.Meta), connect propagates m.timeout to persistent.ClientOpts.ConnectionTimeout, and remaining multi-batch insert-error goroutine lifetime debt is KI-linked. No runtime product behavior change.'
+        fingerprint: sha256:c0862ec229f22137f8d1b499397b25099630887db9ba091f504af87cccb32280
         ai_generated: false
 history:
     created_by: human:cli
     created_at: "2026-05-30T08:33:59Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-25T20:58:09Z"
+    last_modified_at: "2026-06-26T00:35:31Z"
 obligation_checklist:
     - backend_connection_timeout_propagated
     - boundary
     - cancellation_observed
+    - connection_leak_free
     - concurrent
     - config_schema_strict
     - document_size_accounting_exact
@@ -68,6 +69,12 @@ obligation_deferrals:
       tracking: mongo-pump-ignores-caller-context
       owner: human:buger
       ki_ref: mongo-pump-ignores-caller-context
+    - obligation_class: connection_leak_free
+      reason: Standard Mongo WriteData can return after the first insert error while later failing batch goroutines are still trying to send both err and nil into errCh; tracked until the insert fan-out drains all results or each goroutine sends exactly one result.
+      tracking: mongo-standard-insert-error-double-send-goroutine-leak
+      owner: human:buger
+      ki_ref: mongo-standard-insert-error-double-send-goroutine-leak
+      reproducer: mongo-standard-insert-error-double-send-goroutine-leak
     - obligation_class: config_schema_strict
       reason: 'Pump configuration unknown-field rejection is required but currently not implemented: mapstructure.Decode silently ignores unknown keys and operator typos until known issue mapstructure-decode-silently-drops-unknown-keys is fixed.'
       tracking: mapstructure-decode-silently-drops-unknown-keys
@@ -182,4 +189,14 @@ lifecycle:
           from: approved
           to: approved
           reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T20:02:53Z comment="Reviewed 8bfdb36 hardening: SW-REQ-034 now explicitly owns standard Mongo document-size accounting and raw-payload elision behavior, with document_size_accounting_exact evidence and current final-skipped-item debt KI-linked.")'
+          changed_by: human:buger
+        - date: "2026-06-26T00:32:55Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-25T20:58:09Z comment="Reviewed 956b66a hardening: standard Mongo now explicitly specifies blank driver selection as the v1.9+ mongo-go default with explicit mongo-go/mgo values preserved; evidence remains code-annotated only.")'
+          changed_by: human:buger
+        - date: "2026-06-26T00:35:31Z"
+          from: approved
+          to: approved
+          reason: 're-approve (prior: role="software_engineer" reviewer="human:buger" at=2026-06-26T00:32:55Z comment="Reviewed TT-695 follow-up: standard Mongo timeout evidence now proves pmp.Timeout is passed to SetTimeout before Init(pmp.Meta), and connect propagates m.timeout to persistent.ClientOpts.ConnectionTimeout. Residual write/query timeout debt remains KI-linked.")'
           changed_by: human:buger

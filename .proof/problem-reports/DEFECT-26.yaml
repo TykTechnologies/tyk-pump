@@ -65,6 +65,7 @@ disposition:
     known_issues:
         - mapstructure-decode-silently-drops-unknown-keys
         - mongo-standard-final-skipped-record-drops-pending-batch
+        - mongo-standard-insert-error-double-send-goroutine-leak
         - mongo-standard-logbrowser-compatible-index-conflict
         - mongo-pump-ignores-caller-context
         - no-panic-recovery-in-exec-pump-writing

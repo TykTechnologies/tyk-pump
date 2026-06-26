@@ -28,8 +28,8 @@ carry the real obligations.
 - `pumps/mongo_aggregate.go:DoAggregatedWriting` — per-org upsert pipeline.
 - `pumps/mongo_aggregate.go:229` — blank Mongo driver selection resolves to
   the shared `mongo-go` default before building the storage client.
-- `main.go:209` and `pumps/mongo_aggregate.go:231` — configured pump timeout
-  is applied before `Init` and passed to
+- `main.go:209` and `pumps/mongo_aggregate.go:231` — `PumpConfig.Timeout` is
+  passed to `SetTimeout` before `Init` and then to
   `persistent.ClientOpts.ConnectionTimeout`.
 - Sub-behaviour entry points are listed in each sub-req's "Code references"
   section.
@@ -49,7 +49,8 @@ carry the real obligations.
     and the `dummyObject` helpers remain annotated against this parent.
 - Live-MongoDB tests are excluded from the local audit MC/DC scope (known
   issue).
-- `pumps/mongo_timeout_config_test.go` proves timeout setup order and
+- `pumps/mongo_timeout_config_test.go` proves `pmp.Timeout` is passed to
+  `SetTimeout` before `Init(pmp.Meta)` and proves
   `ConnectionTimeout: m.timeout` propagation without starting MongoDB.
 
 ## Open questions
