@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"net"
 	"os"
+	"regexp"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -149,6 +150,44 @@ func TestStatsDSink_EventSkipOptions(t *testing.T) {
 		sink.flush()
 		assert.Empty(t, sink.udpBuf.String())
 	})
+}
+
+func readInstrumentationSource(t *testing.T, path string) string {
+	t.Helper()
+
+	data, err := os.ReadFile(path)
+	require.NoError(t, err)
+	return string(data)
+}
+
+// Verifies: SW-REQ-005
+// Verifies: KI:instrumentation-goroutines-no-recover-or-shutdown
+// Reproduces: instrumentation-goroutines-no-recover-or-shutdown
+func TestInstrumentationBackgroundGoroutinesLackRecover_KI(t *testing.T) {
+	helpers := readInstrumentationSource(t, "instrumentation_helpers.go")
+	statsd := readInstrumentationSource(t, "instrumentation_statsd_sink.go")
+
+	require.Contains(t, helpers, "go func() {")
+	require.Contains(t, helpers, "debug.ReadGCStats")
+	require.NotContains(t, helpers, "recover(")
+
+	require.Contains(t, statsd, "go s.loop()")
+	require.Regexp(t, regexp.MustCompile(`(?s)func \(s \*StatsDSink\) loop\(\).*for cmd := range cmdChan`), statsd)
+	require.Regexp(t, regexp.MustCompile(`(?s)go func\(\) \{\s*for range ticker\.C`), statsd)
+	require.NotContains(t, statsd, "recover(")
+}
+
+// Verifies: SW-REQ-005
+// Verifies: KI:instrumentation-goroutines-no-recover-or-shutdown
+// Reproduces: instrumentation-goroutines-no-recover-or-shutdown
+func TestInstrumentationGCMonitorHasNoShutdownSignal_KI(t *testing.T) {
+	source := readInstrumentationSource(t, "instrumentation_helpers.go")
+
+	require.Regexp(t, regexp.MustCompile(`func MonitorApplicationInstrumentation\(\)`), source)
+	require.Contains(t, source, "for {")
+	require.Contains(t, source, "time.Sleep(5 * time.Second)")
+	require.NotRegexp(t, regexp.MustCompile(`func MonitorApplicationInstrumentation\([^)]*(context\.Context|chan|stop|done)`), source)
+	require.NotContains(t, source, "select {")
 }
 
 // TestSetupInstrumentation_VacuousRows drives the two vacuous (antecedent-false)
