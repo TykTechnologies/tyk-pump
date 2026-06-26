@@ -2,14 +2,20 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"go/ast"
 	"go/parser"
 	"go/printer"
 	"go/token"
+	"net"
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"os/exec"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 )
 
 // SW-REQ-032:nominal:boundary
@@ -134,6 +140,51 @@ func TestServeHealthCheck_BindsExternalInterface(t *testing.T) {
 	portIdent, ok := call.Args[0].(*ast.Ident)
 	if !ok || portIdent.Name != "port" {
 		t.Fatalf("health endpoint listener should use resolved port, got %s", expressionString(call.Args[0]))
+	}
+}
+
+// Verifies: SW-REQ-032
+// Verifies: SYS-REQ-012
+// Verifies: KI:health-listener-bind-failure-logfatal
+// Reproduces: health-listener-bind-failure-logfatal
+func TestServeHealthCheckOccupiedPortFatal_KI(t *testing.T) {
+	if os.Getenv("TYK_PUMP_HEALTH_BIND_FATAL_CHILD") == "1" {
+		port, err := strconv.Atoi(os.Getenv("TYK_PUMP_HEALTH_OCCUPIED_PORT"))
+		if err != nil {
+			t.Fatalf("invalid occupied port: %v", err)
+		}
+		ServeHealthCheck("health", port, false)
+		t.Fatal("ServeHealthCheck returned after occupied listener port")
+	}
+
+	listener, err := net.Listen("tcp", ":0")
+	if err != nil {
+		t.Fatalf("bind occupied-port listener: %v", err)
+	}
+	defer listener.Close()
+
+	tcpAddr, ok := listener.Addr().(*net.TCPAddr)
+	if !ok {
+		t.Fatalf("listener address has unexpected type %T", listener.Addr())
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, os.Args[0], "-test.run", "^TestServeHealthCheckOccupiedPortFatal_KI$")
+	cmd.Env = append(os.Environ(),
+		"TYK_PUMP_HEALTH_BIND_FATAL_CHILD=1",
+		"TYK_PUMP_HEALTH_OCCUPIED_PORT="+strconv.Itoa(tcpAddr.Port),
+	)
+	output, err := cmd.CombinedOutput()
+	if ctx.Err() == context.DeadlineExceeded {
+		t.Fatalf("child process hung waiting for occupied-port fatal; output:\n%s", output)
+	}
+	if err == nil {
+		t.Fatalf("child process exited successfully; expected log.Fatal on occupied port; output:\n%s", output)
+	}
+	if !strings.Contains(string(output), "Error serving health check endpoint") {
+		t.Fatalf("child output did not include health listener fatal message; output:\n%s", output)
 	}
 }
 
