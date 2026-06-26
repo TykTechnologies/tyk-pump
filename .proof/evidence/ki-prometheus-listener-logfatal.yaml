@@ -6,13 +6,13 @@ requirements:
 command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n -F 'log.Fatal(http.ListenAndServe' pumps/prometheus.go
 status: pass
 observed_result: known_issue_reproduced
-executed_at: "2026-06-26T20:48:56Z"
+executed_at: "2026-06-26T20:58:36Z"
 input_set:
     - KI prometheus-listener-logfatal static source tripwire
 freshness_hashes:
     proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
     pumps/prometheus.go: sha256:40ffde54b93cb18faed9e300a8432132bb92cd61d22e97c6d80df8fddb0f351d
-    specs/software/requirements/SW-REQ-024.req.yaml: sha256:afc96fd525379ceebb502fdc44e8fad01dc940ba3432ce70171ba3f799cf51e3
+    specs/software/requirements/SW-REQ-024.req.yaml: sha256:24f4e2f9243699681fae3d000c812ccc69c444df3c791bd7cbd6ebeffea19181
     specs/system/requirements/SYS-REQ-004.req.yaml: sha256:149e22ab96b33d3f2659f48fe98028a37f538e45f06138ca9048b5ef94e78c51
 known_issues:
     - prometheus-listener-logfatal

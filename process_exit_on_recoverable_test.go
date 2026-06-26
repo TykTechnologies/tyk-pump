@@ -60,11 +60,11 @@ func TestProcessExitOnRecoverable_NoNewLogFatalSites(t *testing.T) {
 		"pumps/syslog.go:82":           "pumps-logfatal-on-config-decode",
 		"pumps/graylog.go:76":          "pumps-logfatal-on-config-decode",
 		"pumps/prometheus.go:193":      "pumps-logfatal-on-config-decode",
-		"pumps/kafka.go:103":           "pumps-logfatal-on-config-decode",
+		"pumps/kafka.go:105":           "pumps-logfatal-on-config-decode",
 		"pumps/elasticsearch.go:367":   "pumps-logfatal-on-config-decode",
 		"pumps/influx.go:71":           "pumps-logfatal-on-config-decode",
 		"pumps/influx2.go:97":          "pumps-logfatal-on-config-decode",
-		"pumps/kinesis.go:71":          "pumps-logfatal-on-config-decode",
+		"pumps/kinesis.go:72":          "pumps-logfatal-on-config-decode",
 		"pumps/logzio.go:124":          "pumps-logfatal-on-config-decode",
 		"pumps/moesif.go:282":          "pumps-logfatal-on-config-decode",
 		"pumps/mongo.go:223":           "pumps-logfatal-on-config-decode",
@@ -76,15 +76,15 @@ func TestProcessExitOnRecoverable_NoNewLogFatalSites(t *testing.T) {
 		// KI: aws-pump-init-client-logfatal
 		"pumps/sqs.go:111":        "aws-pump-init-client-logfatal",
 		"pumps/timestream.go:113": "aws-pump-init-client-logfatal",
-		"pumps/kinesis.go:81":     "aws-pump-init-client-logfatal",
+		"pumps/kinesis.go:82":     "aws-pump-init-client-logfatal",
 
 		// KI: kafka-logfatal-on-init-mech-and-timeout
-		"pumps/kafka.go:142": "kafka-logfatal-on-init-mech-and-timeout",
-		"pumps/kafka.go:156": "kafka-logfatal-on-init-mech-and-timeout",
+		"pumps/kafka.go:144": "kafka-logfatal-on-init-mech-and-timeout",
+		"pumps/kafka.go:158": "kafka-logfatal-on-init-mech-and-timeout",
 
 		// KI: mongo-pump-init-connect-logfatal-unreachable
-		"pumps/mongo.go:395":           "mongo-pump-init-connect-logfatal-unreachable",
-		"pumps/mongo.go:405":           "mongo-pump-init-connect-logfatal-unreachable",
+		"pumps/mongo.go:396":           "mongo-pump-init-connect-logfatal-unreachable",
+		"pumps/mongo.go:407":           "mongo-pump-init-connect-logfatal-unreachable",
 		"pumps/mongo_aggregate.go:244": "mongo-pump-init-connect-logfatal-unreachable",
 		"pumps/mongo_selective.go:139": "mongo-pump-init-connect-logfatal-unreachable",
 

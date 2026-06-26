@@ -97,10 +97,10 @@ obligation_deferrals:
       owner: human:buger
       ki_ref: pump-fanout-panic-not-recovered
     - obligation_class: process_exit_on_recoverable
-      reason: real untested obligation under known-issue pumps-logfatal-on-config-decode; surfaced as visible tracked debt, not an overclaimed fix
-      tracking: pumps-logfatal-on-config-decode
+      reason: Prometheus listener failure calls log.Fatal from a goroutine, so listener bind/runtime failures remain process-exit debt until prometheus-listener-logfatal is remediated.
+      tracking: prometheus-listener-logfatal
       owner: human:buger
-      ki_ref: pumps-logfatal-on-config-decode
+      ki_ref: prometheus-listener-logfatal
     - obligation_class: request_timeout_bounded
       reason: Prometheus Init starts http.ListenAndServe with a nil handler on the process-global DefaultServeMux and no private server lifecycle, so listener timeout/lifecycle isolation remains KI-gated with the DefaultServeMux issue.
       tracking: prometheus-init-mutates-default-mux

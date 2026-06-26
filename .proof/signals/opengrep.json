@@ -1,8 +1,8 @@
 {
   "schema_version": "proof.code_signals.report.v1",
   "provider": "opengrep",
-  "generated_at": "2026-06-26T20:50:19Z",
-  "input_hash": "sha256:823c148f633646c1e22c62113d07e1ade0c4c561e7059e1c397aeca31cef5dfc",
+  "generated_at": "2026-06-26T20:58:59Z",
+  "input_hash": "sha256:05241f6b641cd65cdaf4f43240261da84c71c0edec948446f783b48958362734",
   "mode": "run",
   "source": "stdout",
   "format": "sarif",
@@ -3414,7 +3414,7 @@
       ],
       "message": "log.Fatal / os.Exit called from a non-main constructor or processing function.\nThis aborts the entire process and bypasses caller error handling; return\nan error instead so the caller can recover.\n",
       "fingerprint": "sha256:60bf8fa40495299df085d38d30df343281f4c88ae3cf6ccc73ce8864c0c79da4",
-      "source_hash": "sha256:7fc54f5bbcab42ecfec001a4da84851bdc05d18eef09cd3efedcb5d029752e20"
+      "source_hash": "sha256:60be5052a1487bc55ebb58a791a4ac3976fcff4dcb795879db6342e1c8c0f6e4"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3437,7 +3437,7 @@
       ],
       "message": "A pump's `Init(config)` method calls `log.Fatal(...)` on a config\ndecode or connection failure. log.Fatal calls os.Exit(1), bypassing\nevery deferred cleanup AND every sibling pump's chance to keep\nworking. A single misconfigured pump in a multi-pump deployment\ntakes down the whole process. Either return the error to the caller\n(the pump-init driver should decide whether the failure is fatal\nfor the WHOLE process, or just for THIS pump), or recover into a\ndegraded \"this pump is inert\" mode while others continue.\n",
       "fingerprint": "sha256:0d14470dea86ba8bb40876c1c275e6f284882c5071325859a783c431e6f3bff4",
-      "source_hash": "sha256:7fc54f5bbcab42ecfec001a4da84851bdc05d18eef09cd3efedcb5d029752e20"
+      "source_hash": "sha256:60be5052a1487bc55ebb58a791a4ac3976fcff4dcb795879db6342e1c8c0f6e4"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3459,7 +3459,7 @@
       ],
       "message": "mapstructure.Decode silently ignores unknown keys in the input map. For\nconfiguration parsing this can hide typos; use a DecoderConfig with\nErrorUnused: true when unknown keys should fail loudly.\n",
       "fingerprint": "sha256:4b3d72dc2c623eb6f6821300347c6429e3bee4c41467f9769f937751a3e3bced",
-      "source_hash": "sha256:7fc54f5bbcab42ecfec001a4da84851bdc05d18eef09cd3efedcb5d029752e20"
+      "source_hash": "sha256:60be5052a1487bc55ebb58a791a4ac3976fcff4dcb795879db6342e1c8c0f6e4"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3477,7 +3477,7 @@
       ],
       "message": "Discarded call result requires explicit propagation or ignore-policy evidence.",
       "fingerprint": "sha256:7975269bd6d0625f18547f02672df83edbba86fd573f214403938f4699a32350",
-      "source_hash": "sha256:7fc54f5bbcab42ecfec001a4da84851bdc05d18eef09cd3efedcb5d029752e20"
+      "source_hash": "sha256:60be5052a1487bc55ebb58a791a4ac3976fcff4dcb795879db6342e1c8c0f6e4"
     },
     {
       "schema_version": "proof.code_signals.v1",
@@ -3499,7 +3499,7 @@
       ],
       "message": "A for loop uses a struct field as its stride: `for i := 0; i \u003c N; i +=\ncfg.BatchSize`, OR a shrink-loop uses a parameter as its slice step:\n`for batchSize \u003c len(s) { s = s[batchSize:] ... }`. When the field /\nparameter is zero (default-constructed config, missing YAML key,\nmisconfigured caller) the loop hangs the goroutine forever and produces\nno observable failure. Validate the field at init time and substitute a\nnon-zero default, OR guard the loop with `if cfg.BatchSize == 0 {\ncfg.BatchSize = N }` immediately before the loop.\n",
       "fingerprint": "sha256:f46acf33496fb96f1d0cdeaecc21fc8c29a74e13e5d955fefabfb27c8558d3b3",
-      "source_hash": "sha256:7fc54f5bbcab42ecfec001a4da84851bdc05d18eef09cd3efedcb5d029752e20"
+      "source_hash": "sha256:60be5052a1487bc55ebb58a791a4ac3976fcff4dcb795879db6342e1c8c0f6e4"
     },
     {
       "schema_version": "proof.code_signals.v1",

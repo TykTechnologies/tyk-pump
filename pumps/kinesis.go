@@ -105,9 +105,9 @@ func (p *KinesisPump) Init(config interface{}) error {
 		})
 
 		switch {
-		case err != nil: //mcdc:ignore production DescribeStream err arm requires a live AWS client failure; the mirror branch in TestableKinesisPump.InitWithMock is exercised by TestKinesisPump_DescribeStream_APIFailure. Production Init only reaches this point after LoadDefaultConfig succeeds (requires AWS env), making the err arm unreachable from a unit test. KI mcdc-pumps-below-95.
+		case err != nil: //mcdc:ignore:external-evidence production DescribeStream err arm requires a live AWS client failure; the mirror branch in TestableKinesisPump.InitWithMock is exercised by TestKinesisPump_DescribeStream_APIFailure. Production Init only reaches this point after LoadDefaultConfig succeeds (requires AWS env), making the err arm unreachable from a unit test. KI mcdc-pumps-below-95.
 			return fmt.Errorf("failed to describe Kinesis stream: %w", err)
-		case describeOutput.StreamDescription.EncryptionType == types.EncryptionTypeKms && describeOutput.StreamDescription.KeyId != nil: //mcdc:ignore production switch requires a live AWS DescribeStream response; mirror logic in TestableKinesisPump.InitWithMock is exercised by TestKinesisPump_DescribeStream_* tests. KI mcdc-pumps-below-95.
+		case describeOutput.StreamDescription.EncryptionType == types.EncryptionTypeKms && describeOutput.StreamDescription.KeyId != nil: //mcdc:ignore:external-evidence production switch requires a live AWS DescribeStream response; mirror logic in TestableKinesisPump.InitWithMock is exercised by TestKinesisPump_DescribeStream_* tests. KI mcdc-pumps-below-95.
 			currentKeyID := aws.ToString(describeOutput.StreamDescription.KeyId)
 			if currentKeyID == p.kinesisConf.KMSKeyID { //mcdc:ignore:capability-gap same rationale — covered by TestKinesisPump_DescribeStream_AlreadyEncryptedSameKey/DifferentKey via the mock seam. KI mcdc-pumps-below-95. [ki: mcdc-pumps-below-95]
 				p.log.Info("Server-side encryption is already enabled with the specified KMS Key ID")
@@ -148,7 +148,7 @@ func (p *KinesisPump) WriteData(ctx context.Context, records []interface{}) erro
 		var entries []types.PutRecordsRequestEntry
 		for _, record := range batch {
 			// Build message format
-			decoded, ok := record.(analytics.AnalyticsRecord) //mcdc:ignore !ok arm is unreachable from the production call path: WriteData is only invoked by pump.Pump with []interface{} containing analytics.AnalyticsRecord values. KI mcdc-pumps-below-95.
+			decoded, ok := record.(analytics.AnalyticsRecord) //mcdc:ignore:defensive !ok arm is unreachable from the production call path: WriteData is only invoked by pump.Pump with []interface{} containing analytics.AnalyticsRecord values. KI mcdc-pumps-below-95.
 			if !ok {                                          //mcdc:ignore:defensive same rationale as the type-assert above — the !ok arm is structurally unreachable from production. KI mcdc-pumps-below-95.
 				p.log.WithField("record", record).Error("unable to decode record")
 				continue

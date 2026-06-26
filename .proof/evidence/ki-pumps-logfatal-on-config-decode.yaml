@@ -33,7 +33,7 @@ requirements:
 command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'mapstructure\.Decode\(|Failed to decode configuration' pumps
 status: pass
 observed_result: known_issue_reproduced
-executed_at: "2026-06-26T20:48:58Z"
+executed_at: "2026-06-26T20:58:42Z"
 input_set:
     - KI pumps-logfatal-on-config-decode static config-decode fatal scan
 freshness_hashes:
@@ -44,7 +44,7 @@ freshness_hashes:
     pumps/influx.go: sha256:5f47f56b241e5d875a041d458dc705ddb636ba22ec8cc287b196cc0344cdda47
     pumps/influx2.go: sha256:6ae1cf74fc76fdf8c55eaf8d15a5eeaa2f0fac54a448e4894cb2b320e5786af5
     pumps/kafka.go: sha256:534bf9beeb656d6fc3d3e007026ac97dd99722526bd4586c145c222a2cd0e7f6
-    pumps/kinesis.go: sha256:7fc54f5bbcab42ecfec001a4da84851bdc05d18eef09cd3efedcb5d029752e20
+    pumps/kinesis.go: sha256:60be5052a1487bc55ebb58a791a4ac3976fcff4dcb795879db6342e1c8c0f6e4
     pumps/logzio.go: sha256:b912c5b3b49ac3b0ab31ffc01b97d7bb6598324c599cf776e48541fe75b2a949
     pumps/moesif.go: sha256:8c931352943067f1c554e5e2bc32521e05fd33fdde6885d4dd9949091518ad32
     pumps/mongo.go: sha256:46c26200acfb5910015a33076a6d691dc0d04afde4fcf17f42734d06cad7e7c6
@@ -59,7 +59,7 @@ freshness_hashes:
     pumps/timestream.go: sha256:a7647659ff9a47dc0cc13e4fd090026016f420777cec27b668b1ccbc65054269
     specs/software/requirements/SW-REQ-021.req.yaml: sha256:05d272ce9f9fa33993591435f2ab560a22e7c6d33c3cf766311f4b6a40a2744b
     specs/software/requirements/SW-REQ-023.req.yaml: sha256:2d6e57b26dff01a50fe993aa2b748e0f27b3acf50cd47e4254728d8f47277590
-    specs/software/requirements/SW-REQ-024.req.yaml: sha256:afc96fd525379ceebb502fdc44e8fad01dc940ba3432ce70171ba3f799cf51e3
+    specs/software/requirements/SW-REQ-024.req.yaml: sha256:24f4e2f9243699681fae3d000c812ccc69c444df3c791bd7cbd6ebeffea19181
     specs/software/requirements/SW-REQ-025.req.yaml: sha256:c39d87b183049e6be369fa20021a38962e055d68f625bc0baa6b1f4ae06fb4f6
     specs/software/requirements/SW-REQ-026.req.yaml: sha256:8eb14bcfa3d5811f0d4bca2d6654894d4a07f630255419983899530d14dfe6e9
     specs/software/requirements/SW-REQ-034.req.yaml: sha256:0b87408fdfa90d4e12515b44d440ab43641048d2ee8ef876fce552ffbd761238

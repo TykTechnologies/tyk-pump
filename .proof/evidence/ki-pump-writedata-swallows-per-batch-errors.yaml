@@ -14,7 +14,7 @@ requirements:
 command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestSQLPumpWriteDataSwallowsBatchError_KI$' ./pumps
 status: pass
 observed_result: known_issue_reproduced
-executed_at: "2026-06-26T20:50:02Z"
+executed_at: "2026-06-26T20:58:38Z"
 input_set:
     - KI pump-writedata-swallows-per-batch-errors table-driven remaining-scope source tripwire
 freshness_hashes:
@@ -22,7 +22,7 @@ freshness_hashes:
     pumps/graylog.go: sha256:3267a8647738fa57f0916b61339bd61edc4cf6e311bc96fdf21cbab6b9dfe421
     pumps/influx.go: sha256:5f47f56b241e5d875a041d458dc705ddb636ba22ec8cc287b196cc0344cdda47
     pumps/influx2.go: sha256:6ae1cf74fc76fdf8c55eaf8d15a5eeaa2f0fac54a448e4894cb2b320e5786af5
-    pumps/kinesis.go: sha256:7fc54f5bbcab42ecfec001a4da84851bdc05d18eef09cd3efedcb5d029752e20
+    pumps/kinesis.go: sha256:60be5052a1487bc55ebb58a791a4ac3976fcff4dcb795879db6342e1c8c0f6e4
     pumps/known_issue_tripwire_test.go: sha256:7ec0074c0adc22e3df8b14211cd6c1c4b64adfd0eaa0077a6c7585687ffa5404
     pumps/logzio.go: sha256:b912c5b3b49ac3b0ab31ffc01b97d7bb6598324c599cf776e48541fe75b2a949
     pumps/mongo_aggregate.go: sha256:9e6d675bf3db1aa3da93b6a46fb4bcd3699d2b8f5e10c1cf447fd65867443a5d
