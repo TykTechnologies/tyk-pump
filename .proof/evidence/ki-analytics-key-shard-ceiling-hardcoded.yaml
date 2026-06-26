@@ -5,7 +5,7 @@ requirements:
 command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored rg -n 'for i := -1; i < 10; i\+\+' main.go
 status: pass
 observed_result: known_issue_reproduced
-executed_at: "2026-06-26T15:11:54Z"
+executed_at: "2026-06-26T17:08:53Z"
 input_set:
     - KI analytics-key-shard-ceiling-hardcoded static shard ceiling scan
 freshness_hashes:
