@@ -45,7 +45,9 @@ ctx-cancellation check (unique among HTTP-logging pumps) be explicit.
   covers DEFECT-35 / commit `34e1a2c` syslog privacy inheritance by asserting
   a real syslog UDP message emits empty `raw_request`/`raw_response` field
   values and omits original raw request/response bytes after `filterData`
-  redaction.
+  redaction. Its MC/DC rows are the SYS-REQ-015 omitted-payload true row and
+  the SW-REQ-050 UDP transport row; the privacy behavior itself is carried by
+  `per_backend_privacy_transform_applied`.
 - Live-syslog tests need a running syslog server and are excluded from the
   local audit MC/DC scope (known issue).
 

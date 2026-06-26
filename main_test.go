@@ -356,6 +356,8 @@ func TestOmitDetailsFilterData(t *testing.T) {
 // SW-REQ-050:per_backend_privacy_transform_applied:nominal
 // SW-REQ-050:per_backend_privacy_transform_applied:negative
 // SW-REQ-050:per_backend_privacy_transform_applied:review
+// MCDC SYS-REQ-015: detailed_payloads_omitted=T, omit_detailed_recording_enabled=T => TRUE
+// MCDC SW-REQ-050: tcp_writer_used=F, transport_tcp=F => TRUE
 func TestSyslogPump_OmitDetailedRecordingRedactsForwardedPayloads(t *testing.T) {
 	addr, messages := mockMainSyslogServer(t)
 	syslogPump := &pumps.SyslogPump{}
