@@ -30,5 +30,6 @@ Variables are declared in `specs/software/variables/pumps-mongo-aggregate.vars.y
 - `pumps/mongo_aggregate_test.go:TestDoAggregatedWritingWithIgnoredAggregations`
   writes a mixed aggregate with `ignore_aggregations: ["apikeys"]`, writes a
   second aggregate that includes API-key dimensions, writes the ignoring
-  aggregate again, and asserts the mixed collection still retains the non-ignored
-  `apikey2` counter.
+  aggregate again, checks that final write succeeds, and asserts the persisted
+  documents omit the ignored writer's `apikey1` dimension while still retaining
+  the non-ignored `apikey2` counter in both the aggregate map and persisted list.

@@ -29,24 +29,27 @@ verification:
         status: approved
         reviewer: human:buger
         role: software_engineer
-        reviewed_at: "2026-06-25T18:08:19Z"
-        comment: 'TT5516 hardening: reviewed mixed aggregate ignored-dimension retention requirement, aggregate_dimension_retention evidence, DEFECT-32 closure, and live Mongo regression coverage; no runtime product behavior change.'
+        reviewed_at: "2026-06-26T00:24:30Z"
+        comment: 'Reviewed TT5516 follow-up: SW-REQ-096 evidence now requires the final ignoring-writer pass to succeed and proves ignored apikey1 is absent while retained apikey2 remains. No runtime product behavior change.'
         fingerprint: sha256:5459185f56ee19b6863453391628fa256ee1a69e597829cbc34347c7bcf75b61
         ai_generated: false
 history:
     created_by: human:buger
     created_at: "2026-06-25T18:05:11Z"
     last_modified_by: human:buger
-    last_modified_at: "2026-06-25T18:08:19Z"
+    last_modified_at: "2026-06-26T00:24:30Z"
 obligation_checklist:
     - aggregate_dimension_retention
 stakeholder:
     acceptance_criteria:
         - id: AC-001
-          text: If one MongoAggregate writer ignores the apikeys aggregation and another writer records apikeys into the mixed collection, a later write by the ignoring writer preserves the existing apikey counter map.
+          text: If one MongoAggregate writer ignores the apikeys aggregation and another writer records apikeys into the mixed collection, a later successful write by the ignoring writer preserves the existing apikey counter map from the non-ignoring writer.
           verification_method: test
         - id: AC-002
           text: The total hit and average counters continue to accumulate while ignored dimension maps remain bounded to the dimensions actually written by non-ignoring writers.
+          verification_method: test
+        - id: AC-003
+          text: The same mixed-collection evidence proves the ignored writer's apikey is absent from both the aggregate map and persisted list while the retained non-ignored apikey remains present.
           verification_method: test
 lifecycle:
     change_history:
@@ -59,4 +62,9 @@ lifecycle:
           from: draft
           to: review
           reason: '[2e26ba7] TT5516 mixed aggregate ignored-dimension retention requirement ready for branch review'
+          changed_by: human:buger
+        - date: "2026-06-26T00:23:12Z"
+          from: approved
+          to: approved
+          reason: 're-approve after strengthening the evidence contract for the final ignoring-writer pass and explicit ignored/retained apikey assertions'
           changed_by: human:buger

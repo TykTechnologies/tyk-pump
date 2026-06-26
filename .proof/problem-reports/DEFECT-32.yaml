@@ -65,6 +65,12 @@ disposition:
     evidence:
         verified_by:
             - pumps/mongo_aggregate_test.go:TestDoAggregatedWritingWithIgnoredAggregations
+        notes: |
+            The regression test now fails closed on the final ignoring-writer
+            pass and asserts both sides of the invariant: ignored apikey1 is
+            absent from the persisted aggregate dimensions, while retained
+            apikey2 from the non-ignoring writer remains present in the map and
+            list projections.
         obligation_evidence:
             - requirement: SW-REQ-096
               obligation_class: aggregate_dimension_retention
@@ -82,3 +88,11 @@ history:
         Recorded TT5516 double-discard as covered by SW-REQ-096, with live
         Mongo evidence that an ignoring writer does not remove a previously
         retained API-key aggregate dimension from the mixed collection.
+    - at: "2026-06-26T00:24:13Z"
+      by: agent:codex
+      action: strengthened_evidence
+      detail: |
+        Tightened the live Mongo regression evidence so the final
+        ignoring-writer write must succeed and the persisted aggregate asserts
+        ignored apikey1 is absent while retained apikey2 remains present in the
+        map and list projections.

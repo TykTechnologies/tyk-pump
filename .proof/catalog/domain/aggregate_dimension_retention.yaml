@@ -27,9 +27,9 @@ if_missing: |-
   lose per-dimension breakdowns even while total counters keep increasing.
 recommended_evidence:
   - kind: nominal
-    note: Integration or unit test writes aggregates with and without an ignored dimension and proves retained dimensions still exist.
+    note: Integration or unit test writes aggregates with and without an ignored dimension and proves the final ignored-dimension write succeeds while retained dimensions still exist.
   - kind: negative
-    note: Regression test covers the historical double-discard shape where a second discard after readback would erase an existing dimension map.
+    note: Regression test covers the historical double-discard shape where a second discard after readback would erase an existing dimension map, and explicitly proves the ignored incoming dimension is absent rather than mixed with retained dimensions.
   - kind: review
     note: Review maps every discard/omit call to the pre-upsert update document, never to a post-merge document used for average recalculation.
 frameworks:

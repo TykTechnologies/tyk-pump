@@ -129,7 +129,7 @@ func TestDoAggregatedWritingWithIgnoredAggregations(t *testing.T) {
 		t.Fatal("Mongo Aggregate Pump couldn't write records with err:", errWrite2)
 	}
 	errWrite3 := pmp1.WriteData(ctx, keys)
-	if errWrite != nil {
+	if errWrite3 != nil {
 		t.Fatal("Mongo Aggregate Pump couldn't write records with err:", errWrite3)
 	}
 
@@ -185,13 +185,13 @@ func TestDoAggregatedWritingWithIgnoredAggregations(t *testing.T) {
 			assert.Equal(t, 800.0, res.Total.TotalRequestTime)
 			assert.InDelta(t, 800.0/6.0, res.Total.RequestTime, 0.0001)
 
-			// validate that APIKeys (ignored in pmp1) wasn't overriden
+			// validate that APIKeys (ignored in pmp1) wasn't overridden
 			assert.Len(t, res.APIKeys, 1)
-			if val, ok := res.APIKeys["apikey2"]; ok {
-				assert.NotNil(t, val)
-				assert.Equal(t, 2, val.Hits)
-			}
+			assert.NotContains(t, res.APIKeys, "apikey1")
+			require.Contains(t, res.APIKeys, "apikey2")
+			assert.Equal(t, 2, res.APIKeys["apikey2"].Hits)
 			require.Len(t, res.Lists.APIKeys, 1)
+			assert.NotEqual(t, "apikey1", res.Lists.APIKeys[0].Identifier)
 			assert.Equal(t, "apikey2", res.Lists.APIKeys[0].Identifier)
 			assert.Equal(t, 2, res.Lists.APIKeys[0].Hits)
 		})
