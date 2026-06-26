@@ -4,12 +4,13 @@ description: main.go dispatches each purge batch by spawning a goroutine per con
 affected_requirements:
     - SYS-REQ-004
 evidence_manifests:
+    - test:main_test.go:TestWriteToPumpsNoGlobalConcurrencyLimit_KI
     - .proof/evidence/ki-pump-fanout-no-global-concurrency-limit.yaml
 severity: low
 severity_basis: risk
 risk: availability
-reproducer_command: rg -n "go execPumpWriting|go func\\(\\).*WriteData|Pumps" main.go
-environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestWriteToPumpsNoGlobalConcurrencyLimit_KI$' .
+environment_note: Run the focused in-memory tripwire under the memory monitor. The test configures six blocking pumps, calls writeToPumps, observes all six WriteData calls enter concurrently, then releases them; no external service or container is required.
 introduced_in: inception
 mitigation: Operators should keep the configured pump count within host capacity and use per-pump timeouts to reduce stalled goroutine lifetime.
 remediation: Add a configurable fanout concurrency limit or worker pool around backend writes, then add a test proving more configured pumps than the limit do not exceed the cap.
@@ -37,3 +38,7 @@ history:
       by: agent:codex
       action: edit
       detail: add-evidence-manifest
+    - at: "2026-06-26T18:02:39Z"
+      by: agent:codex
+      action: edit
+      detail: add-in-memory-peak-concurrency-tripwire

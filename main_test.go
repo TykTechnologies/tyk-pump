@@ -10,6 +10,7 @@ import (
 	"os/signal"
 	"regexp"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"testing"
 	"time"
@@ -105,6 +106,32 @@ func (p *blockingMockedPump) WriteData(ctx context.Context, keys []interface{}) 
 	select {
 	case <-p.release:
 		return nil
+	case <-ctx.Done():
+		return ctx.Err()
+	}
+}
+
+type fanoutCountingPump struct {
+	MockedPump
+	active  *atomic.Int32
+	peak    *atomic.Int32
+	entered chan<- struct{}
+	release <-chan struct{}
+}
+
+func (p *fanoutCountingPump) WriteData(ctx context.Context, keys []interface{}) error {
+	current := p.active.Add(1)
+	defer p.active.Add(-1)
+	for {
+		peak := p.peak.Load()
+		if current <= peak || p.peak.CompareAndSwap(peak, current) {
+			break
+		}
+	}
+	p.entered <- struct{}{}
+	select {
+	case <-p.release:
+		return p.MockedPump.WriteData(ctx, keys)
 	case <-ctx.Done():
 		return ctx.Err()
 	}
@@ -616,6 +643,55 @@ func TestWriteDataWithFilters(t *testing.T) {
 			assert.Equal(t, tc.expectedCounterRequest, tc.mockedPump.CounterRequest)
 			assert.Len(t, keys, 6)
 		})
+	}
+}
+
+// Verifies: SYS-REQ-004
+// Verifies: KI:pump-fanout-no-global-concurrency-limit
+// Reproduces: pump-fanout-no-global-concurrency-limit
+func TestWriteToPumpsNoGlobalConcurrencyLimit_KI(t *testing.T) {
+	originalPumps := Pumps
+	t.Cleanup(func() {
+		Pumps = originalPumps
+	})
+
+	const pumpCount = 6
+	var active atomic.Int32
+	var peak atomic.Int32
+	entered := make(chan struct{}, pumpCount)
+	release := make(chan struct{})
+	Pumps = make([]pumps.Pump, 0, pumpCount)
+	for i := 0; i < pumpCount; i++ {
+		Pumps = append(Pumps, &fanoutCountingPump{
+			active:  &active,
+			peak:    &peak,
+			entered: entered,
+			release: release,
+		})
+	}
+
+	done := make(chan struct{})
+	go func() {
+		writeToPumps([]interface{}{analytics.AnalyticsRecord{APIID: "fanout"}}, nil, time.Now(), 1)
+		close(done)
+	}()
+
+	for i := 0; i < pumpCount; i++ {
+		select {
+		case <-entered:
+		case <-time.After(time.Second):
+			close(release)
+			t.Fatalf("only %d/%d pump writes entered before timeout", i, pumpCount)
+		}
+	}
+
+	assert.Equal(t, int32(pumpCount), peak.Load(), "all configured pumps entered WriteData concurrently")
+	close(release)
+
+	select {
+	case <-done:
+	case <-time.After(time.Second):
+		t.Fatal("writeToPumps did not complete after releasing blocked pumps")
 	}
 }
 
