@@ -45,12 +45,16 @@ default `BatchSize` remains 100.
 - `pumps/kinesis.go:splitIntoBatches` — configured `BatchSize` slicing.
 
 ## Evidence
-- `pumps/kinesis_test.go` (re-annotated `Verifies: SW-REQ-056`).
+- `pumps/kinesis_test.go` carries code annotations for SW-REQ-056 behavior.
 - `pumps/kinesis_test.go:TestKinesisPump_DefaultEnvOverridesConfig` proves
-  `TYK_PMP_PUMPS_KINESIS_META_STREAMNAME`, `REGION`, `BATCHSIZE`, and
-  `KMSKEYID` override file/config values.
+  the `env_override_applied` obligation for `TYK_PMP_PUMPS_KINESIS_META_STREAMNAME`,
+  `REGION`, `BATCHSIZE`, and `KMSKEYID` overriding file/config values.
 - `pumps/kinesis_test.go:TestKinesisPump_CustomEnvPrefixOverridesConfig`
-  proves a configured `meta_env_prefix` is used instead of the default prefix.
+  proves the `env_override_applied` boundary where a configured
+  `meta_env_prefix` is used instead of the default prefix.
+- `pumps/kinesis_test.go:TestKinesisPump_StreamName_Required` and the KMS
+  `DescribeStream` tests carry exact MC/DC witness rows for the formal
+  `kms_key_configured -> stream_encryption_verified` formula.
 - `pumps/kinesis_test.go:TestKinesisSplitIntoBatches_AllowsOverAWSLimit`
   reproduces the open KnownIssue where `batch_size > 500` can produce an
   oversized `PutRecords` request.
