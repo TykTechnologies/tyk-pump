@@ -8,6 +8,7 @@ import (
 	"net"
 	"os"
 	"os/signal"
+	"regexp"
 	"sync"
 	"syscall"
 	"testing"
@@ -392,6 +393,8 @@ func TestSyslogPump_OmitDetailedRecordingRedactsForwardedPayloads(t *testing.T) 
 	case msg := <-messages:
 		assert.Contains(t, msg, "raw_request:")
 		assert.Contains(t, msg, "raw_response:")
+		assert.Regexp(t, regexp.MustCompile(`raw_request:(\s|\])`), msg)
+		assert.Regexp(t, regexp.MustCompile(`raw_response:(\s|\])`), msg)
 		assert.NotContains(t, msg, rawRequestSecret)
 		assert.NotContains(t, msg, rawResponseSecret)
 	case <-time.After(2 * time.Second):

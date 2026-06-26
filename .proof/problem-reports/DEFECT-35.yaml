@@ -12,8 +12,8 @@ description: |
 
   Current code embeds CommonPumpConfig, main.filterData clears RawRequest and
   RawResponse for the syslog pump when the per-pump flag is set, and the syslog
-  backend output contains only the redacted empty fields rather than the
-  original payload bytes.
+  backend output contains the redacted empty fields rather than the original
+  payload bytes.
 source:
     type: upstream_commit
     repo: TykTechnologies/tyk-pump
@@ -73,6 +73,11 @@ disposition:
         verified_by:
             - main_test.go:TestSyslogPump_OmitDetailedRecordingRedactsForwardedPayloads
             - main_test.go:TestOmitDetailsFilterData
+        notes: |
+            The syslog regression evidence now checks both the core filtered
+            record and the emitted UDP syslog message: raw_request/raw_response
+            are present as empty map fields and the original secret payload
+            bytes are absent from backend output.
         obligation_evidence:
             - requirement: SW-REQ-050
               obligation_class: per_backend_privacy_transform_applied
@@ -96,3 +101,10 @@ history:
         Recorded the 2020 syslog omit_detailed_recording inheritance fix as
         covered by SW-REQ-050 backend-output privacy evidence. The top-level
         global omit_detailed_recording field remains a separate KnownIssue.
+    - at: "2026-06-26T00:43:00Z"
+      by: agent:codex
+      action: strengthened_evidence
+      detail: |
+        Tightened syslog backend-output evidence to assert the emitted syslog
+        map carries empty raw_request/raw_response values, not only that the
+        original payload secrets are absent.

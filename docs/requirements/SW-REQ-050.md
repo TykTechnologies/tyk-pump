@@ -8,8 +8,9 @@ remains one syslog entry, while preserving the backward-compatible output
 shape. Delivery uses the operator-configured `Transport` (udp/tcp/tls),
 `NetworkAddr`, `LogLevel` (syslog severity 0-7), and `Tag`. When per-pump
 `omit_detailed_recording` is enabled, syslog output must reflect the core
-privacy transform and must not contain the original raw request/response
-payload bytes. Derived from SYS-REQ-004 via Phase A decomposition of
+privacy transform by emitting empty `raw_request` and `raw_response` values,
+and must not contain the original raw request/response payload bytes. Derived
+from SYS-REQ-004 via Phase A decomposition of
 SW-REQ-027, and linked to SYS-REQ-015 for the backend-output privacy boundary.
 
 ## Motivation
@@ -42,8 +43,9 @@ ctx-cancellation check (unique among HTTP-logging pumps) be explicit.
   cardinality contract.
 - `main_test.go:TestSyslogPump_OmitDetailedRecordingRedactsForwardedPayloads`
   covers DEFECT-35 / commit `34e1a2c` syslog privacy inheritance by asserting
-  a real syslog UDP message omits original raw request/response bytes after
-  `filterData` redaction.
+  a real syslog UDP message emits empty `raw_request`/`raw_response` field
+  values and omits original raw request/response bytes after `filterData`
+  redaction.
 - Live-syslog tests need a running syslog server and are excluded from the
   local audit MC/DC scope (known issue).
 

@@ -20,7 +20,8 @@ applies_when:
 example_req: |-
   When Syslog has omit_detailed_recording enabled, filterData shall clear
   RawRequest and RawResponse before Syslog WriteData formats the record, and
-  the emitted syslog message shall not contain the original payload bytes.
+  the emitted syslog message shall carry empty raw_request/raw_response field
+  values and shall not contain the original payload bytes.
 if_missing: |-
   A pump can satisfy a generic filtering test while still leaking raw payloads
   at its backend boundary because it does not expose the shared common
