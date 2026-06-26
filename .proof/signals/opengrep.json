@@ -1,8 +1,8 @@
 {
   "schema_version": "proof.code_signals.report.v1",
   "provider": "opengrep",
-  "generated_at": "2026-06-26T12:07:48Z",
-  "input_hash": "sha256:a81d3e68f3f14223d64b841212b40ed1400b2c96b9818fc064cd08735e9d8bf3",
+  "generated_at": "2026-06-26T13:05:37Z",
+  "input_hash": "sha256:ddf6e585de7842242251113cc3911436ef4c16be85f69212d2685d4f29f5a8b6",
   "mode": "run",
   "source": "stdout",
   "format": "sarif",

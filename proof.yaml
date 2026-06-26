@@ -62,7 +62,7 @@ project:
                     - '**/*_test.go'
                     - '**/testdata/**'
                     - '**/*.pb.go'
-                memory_limit_mb: 2048
+                memory_limit_mb: 3072
                 max_output_mb: 64
                 timeout_seconds: 600
     commands:
