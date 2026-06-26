@@ -4,14 +4,15 @@ description: main.go:415-426 (filterData) attempts base64.StdEncoding.DecodeStri
 affected_requirements:
     - SYS-REQ-011
     - SW-REQ-088
-evidence_manifests:
-    - test:main_test.go:TestFilterDataBase64DecodeFailurePreservesField
 commands:
     - grep -n 'base64.StdEncoding.DecodeString' main.go
+evidence_manifests:
+    - test:main_test.go:TestFilterDataBase64DecodeFailurePreservesField
+    - .proof/evidence/ki-filterdata-base64-decode-silent-noop.yaml
 severity: medium
 severity_basis: risk
 risk: data_integrity
-reproducer_command: grep -n 'base64.StdEncoding.DecodeString' main.go
+reproducer_command: go test -count=1 -run '^TestFilterDataBase64DecodeFailurePreservesField$' .
 introduced_in: e2f277a
 mitigation: Operators must verify upstream gateway always produces well-formed base64 in RawRequest/RawResponse before enabling DecodeRawRequest/DecodeRawResponse. Disabling the decode toggle is the safe default — backends then receive the original base64 with their schemas reflecting that.
 remediation: Replace the `if err == nil` happy-path guard with an else branch that increments an instrumentation counter, logs at Warn level (with record correlation), and either (a) forwards the still-encoded payload with a structural marker so downstream tooling can detect the failure, or (b) drops just the offending payload field while preserving the rest of the record. The Warn log should fire at most once per N records to avoid log flooding when an upstream pipeline persistently emits non-base64.
@@ -31,3 +32,11 @@ history:
       by: human:buger
       action: edit
       detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T14:17:45Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-26T14:17:45Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command

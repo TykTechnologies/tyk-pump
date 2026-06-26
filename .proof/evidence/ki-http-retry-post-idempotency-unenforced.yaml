@@ -1,0 +1,17 @@
+schema_version: proof.evidence_profile.v1
+profile: known_issue_reproducer
+requirements:
+    - SW-REQ-030
+    - SW-REQ-048
+command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestBackoffHTTPRetry_Send_ReplaysRequestBodyOnRetry$' ./retry
+status: pass
+observed_result: known_issue_reproduced
+executed_at: "2026-06-26T14:18:38Z"
+input_set:
+    - KI http-retry-post-idempotency-unenforced focused tripwire
+freshness_hashes:
+    proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
+    retry/http-retry.go: sha256:c760d2c36c5a8a08cd52bd0cfc33a6b21c67b458206ecbca0569e82b4f821ef1
+    retry/http_retry_branches_test.go: sha256:ddb2d03b39a62f926ad699046f34d9120d5e8d558560e4e0027288edcd00281f
+known_issues:
+    - http-retry-post-idempotency-unenforced

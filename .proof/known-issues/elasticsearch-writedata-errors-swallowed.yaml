@@ -5,10 +5,11 @@ affected_requirements:
     - SW-REQ-077
 evidence_manifests:
     - test:pumps/elasticsearch_mcdc_test.go:TestElasticsearchPump_WriteData_V7ProcessDataIndexError
+    - .proof/evidence/ki-elasticsearch-writedata-errors-swallowed.yaml
 severity: medium
 severity_basis: risk
 risk: data_integrity
-reproducer_command: rg -n "operator\.processData\(|func \(e Elasticsearch[0-9]Operator\) processData|Error while writing|return nil" pumps/elasticsearch.go
+reproducer_command: go test -count=1 -run '^TestElasticsearchPump_WriteData_V7ProcessDataIndexError$' ./pumps
 introduced_in: inception
 mitigation: Monitor Elasticsearch pump logs and backend rejected/indexing metrics independently; avoid relying on WriteData nil as proof of per-record success.
 remediation: Propagate processData errors from WriteData and aggregate per-record indexing failures into a typed partial-progress result or retry/DLQ path.
@@ -32,3 +33,11 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T14:17:45Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-26T14:17:45Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command

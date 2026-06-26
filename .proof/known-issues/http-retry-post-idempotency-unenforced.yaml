@@ -6,10 +6,11 @@ affected_requirements:
     - SW-REQ-048
 evidence_manifests:
     - test:retry/http_retry_branches_test.go:TestBackoffHTTPRetry_Send_ReplaysRequestBodyOnRetry
+    - .proof/evidence/ki-http-retry-post-idempotency-unenforced.yaml
 severity: medium
 severity_basis: risk
 risk: data_integrity
-reproducer_command: rg -n "func \(s \*BackoffHTTPRetry\) Send|RetryNotify|StatusTooManyRequests|StatusInternalServerError|http.MethodPost|NewRequest" retry/http-retry.go pumps/splunk.go
+reproducer_command: go test -count=1 -run '^TestBackoffHTTPRetry_Send_ReplaysRequestBodyOnRetry$' ./retry
 introduced_in: inception
 mitigation: Configure downstream receivers with deduplication where available and tune retry counts conservatively for non-idempotent POST sinks.
 remediation: 'Declare the retry idempotency policy explicitly: either require idempotency keys/deduplication for replayed POST requests or restrict retries to failure modes that cannot have reached the receiver.'
@@ -25,3 +26,11 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T14:17:45Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-26T14:17:45Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command

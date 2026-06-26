@@ -8,9 +8,11 @@ affected_requirements:
     - STK-REQ-002
 evidence_manifests:
     - test:storage/temporal_storage_mcdc_test.go:TestTemporalStorageHandler_GetAndDeleteSet_ExpireFailureDecision
+    - .proof/evidence/ki-getanddeleteset-expire-fail-loses-records.yaml
 severity: medium
 severity_basis: risk
 risk: data_integrity
+reproducer_command: go test -count=1 -run '^TestTemporalStorageHandler_GetAndDeleteSet_ExpireFailureDecision$' ./storage
 environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
 introduced_in: inception
 mitigation: Operators see 'Error on Purge Loop. Is Temporal Storage down?' messages but the underlying records are gone and cannot be replayed without an external buffer.
@@ -47,3 +49,11 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T14:17:45Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-26T14:17:45Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command

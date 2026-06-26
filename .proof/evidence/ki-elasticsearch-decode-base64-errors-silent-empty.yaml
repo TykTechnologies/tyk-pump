@@ -1,0 +1,14 @@
+schema_version: proof.evidence_profile.v1
+profile: known_issue_reproducer
+requirement: SW-REQ-068
+command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestGetMapping_DecodeBase64MalformedInput_KI$' ./pumps
+status: pass
+observed_result: known_issue_reproduced
+executed_at: "2026-06-26T14:18:19Z"
+input_set:
+    - KI elasticsearch-decode-base64-errors-silent-empty focused tripwire
+freshness_hashes:
+    proof.yaml: sha256:18dd484cb75c5c729bc063c96426b101df78e0c89ec729e39724c18f50367e0e
+    pumps/elasticsearch_test.go: sha256:77fd64bc433f918589e397bae2ea45d3f98953807ea1324d7926892f2bdc0ca4
+known_issues:
+    - elasticsearch-decode-base64-errors-silent-empty

@@ -10,10 +10,11 @@ affected_requirements:
     - SW-REQ-068
 evidence_manifests:
     - test:pumps/elasticsearch_test.go:TestElasticsearchPump_ApiKeyAuthDroppedWhenUseSSL_KI
+    - .proof/evidence/ki-elasticsearch-api-key-auth-dropped-when-use-ssl.yaml
 severity: medium
 severity_basis: risk
 risk: data_integrity
-reproducer_command: rg -n "ApiKeyTransport|TLSClientConfig|httpClient =" pumps/elasticsearch.go
+reproducer_command: go test -count=1 -run '^TestElasticsearchPump_ApiKeyAuthDroppedWhenUseSSL_KI$' ./pumps
 environment_note: 'Static reproducer test asserts the current bad ordering/wiring: API-key transport assignment is followed by a TLS client assignment that does not preserve or wrap ApiKeyTransport.'
 introduced_in: 84f3855
 mitigation: Avoid combining auth_api_key/auth_api_key_id with use_ssl until the transport composition is fixed; use basic auth over TLS or network-level controls where acceptable.
@@ -33,3 +34,11 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T14:17:45Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-26T14:17:45Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command

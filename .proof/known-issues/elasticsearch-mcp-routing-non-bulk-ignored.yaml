@@ -27,9 +27,11 @@ affected_requirements:
     - SW-REQ-070
 evidence_manifests:
     - test:pumps/elasticsearch_mcdc_test.go:TestElasticsearchPump_WriteData_MCPIndexRouting_NonBulkBug
+    - .proof/evidence/ki-elasticsearch-mcp-routing-non-bulk-ignored.yaml
 severity: medium
 severity_basis: risk
 risk: correctness
+reproducer_command: go test -count=1 -run '^TestElasticsearchPump_WriteData_MCPIndexRouting_NonBulkBug$' ./pumps
 environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source or documentation surface and following the described scenario.
 introduced_in: inception
 mitigation: |
@@ -63,3 +65,11 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T14:17:45Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-26T14:17:45Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command

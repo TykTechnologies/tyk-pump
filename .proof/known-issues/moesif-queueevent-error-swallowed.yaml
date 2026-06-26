@@ -5,10 +5,11 @@ affected_requirements:
     - SW-REQ-052
 evidence_manifests:
     - test:pumps/http_pumps_mcdc_100_test.go:TestMoesifPump_WriteData_QueueEventError_KI
+    - .proof/evidence/ki-moesif-queueevent-error-swallowed.yaml
 severity: medium
 severity_basis: risk
 risk: data_integrity
-reproducer_command: rg -n "QueueEvent\\(&event\\)|Error while writing|return nil" pumps/moesif.go
+reproducer_command: go test -count=1 -run '^TestMoesifPump_WriteData_QueueEventError_KI$' ./pumps
 environment_note: Static evidence is documented in this KnownIssue description; reproduce by inspecting the named source and command output.
 introduced_in: inception
 mitigation: Monitor Moesif SDK queue health and process logs for "Error while writing" messages; replay source analytics from upstream storage when a Moesif outage is suspected.
@@ -33,3 +34,11 @@ history:
       by: agent:codex
       action: review
       detail: reviewer=human:buger,new_review_date=2026-11-30
+    - at: "2026-06-26T14:17:45Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest
+    - at: "2026-06-26T14:17:45Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command

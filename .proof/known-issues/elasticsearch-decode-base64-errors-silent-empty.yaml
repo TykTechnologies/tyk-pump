@@ -1,17 +1,18 @@
 id: elasticsearch-decode-base64-errors-silent-empty
 title: Elasticsearch decode_base64 silently emits empty decoded payloads on malformed base64
 description: |
-  pumps/elasticsearch.go:getMapping ignores errors from
-  base64.StdEncoding.DecodeString when ExtendedStatistics and DecodeBase64 are
-  enabled. On malformed RawRequest or RawResponse input, the decoded byte slice
-  is still converted to string and written into the Elasticsearch mapping,
-  producing an empty or partial raw_request/raw_response field with no warning,
-  metric, or returned error. This is distinct from the core filterData decode
-  KnownIssue, which preserves the original field on decode failure.
+    pumps/elasticsearch.go:getMapping ignores errors from
+    base64.StdEncoding.DecodeString when ExtendedStatistics and DecodeBase64 are
+    enabled. On malformed RawRequest or RawResponse input, the decoded byte slice
+    is still converted to string and written into the Elasticsearch mapping,
+    producing an empty or partial raw_request/raw_response field with no warning,
+    metric, or returned error. This is distinct from the core filterData decode
+    KnownIssue, which preserves the original field on decode failure.
 affected_requirements:
     - SW-REQ-068
 evidence_manifests:
     - test:pumps/elasticsearch_test.go:TestGetMapping_DecodeBase64MalformedInput_KI
+    - .proof/evidence/ki-elasticsearch-decode-base64-errors-silent-empty.yaml
 severity: medium
 severity_basis: risk
 risk: data_integrity
@@ -32,3 +33,7 @@ history:
         Found while reviewing TN-6 / 0adb849: successful decode is now covered
         as text mapping, but malformed ES decode_base64 input remains silent
         data-integrity debt and is tracked separately from filterData decode.
+    - at: "2026-06-26T14:17:45Z"
+      by: agent:codex
+      action: edit
+      detail: add-evidence-manifest
