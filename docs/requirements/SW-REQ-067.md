@@ -15,6 +15,13 @@ shall be returned to the caller. Records are batched in slices of
 `BatchSize`. Derived from SYS-REQ-018 / SYS-REQ-019 (aggregation
 counters).
 
+The order in which aggregate rows are inserted is intentionally
+unspecified. `AggregateData(...).Dimensions()` derives rows from Go map
+state, so callers must not infer ordering from the generated batch.
+Correctness is keyed by the deterministic aggregate row id and the
+`ON CONFLICT (id)` merge semantics; replay or concurrent writes must
+accumulate counters for the same id regardless of row order.
+
 ## Motivation
 The on-conflict upsert is the SQL equivalent of mongo-aggregate's
 two-step `$inc` upsert (SW-REQ-060): multiple pumps may write to the
@@ -41,6 +48,9 @@ for that; the `OnConflictAssignments` helper builds the per-column
 - The `atomicity` obligation's `negative` evidence is deferred: a
   transaction-failure injection harness around the GORM session is required
   for an honest negative test and is not present today.
+- The `ordering_guarantees_documented` obligation is documentation-only for
+  this requirement: SQL aggregate row order is explicitly unspecified and is
+  not a runtime guarantee.
 
 ## Open questions
 - Parameter binding is provided by GORM; the obligation

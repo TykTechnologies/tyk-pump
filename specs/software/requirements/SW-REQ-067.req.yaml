@@ -5,7 +5,17 @@ priority: shall
 category: functional
 req_type: guarantee
 fretish: when row_conflict_detected pumps_sql_aggregate shall always satisfy on_conflict_assignments_applied
-description: The SQL Aggregate pump shall, per (orgID, dimension) row in each aggregated batch, issue a parameter-bound INSERT ... ON CONFLICT (id) DO UPDATE SET ... against the caller-selected aggregate table using clause.OnConflict with analytics.OnConflictAssignments(table, "excluded") so that monotonic counter columns are incremented rather than overwritten; insert failures shall be returned to the caller. Records are batched in slices of BatchSize.
+description: >-
+    The SQL Aggregate pump shall, per (orgID, dimension) row in each aggregated
+    batch, issue a parameter-bound INSERT ... ON CONFLICT (id) DO UPDATE SET ...
+    against the caller-selected aggregate table using clause.OnConflict with
+    analytics.OnConflictAssignments(table, "excluded") so that monotonic counter
+    columns are incremented rather than overwritten; insert failures shall be
+    returned to the caller. Records are batched in slices of BatchSize. The batch
+    insertion order is not part of the contract: rows are keyed by the
+    deterministic aggregate id and correctness depends on the id-keyed ON CONFLICT
+    merge semantics, not on the order in which map-derived dimensions are
+    appended.
 formalization_strategy: fretish
 informal_verification:
     method: ""
@@ -82,7 +92,7 @@ obligation_deferrals:
       owner: human:buger
       ki_ref: mapstructure-decode-silently-drops-unknown-keys
     - obligation_class: ordering_guarantees_documented
-      reason: Required ordering evidence is parked because SQL aggregate upsert order is intentionally undocumented.
+      reason: SW-REQ-067 now explicitly documents that SQL aggregate upsert order is unspecified and correctness is id-keyed; this remains KI-tracked proof debt only because the obligation evidence model expects a live evidence carrier for the documentation/attribution decision rather than a runtime ordering witness.
       tracking: known-issue:sql-aggregate-upsert-order-undocumented
       owner: human:buger
       ki_ref: sql-aggregate-upsert-order-undocumented
