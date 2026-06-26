@@ -4,20 +4,21 @@ description: analytics/uptime_data.go:86 inside OnConflictUptimeAssignments iter
 affected_requirements:
     - SW-REQ-073
 commands:
-    - go test -count=1 -run TestOnConflictUptimeAssignments_RequestTimeZeroSkipped ./analytics
+    - PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestOnConflictUptimeAssignments_RequestTimeZeroSkipped$' ./analytics
 evidence_manifests:
     - .proof/evidence/ki-uptime-onconflict-request-time-is-zero-unreachable.yaml
 severity: low
 severity_basis: risk
 risk: data_integrity
-reproducer_command: go test -p=1 -count=1 -timeout=180s -run '^TestOnConflictUptimeAssignments_RequestTimeZeroSkipped$' ./analytics
+reproducer_command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestOnConflictUptimeAssignments_RequestTimeZeroSkipped$' ./analytics
+environment_note: Run the focused OnConflict uptime tripwire; it proves request_time is omitted for the locally constructed zero-value Counter while analytics/uptime_data.go carries an explicit mcdc:ignore documenting that the non-zero RequestTime branch is structurally unreachable in this function.
 introduced_in: inception
 mitigation: The dead branch is benign — it gates a GORM expression that the test suite confirms is omitted, matching production behaviour where on-conflict updates only ever assign request_time as a derived ratio of the always-present total_request_time and hits columns.
-remediation: Either drop the IsZero check entirely (since it is always true for the locally-constructed empty struct) and unconditionally emit the assignment, or add //mcdc:ignore on uptime_data.go:86.
+remediation: Either drop the IsZero check entirely when code is next simplified, or keep the current //mcdc:ignore on uptime_data.go:86 as the explicit structural proof waiver.
 owner: tyk-team
 review_date: "2026-11-30"
-release_disposition: ship
-status: open
+release_disposition: ship_with_known_issue
+status: reviewed
 history:
     - at: "2026-05-30T20:37:38Z"
       by: human:buger
@@ -42,3 +43,7 @@ history:
       by: agent:codex
       action: edit
       detail: set-reproducer-command
+    - at: "2026-06-26T17:31:46Z"
+      by: agent:codex
+      action: edit
+      detail: clarify-structural-mcdc-debt,set-status=reviewed,set-release-disposition=ship_with_known_issue

@@ -5,7 +5,7 @@ requirements:
 command: PATH=/Users/buger/go/bin:$PATH PROOF_MONITOR_MIN_FREE_PERCENT=3 PROOF_MONITOR_KILL_FREE_PERCENT=2 PROOF_MONITOR_KILL_SAMPLES=5 ./bin/run-monitored go test -p=1 -count=1 -timeout=180s -run '^TestAggregateUptimeData_TCPErrorWithURL$' ./analytics
 status: pass
 observed_result: known_issue_reproduced
-executed_at: "2026-06-26T16:12:59Z"
+executed_at: "2026-06-26T17:32:37Z"
 input_set:
     - KI uptime-aggregate-erasstr-itoa-always-nonempty structural MC/DC tripwire
 freshness_hashes:
