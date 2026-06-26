@@ -44,6 +44,43 @@ func TestSQSPumpBatchLimitZeroInfiniteLoop_KI(t *testing.T) {
 	require.NotRegexp(t, regexp.MustCompile(`AWSSQSBatchLimit\s*(<=\s*0|<\s*1|==\s*0)`), source)
 }
 
+// TestSQLFamilyBatchSizeNonPositive_KI is a static tripwire for the SQL-family
+// batch-size KnownIssue. Executing a zero/negative stride can hang or panic, so
+// the test pins the current source shape: Init defaulting only handles == 0,
+// while write loops advance by BatchSize without <= 0 validation.
+// Verifies: SW-REQ-040
+// Verifies: SW-REQ-041
+// Verifies: SW-REQ-042
+// Verifies: SW-REQ-043
+// Verifies: SW-REQ-044
+// Verifies: SW-REQ-045
+// Verifies: KI:sql-batch-size-zero-infinite-loop
+// Reproduces: sql-batch-size-zero-infinite-loop
+func TestSQLFamilyBatchSizeNonPositive_KI(t *testing.T) {
+	cases := []struct {
+		path      string
+		batchExpr string
+		loopExpr  string
+	}{
+		{path: "sql.go", batchExpr: `c\.SQLConf\.BatchSize`, loopExpr: `i \+= c\.SQLConf\.BatchSize`},
+		{path: "sql_aggregate.go", batchExpr: `c\.SQLConf\.BatchSize`, loopExpr: `i \+= c\.SQLConf\.BatchSize`},
+		{path: "graph_sql.go", batchExpr: `g\.Conf\.BatchSize`, loopExpr: `ri \+= g\.Conf\.BatchSize`},
+		{path: "graph_sql_aggregate.go", batchExpr: `s\.SQLConf\.BatchSize`, loopExpr: `i \+= s\.SQLConf\.BatchSize`},
+		{path: "mcp_sql.go", batchExpr: `g\.Conf\.BatchSize`, loopExpr: `ri \+= g\.Conf\.BatchSize`},
+		{path: "mcp_sql_aggregate.go", batchExpr: `s\.SQLConf\.BatchSize`, loopExpr: `i \+= s\.SQLConf\.BatchSize`},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.path, func(t *testing.T) {
+			source := readPumpSource(t, tc.path)
+
+			require.Regexp(t, regexp.MustCompile(tc.batchExpr+`\s*==\s*0`), source)
+			require.Regexp(t, regexp.MustCompile(tc.loopExpr), source)
+			require.NotRegexp(t, regexp.MustCompile(tc.batchExpr+`\s*(<=\s*0|<\s*1)`), source)
+		})
+	}
+}
+
 // TestLogzioPumpMissingShutdownFlush_KI is a static tripwire for the Logz.io
 // half of logzio-segment-no-shutdown-flush.
 // Verifies: STK-REQ-002
