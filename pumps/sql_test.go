@@ -3,12 +3,18 @@ package pumps
 import (
 	"context"
 	"os"
+	"os/exec"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/vmihailenco/msgpack.v2"
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 // sharedPostgresDSN caches the per-process Postgres DSN once resolved by
@@ -462,6 +468,70 @@ func setupSQLPump(t *testing.T, tableName string, useBackground bool) *SQLPump {
 	assert.NoError(t, pmp.ensureTable(tableName))
 
 	return pmp
+}
+
+// Verifies: SW-REQ-040
+// Verifies: KI:sql-background-index-concurrency-unbounded
+// Reproduces: sql-background-index-concurrency-unbounded
+func TestSQLPumpEnsureIndexBackgroundFailureIsNotSurfaced_KI(t *testing.T) {
+	if os.Getenv("TYK_PUMP_SQL_BG_INDEX_KI_CHILD") == "1" {
+		runSQLPumpBackgroundIndexKIChild(t)
+		return
+	}
+
+	cmd := exec.Command(os.Args[0], "-test.run=^TestSQLPumpEnsureIndexBackgroundFailureIsNotSurfaced_KI$")
+	cmd.Env = append(os.Environ(), "TYK_PUMP_SQL_BG_INDEX_KI_CHILD=1")
+	output, err := cmd.CombinedOutput()
+	if err == nil {
+		return
+	}
+
+	text := string(output)
+	assert.Contains(t, text, "panic:", "child output should show the background-index panic:\n%s", text)
+	assert.True(t,
+		strings.Contains(text, "(*SQLPump).createIndex") || strings.Contains(text, "SQLPump).ensureIndex"),
+		"child panic should originate in SQLPump background index creation:\n%s", text)
+}
+
+func runSQLPumpBackgroundIndexKIChild(t *testing.T) {
+	t.Helper()
+
+	tableName := sanitizeTableName("ki_sql_bg_index", t.Name())
+	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
+		AutoEmbedd:  true,
+		UseJSONTags: true,
+		Logger:      logger.Default.LogMode(logger.Silent),
+	})
+	require.NoError(t, err)
+	sqlDB, err := db.DB()
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, sqlDB.Close()) })
+	require.NoError(t, db.Table(tableName).AutoMigrate(&analytics.AnalyticsRecord{}))
+
+	pmp := &SQLPump{
+		db:                     db.Table(tableName),
+		dbType:                 "postgres",
+		backgroundIndexCreated: make(chan bool, 1),
+		SQLConf: &SQLConf{
+			Type:      "sqlite",
+			BatchSize: SQLDefaultQueryBatchSize,
+		},
+	}
+	pmp.log = log.WithField("prefix", SQLPrefix)
+
+	err = pmp.ensureIndex(tableName, true)
+	require.NoError(t, err)
+
+	select {
+	case <-pmp.backgroundIndexCreated:
+	case <-time.After(200 * time.Millisecond):
+		t.Fatal("background index path should signal readiness even after index creation failures")
+	}
+
+	for _, idx := range indexes {
+		assert.False(t, db.Migrator().HasIndex(tableName, tableName+idx.baseName),
+			"KI active: background index failure is not surfaced even though index %s was not created", idx.baseName)
+	}
 }
 
 // SW-REQ-040:boundary:nominal
