@@ -1,6 +1,9 @@
 package pumps
 
-import "github.com/TykTechnologies/tyk-pump/logger"
+import (
+	"github.com/TykTechnologies/tyk-pump/logger"
+	_ "github.com/aws/aws-sdk-go-v2/service/s3"
+)
 
 var log = logger.GetLogger()
 var AvailablePumps map[string]Pump
