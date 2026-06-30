@@ -242,6 +242,36 @@ project:
         fail_level: info
     documentation:
         sources:
-            - path: docs/
+            - path: ../tyk-docs/
               type: auto
+        roots:
+            - ../tyk-docs/api-management/tyk-pump.mdx
+            - ../tyk-docs/api-management/dashboard-configuration.mdx
+            - ../tyk-docs/api-management/logs-metrics.mdx
+            - ../tyk-docs/api-management/logs.mdx
+            - ../tyk-docs/api-management/manage-apis/api-operations/api-observability.mdx
+            - ../tyk-docs/api-management/mdcb.mdx
+            - ../tyk-docs/api-management/performance-monitoring.mdx
+            - ../tyk-docs/api-management/traffic-transformation.mdx
+            - ../tyk-docs/api-management/traffic-transformation/do-not-track.mdx
+            - ../tyk-docs/api-management/troubleshooting-debugging.mdx
+            - ../tyk-docs/product-stack/tyk-charts/tyk-control-plane-chart.mdx
+            - ../tyk-docs/product-stack/tyk-charts/tyk-data-plane-chart.mdx
+            - ../tyk-docs/product-stack/tyk-charts/tyk-oss-chart.mdx
+            - ../tyk-docs/product-stack/tyk-charts/tyk-stack-chart.mdx
+            - ../tyk-docs/planning-for-production/ensure-high-availability/graceful-shutdown.mdx
+            - ../tyk-docs/planning-for-production/ensure-high-availability/uptime-tests.mdx
+            - ../tyk-docs/snippets/pump-config.mdx
+            - ../tyk-docs/snippets/dashboard-config.mdx
+            - ../tyk-docs/tyk-cloud/environments-deployments/hybrid-gateways.mdx
+            - ../tyk-docs/tyk-configuration-reference/redis-cluster-sentinel.mdx
+            - ../tyk-docs/tyk-pump/**/*.mdx
+            - ../tyk-docs/tyk-self-managed/install/kubernetes.mdx
+            - ../tyk-docs/tyk-self-managed/install/linux.mdx
+            - ../tyk-docs/tyk-self-managed/install/methods.mdx
+            - ../tyk-docs/developer-support/release-notes/gateway.mdx
+            - ../tyk-docs/developer-support/release-notes/helm-chart.mdx
+            - ../tyk-docs/developer-support/release-notes/pump.mdx
+            - ../tyk-docs/developer-support/release-types/fips-release.mdx
+            - ../tyk-docs/developer-support/upgrading.mdx
         threshold: 100

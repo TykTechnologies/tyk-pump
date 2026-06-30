@@ -1,0 +1,5 @@
+timestamp: 2026-06-19T07:54:35Z
+event: layout-migration
+from: .proof/impact-reviews/by-branch
+to: .proof/impact-reviews
+files_moved: 1

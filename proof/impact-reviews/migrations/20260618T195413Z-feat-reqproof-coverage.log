@@ -1,0 +1,7 @@
+timestamp: 2026-06-18T19:54:13Z
+branch: feat-reqproof-coverage
+entries_moved: 88
+files_cleared: 72
+partial: true
+sidecar: .proof/impact-reviews/by-branch/feat-reqproof-coverage.yaml
+sidecar_sha256: 6a1ace537f0c10270ab8904d1a0b5a6dba0846e499a1cac5ec75a5556bb61b2a

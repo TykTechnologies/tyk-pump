@@ -1,0 +1,510 @@
+rules:
+  - id: go.log.fatal-in-init
+    severity: WARNING
+    languages: [go]
+    message: |
+      log.Fatal / os.Exit called from a non-main constructor or processing function.
+      This aborts the entire process and bypasses caller error handling; return
+      an error instead so the caller can recover.
+    metadata:
+      proof:
+        signal_id: process.log_fatal_in_init
+        provider: opengrep
+        tags: [logging, error_handling]
+        obligations: [errors_propagated]
+        confidence: high
+        notes: |
+          Scoped to library-shaped receiver methods. Excludes func main(),
+          TestMain, tests, cmd/** entry points, and main.go where process exit
+          may be an intentional application boundary.
+    paths:
+      exclude:
+        - "*_test.go"
+        - "cmd/**"
+        - "main.go"
+    patterns:
+      - pattern-either:
+          - pattern: |
+              func ($RECV $T) Init(...) error {
+                ...
+                log.Fatal(...)
+                ...
+              }
+          - pattern: |
+              func ($RECV $T) Init(...) error {
+                ...
+                $L.Fatal(...)
+                ...
+              }
+          - pattern: |
+              func ($RECV $T) Init(...) error {
+                ...
+                log.Fatalf(...)
+                ...
+              }
+          - pattern: |
+              func ($RECV $T) Init(...) error {
+                ...
+                $L.Fatalf(...)
+                ...
+              }
+          - pattern: |
+              func ($RECV $T) WriteData(...) error {
+                ...
+                log.Fatal(...)
+                ...
+              }
+          - pattern: |
+              func ($RECV $T) WriteData(...) error {
+                ...
+                $L.Fatal(...)
+                ...
+              }
+          - pattern: |
+              func ($RECV $T) WriteData(...) error {
+                ...
+                log.Fatalf(...)
+                ...
+              }
+          - pattern: |
+              func ($RECV $T) WriteData(...) error {
+                ...
+                $L.Fatalf(...)
+                ...
+              }
+      - pattern-not-inside: |
+          func main() {
+            ...
+          }
+      - pattern-not-inside: |
+          func TestMain($M *testing.M) {
+            ...
+          }
+
+  - id: go.context.dropped-on-floor
+    severity: WARNING
+    languages: [go]
+    message: |
+      Function receives a context.Context parameter but creates a fresh
+      context.Background() / context.TODO() inside the body and uses that
+      instead. Caller deadlines and cancellation can be silently dropped.
+    metadata:
+      proof:
+        signal_id: context.dropped_on_floor
+        provider: opengrep
+        tags: [concurrent, error_propagation]
+        obligations: [cancellation_observed]
+        confidence: medium
+        notes: |
+          Excludes top-level entry points and tests. Detached work that uses
+          context.WithoutCancel(ctx) is not considered this bug shape.
+    paths:
+      exclude:
+        - "*_test.go"
+        - "cmd/**"
+        - "main.go"
+    patterns:
+      - pattern-either:
+          - pattern: |
+              func $F(..., $CTX context.Context, ...) error {
+                ...
+                context.Background()
+                ...
+              }
+          - pattern: |
+              func ($RECV $T) $M(..., $CTX context.Context, ...) error {
+                ...
+                context.Background()
+                ...
+              }
+          - pattern: |
+              func $F(..., $CTX context.Context, ...) error {
+                ...
+                context.TODO()
+                ...
+              }
+          - pattern: |
+              func ($RECV $T) $M(..., $CTX context.Context, ...) error {
+                ...
+                context.TODO()
+                ...
+              }
+      - pattern-not: context.WithoutCancel($CTX)
+      - pattern-not-inside: |
+          func main() {
+            ...
+          }
+      - pattern-not-inside: |
+          func init() {
+            ...
+          }
+
+  - id: go.recursion.unbounded-on-error
+    severity: WARNING
+    languages: [go]
+    message: |
+      Function calls itself recursively after a sleep on the error arm with
+      no retry counter, max-attempt guard, or context-deadline check. Sustained
+      failure can grow the goroutine stack without bound.
+    metadata:
+      proof:
+        signal_id: recursion.unbounded_on_error
+        provider: opengrep
+        tags: [error_handling, concurrent]
+        obligations: [errors_propagated]
+        confidence: medium
+        notes: |
+          Excludes simple bounded-retry and context-Done select-arm shapes.
+    paths:
+      exclude:
+        - "*_test.go"
+    patterns:
+      - pattern-either:
+          - pattern: |
+              func ($RECV $T) $M() {
+                ...
+                if $ERR != nil {
+                  ...
+                  time.Sleep(...)
+                  $RECV.$M()
+                  ...
+                }
+                ...
+              }
+          - pattern: |
+              func $F() {
+                ...
+                if $ERR != nil {
+                  ...
+                  time.Sleep(...)
+                  $F()
+                  ...
+                }
+                ...
+              }
+      - pattern-not: |
+          if $N < $MAX {
+            ...
+            time.Sleep(...)
+            $F()
+          }
+      - pattern-not: |
+          if $N >= $MAX {
+            return $ERR
+          }
+      - pattern-not-inside: |
+          select {
+          case <-$CTX.Done():
+            ...
+          }
+
+  - id: go.mapstructure.lenient-decode
+    severity: INFO
+    languages: [go]
+    message: |
+      mapstructure.Decode silently ignores unknown keys in the input map. For
+      configuration parsing this can hide typos; use a DecoderConfig with
+      ErrorUnused: true when unknown keys should fail loudly.
+    metadata:
+      proof:
+        signal_id: deserializer.mapstructure_lenient
+        provider: opengrep
+        tags: [deserializer, structured_data_parser]
+        obligations: [malformed_recovers_or_errors_loudly]
+        confidence: high
+        notes: |
+          INFO severity: mapstructure's default is intentionally lenient and
+          some projects rely on forward-compatible config parsing.
+    paths:
+      exclude:
+        - "*_test.go"
+    patterns:
+      - pattern-either:
+          - pattern: mapstructure.Decode($IN, $OUT)
+          - pattern: mapstructure.WeakDecode($IN, $OUT)
+      - pattern-not-inside: |
+          &mapstructure.DecoderConfig{..., ErrorUnused: true, ...}
+
+  - id: go.http.default-transport-mutation
+    severity: WARNING
+    languages: [go]
+    message: |
+      Assignment mutates http.DefaultClient or http.DefaultTransport from
+      non-entrypoint code. These globals are process-wide and can make caller
+      behavior and tests order-dependent.
+    metadata:
+      proof:
+        signal_id: http.default_transport_mutation
+        provider: opengrep
+        tags: [http_client, process_local]
+        obligations: [request_timeout_bounded]
+        confidence: high
+        notes: |
+          Excludes main() and TestMain where process-wide integration setup can
+          be intentional. Library code should prefer a private client/transport.
+    paths:
+      exclude:
+        - "*_test.go"
+    patterns:
+      - pattern-either:
+          - pattern: http.DefaultClient.Transport = $X
+          - pattern: http.DefaultClient.Timeout = $X
+          - pattern: http.DefaultClient = $X
+          - pattern: http.DefaultTransport = $X
+      - pattern-not-inside: |
+          func TestMain($T *testing.M) {
+            ...
+          }
+      - pattern-not-inside: |
+          func main() {
+            ...
+          }
+
+  - id: go.backoff.maxelapsed-zero-is-unbounded
+    severity: INFO
+    languages: [go]
+    message: |
+      cenkalti/backoff ExponentialBackOff treats MaxElapsedTime = 0 as retry
+      forever. If unbounded retry is not intended, set a finite duration.
+    metadata:
+      proof:
+        signal_id: backoff.maxelapsed_zero
+        provider: opengrep
+        tags: [error_handling, scheduler]
+        obligations: [external_call_timeout_bounded]
+        confidence: medium
+        notes: |
+          Specific to github.com/cenkalti/backoff v2/v3/v4; other retry
+          libraries can define zero MaxElapsedTime differently.
+    paths:
+      exclude:
+        - "*_test.go"
+    patterns:
+      - pattern-either:
+          - pattern: $B.MaxElapsedTime = 0
+          - pattern: 'backoff.ExponentialBackOff{..., MaxElapsedTime: 0, ...}'
+          - pattern: '&backoff.ExponentialBackOff{..., MaxElapsedTime: 0, ...}'
+
+  - id: go.goroutine.no-recover
+    severity: WARNING
+    languages: [go]
+    message: |
+      Loop-backed goroutine launched without a deferred recover at the top of
+      its body. A panic in a long-lived worker goroutine cannot be caught by
+      the launching frame and will crash the process.
+    metadata:
+      proof:
+        signal_id: concurrency.goroutine_no_recover
+        provider: opengrep
+        tags: [concurrent, panic_safety]
+        obligations: [panic_free_input_handling]
+        confidence: medium
+        notes: |
+          WARNING severity is scoped to goroutines containing loops so short
+          helper goroutines and one-shot cancellation waiters are not flagged
+          by default. Teams that require recover on every goroutine can
+          broaden this rule locally.
+    paths:
+      exclude:
+        - "*_test.go"
+        - "examples/**"
+        - "testutil/**"
+        - "internal/awstesting/**"
+    patterns:
+      - pattern-either:
+          - pattern: |
+              go func() {
+                ...
+                for ... {
+                  ...
+                }
+                ...
+              }()
+          - pattern: |
+              go func(...) {
+                ...
+                for ... {
+                  ...
+                }
+                ...
+              }(...)
+      - pattern-not: |
+          go func() {
+            defer func() {
+              if r := recover(); r != nil {
+                ...
+              }
+              ...
+            }()
+            ...
+            for ... {
+              ...
+            }
+            ...
+          }()
+      - pattern-not: |
+          go func(...) {
+            defer func() {
+              if r := recover(); r != nil {
+                ...
+              }
+              ...
+            }()
+            ...
+            for ... {
+              ...
+            }
+            ...
+          }(...)
+
+  - id: go.http.health-handler-unconditional-200
+    severity: INFO
+    languages: [go]
+    message: |
+      HTTP handler appears to return 200 unconditionally. If mounted as a
+      readiness probe, it may report ready before dependencies are reachable.
+    metadata:
+      proof:
+        signal_id: http.health_unconditional_200
+        provider: opengrep
+        tags: [http_server]
+        obligations: [external_call_failure_observable]
+        confidence: low
+        notes: |
+          Suppressed when the 200 is under an if/switch or after an obvious
+          error branch.
+    paths:
+      exclude:
+        - "*_test.go"
+    patterns:
+      - pattern-either:
+          - pattern: |
+              func $H($W http.ResponseWriter, $R *http.Request) {
+                ...
+                $W.WriteHeader(http.StatusOK)
+                ...
+              }
+          - pattern: |
+              func ($RECV $T) $H($W http.ResponseWriter, $R *http.Request) {
+                ...
+                $W.WriteHeader(http.StatusOK)
+                ...
+              }
+      - metavariable-regex:
+          metavariable: $H
+          regex: '(?i).*(health|ready|live|readiness|liveness).*'
+      - pattern-not-inside: |
+          if $COND {
+            ...
+            $W.WriteHeader(http.StatusOK)
+            ...
+          }
+      - pattern-not-inside: |
+          switch $V {
+          case $C:
+            ...
+          }
+      - pattern-not: |
+          if $ERR != nil {
+            ...
+            $W.WriteHeader($S)
+            ...
+            return
+          }
+          ...
+          $W.WriteHeader(http.StatusOK)
+
+  - id: go.slice.preallocated-with-continue-on-error
+    severity: INFO
+    languages: [go]
+    message: |
+      Slice is preallocated with len(), filled by indexed assignment, and the
+      loop body can continue on error. That can leave zero-value holes in the
+      result; append to a zero-length slice when sparse output is not intended.
+    metadata:
+      proof:
+        signal_id: slice.preallocated_continue_on_error
+        provider: opengrep
+        tags: [error_handling, panic_safety]
+        obligations: [nil_safety]
+        confidence: medium
+        notes: |
+          May false-positive when the consumer intentionally expects an
+          index-aligned sparse output slice.
+    paths:
+      exclude:
+        - "*_test.go"
+    patterns:
+      - pattern-inside: |
+          $S := make([]$T, len($IN))
+          ...
+          for $I, $V := range $IN {
+            ...
+          }
+      - pattern-inside: |
+          for $I, $V := range $IN {
+            ...
+            if $ERR != nil {
+              ...
+              continue
+            }
+            ...
+          }
+      - pattern: $S[$I] = $X
+
+  - id: go.context.zero-timeout
+    severity: WARNING
+    languages: [go]
+    message: |
+      context.WithTimeout / WithDeadline called with a zero or already-passed
+      deadline. This returns an already-cancelled context.
+    metadata:
+      proof:
+        signal_id: context.zero_timeout
+        provider: opengrep
+        tags: [concurrent, scheduler]
+        obligations: [external_call_timeout_bounded]
+        confidence: high
+    paths:
+      exclude:
+        - "*_test.go"
+    pattern-either:
+      - pattern: context.WithTimeout($CTX, 0)
+      - pattern: context.WithTimeout($CTX, time.Duration(0))
+      - pattern: context.WithTimeout($CTX, 0 * time.Second)
+      - pattern: context.WithTimeout($CTX, 0 * time.Millisecond)
+      - pattern: context.WithDeadline($CTX, time.Time{})
+
+  - id: go.context.cancel-where-timeout-expected
+    severity: INFO
+    languages: [go]
+    message: |
+      context.WithCancel called in a zero-timeout fallback. The intent appears
+      to be no timeout, but downstream callers cannot observe a deadline.
+    metadata:
+      proof:
+        signal_id: context.cancel_where_timeout_expected
+        provider: opengrep
+        tags: [concurrent, scheduler]
+        obligations: [external_call_timeout_bounded]
+        confidence: low
+        notes: |
+          Bounded operations sometimes legitimately use WithCancel plus an
+          external watchdog goroutine; this is a low-confidence style signal.
+    paths:
+      exclude:
+        - "*_test.go"
+    patterns:
+      - pattern-either:
+          - pattern: |
+              if $X == 0 {
+                ...
+                $CTX, $CANCEL = context.WithCancel($PARENT)
+                ...
+              }
+          - pattern: |
+              if $X == 0 {
+                ...
+                $CTX, $CANCEL := context.WithCancel($PARENT)
+                ...
+              }

@@ -1,0 +1,63 @@
+{
+  "schema_version": "proof.signal_packs.v1",
+  "proof_version": "0.1.0-dev",
+  "pack_ref": "builtin:go/default",
+  "pack_hash": "sha256:54e6d9f8d69dab9ccbfc65ad03883305cb1ee9c72ecf1e1f9a4ce8c456cd5638",
+  "files": [
+    {
+      "source_path": "data/go/boundary.yaml",
+      "path": "boundary.yaml",
+      "sha256": "sha256:46dc9d82fbe5cabeb6b5ab1d9176baed4ae8e8beb58fe51fe626ec23bfb26d79"
+    },
+    {
+      "source_path": "data/go/bug_vectors.yaml",
+      "path": "bug_vectors.yaml",
+      "sha256": "sha256:41bafdac457b498e278719395281f07709fd2887d76ea99f2084a57893ca5fdf"
+    },
+    {
+      "source_path": "data/go/concurrency.yaml",
+      "path": "concurrency.yaml",
+      "sha256": "sha256:b539581124f31133fb59c015f821c6e258631c0dff3428ce76faea740f160168"
+    },
+    {
+      "source_path": "data/go/control_flow.yaml",
+      "path": "control_flow.yaml",
+      "sha256": "sha256:b04d713fe76c2d81cd3057e59ca9655d0b0643a338ce9a05150010449d4a73a8"
+    },
+    {
+      "source_path": "data/go/db.yaml",
+      "path": "db.yaml",
+      "sha256": "sha256:6bca6819945180267a5e3f248b0345ff82cd78c3b5190d7aef4570f03bdaf23b"
+    },
+    {
+      "source_path": "data/go/deserializer.yaml",
+      "path": "deserializer.yaml",
+      "sha256": "sha256:6365d2aab184141a0a86c18b764bedc43057b9fbbf1ad74ec892026974453f72"
+    },
+    {
+      "source_path": "data/go/filesystem.yaml",
+      "path": "filesystem.yaml",
+      "sha256": "sha256:1559b3ed39d25a724c1e3421c66921d3f41720afc5d4e850d675016e7b27d14f"
+    },
+    {
+      "source_path": "data/go/http_client.yaml",
+      "path": "http_client.yaml",
+      "sha256": "sha256:592e21bdde111130542d8fa6e32270e5853431aabade91d490b7276c1d5e04d5"
+    },
+    {
+      "source_path": "data/go/logging.yaml",
+      "path": "logging.yaml",
+      "sha256": "sha256:7e913ba6447ea1f7b37cc77242b11feea64d593ec19af35d05d6a3ab589edd4e"
+    },
+    {
+      "source_path": "data/go/process.yaml",
+      "path": "process.yaml",
+      "sha256": "sha256:177ca51d46288a9c8630ef1ed50df49ae8b505eb0f908a67bd89b729f37ed4ea"
+    },
+    {
+      "source_path": "data/go/runtime.yaml",
+      "path": "runtime.yaml",
+      "sha256": "sha256:f8e8e4db13e2ea214f4bfca33c5686f9090632b8cb5272c949b7652b01a17a31"
+    }
+  ]
+}

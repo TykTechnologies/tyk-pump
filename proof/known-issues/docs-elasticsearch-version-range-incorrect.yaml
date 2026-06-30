@@ -1,0 +1,40 @@
+id: docs-elasticsearch-version-range-incorrect
+title: 'Documentation gap: tyk-docs claims Elasticsearch 2.0-7.x support; code only handles 3.x-7.x'
+description: 'Withdrawn by the TykDocs update on proof/pump-requirement-doc-annotations: api-management/tyk-pump.mdx now advertises Elasticsearch support as 3.x-7.x, matching the current Elasticsearch operator versions handled by tyk-pump. The old record targeted stale tyk-docs/content paths and the pre-fix 2.0-7.x wording.'
+affected_requirements:
+    - SW-REQ-022
+commands:
+    - rg -n 'Elasticsearch \(3\.x - 7\.x\)|Elasticsearch \(2\.0 - 7\.x\)' /Users/buger/go/src/tyk-docs/api-management/tyk-pump.mdx
+evidence_manifests:
+    - .proof/evidence/ki-docs-elasticsearch-version-range-incorrect.yaml
+severity: low
+severity_basis: risk
+risk: correctness
+reproducer_command: PATH=/Users/buger/go/bin:$PATH ./bin/run-monitored bash -lc "rg -n 'elastic\.v7|olivere/elastic|case \"[23567]\"|ElasticSearchVersion|defaultEsVersion|SetURL' pumps/elasticsearch.go go.mod go.sum && rg -n 'Elasticsearch \(3\.x - 7\.x\)' /Users/buger/go/src/tyk-docs/api-management/tyk-pump.mdx && ! rg -n 'Elasticsearch \(2\.0 - 7\.x\)' /Users/buger/go/src/tyk-docs/api-management/tyk-pump.mdx"
+introduced_in: inception
+mitigation: ES 2.x clients defaulting to '3' still work at the wire level for most operations.
+remediation: No further documentation remediation required for the Elasticsearch version range in current TykDocs.
+owner: tyk-team
+review_date: "2026-11-30"
+release_disposition: not_in_scope
+status: withdrawn
+history:
+    - at: "2026-06-01T17:21:33Z"
+      by: human:buger
+      action: created
+    - at: "2026-06-22T07:15:10Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=holistic
+    - at: "2026-06-22T07:18:03Z"
+      by: human:buger
+      action: edit
+      detail: set-severity-basis=risk,set-risk
+    - at: "2026-06-26T15:49:33Z"
+      by: agent:codex
+      action: edit
+      detail: set-reproducer-command,add-evidence-manifest
+    - at: "2026-06-28T13:10:10Z"
+      by: agent:codex
+      action: edit
+      detail: set-description,set-reproducer-command,set-remediation,set-status=withdrawn,set-release-disposition=not_in_scope
