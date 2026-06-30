@@ -9,6 +9,8 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics/demo"
 	"github.com/google/go-cmp/cmp"
 	"github.com/google/go-cmp/cmp/cmpopts"
+	"github.com/sirupsen/logrus"
+	logrustest "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -205,6 +207,29 @@ func TestSerializer_OriginalPathAndListenPathRoundTrip(t *testing.T) {
 			assert.Equal(t, "/listen-path", decoded.ListenPath)
 		})
 	}
+}
+
+func Test_WithLogger(t *testing.T) {
+	logger, hook := logrustest.NewNullLogger()
+	logger.SetLevel(logrus.DebugLevel)
+
+	t.Run("writes logs to provided logger in case MSGP_SERIALIZER", func(t *testing.T) {
+		hook.Reset()
+		_ = NewAnalyticsSerializer(MSGP_SERIALIZER, WithLogger(logger))
+		assert.True(t, len(hook.AllEntries()) > 0)
+	})
+
+	t.Run("writes logs to provided logger in case PROTOBUF_SERIALIZER", func(t *testing.T) {
+		hook.Reset()
+		_ = NewAnalyticsSerializer(PROTOBUF_SERIALIZER, WithLogger(logger))
+		assert.True(t, len(hook.AllEntries()) > 0)
+	})
+
+	t.Run("writes logs to provided logger in case wrong string", func(t *testing.T) {
+		hook.Reset()
+		_ = NewAnalyticsSerializer("dummy", WithLogger(logger))
+		assert.True(t, len(hook.AllEntries()) > 0)
+	})
 }
 
 func BenchmarkProtobufEncoding(b *testing.B) {
