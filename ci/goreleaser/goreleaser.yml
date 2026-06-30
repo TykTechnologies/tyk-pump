@@ -11,7 +11,6 @@ builds:
       - -tags=fips
     env:
       - NOP=nop # ignore this, it is jsut to avoid a complex conditional in the templates
-      - GOFIPS140=v1.0.0
     ldflags:
       - -X github.com/TykTechnologies/tyk-pump/pumps.Version={{.Version}}
       - -X github.com/TykTechnologies/tyk-pump/pumps.Commit={{.FullCommit}}
@@ -27,7 +26,6 @@ builds:
       - -tags=fips
     env:
       - NOP=nop # ignore this, it is jsut to avoid a complex conditional in the templates
-      - GOFIPS140=v1.0.0
     ldflags:
       - -X github.com/TykTechnologies/tyk-pump/pumps.Version={{.Version}}
       - -X github.com/TykTechnologies/tyk-pump/pumps.Commit={{.FullCommit}}
@@ -43,7 +41,6 @@ builds:
       - -tags=fips
     env:
       - NOP=nop # ignore this, it is jsut to avoid a complex conditional in the templates
-      - GOFIPS140=v1.0.0
     ldflags:
       - -X github.com/TykTechnologies/tyk-pump/pumps.Version={{.Version}}
       - -X github.com/TykTechnologies/tyk-pump/pumps.Commit={{.FullCommit}}
