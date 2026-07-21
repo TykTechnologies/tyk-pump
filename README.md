@@ -55,10 +55,9 @@ The table below provides details on the fields within each `tyk_analytics` recor
 - [ElasticSearch (2.0+)](#elasticsearch-config)
 - [Graylog](#graylog)
 - [Resurface.io](#resurfaceio)
-- InfluxDB
 - [InfluxDB2](#influx2-config)
 - [Moesif](#moesif-config)
-- [Splunk](#splunk-config)
+- [Splunk](#splunk)
 - [StatsD](#statsd)
 - [DogStatsD](#dogstatsd)
 - [Hybrid (Tyk RPC)](#hybrid-rpc-config)
@@ -67,8 +66,9 @@ The table below provides details on the fields within each `tyk_analytics` recor
 - [Kafka](#kafka-config)
 - [Stdout](#stdout) (i.e. for use by Datadog logging agent in Kubernetes)
 - [Timestream](#timestream-config)
-- [AWS SQS](#SQS-config)
-- [AWS Kinesis](#Kinesis-config)
+- [AWS SQS](#sqs-config)
+- [AWS Kinesis](#kinesis-config)
+- [Dynatrace](#dynatrace-config)
 
 # Configuration:
 
@@ -78,7 +78,7 @@ This will be your base config. We will then add 1 or more Pumps based off our se
 
 Create a `pump.conf` file:
 
-```.json
+```json
 {
   "analytics_storage_type": "redis",
   "analytics_storage_config": {
@@ -106,8 +106,7 @@ Create a `pump.conf` file:
       "meta": {
         "csv_dir": "./"
       }
-    },
-	...
+    }
   },
   "dont_purge_uptime_data": true,
   "omit_detailed_recording": false,
@@ -145,6 +144,7 @@ TYK_PMP_DONTPURGEUPTIMEDATA=true
 This is the Tyk Pump's primary database which it scrapes Tyk Gateway analytics from. Normally this is `redis`.
 
 ```json
+{
   "analytics_storage_config": {
     "type": "redis",
     "host": "localhost",
@@ -158,7 +158,8 @@ This is the Tyk Pump's primary database which it scrapes Tyk Gateway analytics f
     "enable_cluster": false,
     "redis_use_ssl": false,
     "redis_ssl_insecure_skip_verify": false
-  },
+  }
+}
 ```
 
 `redis_use_ssl` - Setting this to true to use SSL when connecting to Redis
@@ -188,7 +189,7 @@ You can configure the health check endpoint and port for the Tyk Pump:
 
 This returns a HTTP 200 OK response if the Pump is running.
 
-```
+```json
 {"status": "ok"}
 ```
 
@@ -212,7 +213,7 @@ The minimum required configurations for uptime pumps are:
 
 ###### JSON / Conf File
 
-```
+```json
 {
   "uptime_pump_config": {
     "collection_name": "tyk_uptime_analytics",
@@ -243,14 +244,16 @@ You can also use different types of SQL Uptime pumps, like `postgres` or `mysql`
 
 ###### JSON / Conf file Example
 
-```
-    "uptime_pump_config": {
-        "uptime_type": "sql",
-        "type": "postgres",
-        "connection_string": "host=sql_host port=sql_port user=sql_usr dbname=dbname password=sql_pw",
-        "table_sharding": false,
-	"log_level": "info"
-    },
+```json
+{
+  "uptime_pump_config": {
+    "uptime_type": "sql",
+    "type": "postgres",
+    "connection_string": "host=sql_host port=sql_port user=sql_usr dbname=dbname password=sql_pw",
+    "table_sharding": false,
+	  "log_level": "info"
+  }
+}
 ```
 
 ###### Env Variables:
@@ -269,29 +272,31 @@ Example of integrating with GrayLog:
 
 ###### JSON / Conf file Example
 
-```
-"graylog": {
-      "type": "graylog",
-      "meta": {
-        "host": "10.60.6.15",
-        "port": 12216,
-        "tags": [
-          "method",
-          "path",
-          "response_code",
-          "api_key",
-          "api_version",
-          "api_name",
-          "api_id",
-          "org_id",
-          "oauth_id",
-          "raw_request",
-          "request_time",
-          "raw_response",
-          "ip_address"
-        ]
-      }
-    },
+```json
+{
+  "graylog": {
+    "type": "graylog",
+    "meta": {
+      "host": "10.60.6.15",
+      "port": 12216,
+      "tags": [
+        "method",
+        "path",
+        "response_code",
+        "api_key",
+        "api_version",
+        "api_name",
+        "api_id",
+        "org_id",
+        "oauth_id",
+        "raw_request",
+        "request_time",
+        "raw_response",
+        "ip_address"
+      ]
+    }
+  }
+}
 ```
 
 ###### Env Variables:
@@ -316,14 +321,15 @@ The only two fields necessary in the pump cofiguration are:
 
 ###### JSON / Conf File Example
 
-```.json
-
-"resurface": {
+```json
+{
+  "resurface": {
     "type": "resurfaceio",
     "meta": {
         "capture_url": "http://localhost:7701/message",
         "rules": "include debug"
     }
+  }
 }
 ```
 
@@ -341,7 +347,7 @@ Example of integrating with StatsD:
 
 ###### JSON / Conf file Example
 
-```
+```json
 {
   "pumps": {
     "statsd": {
@@ -390,9 +396,8 @@ Available Mongo instances are: Standard Mongo, DocumentDB (AWS), CosmosDB (Azure
 
 ###### JSON / Conf File
 
-```.json
+```json
 {
-  ...
   "pumps": {
     "mongo": {
       "type": "mongo",
@@ -502,7 +507,7 @@ A sample config looks like this:
 ```
 
 `table_sharding` - This determines how the sql tables are created, if this is set to true, a new table is created for each day of records for the graph data.
-The name format for each table is <table*name>*<date>. Defaults to false.
+The name format for each table is `<table*name>*<date>`. Defaults to false.
 
 ## Elasticsearch Config
 
@@ -652,21 +657,23 @@ From Pump 1.6+ it's possible to add custom prometheus metrics using the `custom_
 For example:
 
 ```json
-"prometheus": {
-  "type": "prometheus",
-	"meta": {
-		"listen_address": "localhost:9090",
-		"path": "/metrics",
-		"custom_metrics":[
-      {
-        "name":"tyk_custom_http_status_per_api_name",
-        "description":"This is a custom counter",
-        "metric_type":"counter",
-        "labels":["response_code","api_name"]
-      }
-    ]
-	}
-},
+{
+  "prometheus": {
+    "type": "prometheus",
+    "meta": {
+      "listen_address": "localhost:9090",
+      "path": "/metrics",
+      "custom_metrics":[
+        {
+          "name":"tyk_custom_http_status_per_api_name",
+          "description":"This is a custom counter",
+          "metric_type":"counter",
+          "labels":["response_code","api_name"]
+        }
+      ]
+    }
+  }
+}
 ```
 
 This will create a metric for HTTP status code and API name.
@@ -681,18 +688,17 @@ The available values are: `["host","method", "path", "response_code", "api_key",
 
 ###### JSON / Conf File
 
-```.json
+```json
 {
-    ...
-    "pumps": {
-      "prometheus": {
-        "type": "prometheus",
-        "meta": {
-          "listen_address": "localhost:9090",
-          "path": "/metrics"
-        }
+  "pumps": {
+    "prometheus": {
+      "type": "prometheus",
+      "meta": {
+        "listen_address": "localhost:9090",
+        "path": "/metrics"
       }
     }
+  }
 }
 ```
 
@@ -731,30 +737,32 @@ If no tag is specified the fallback behavior is to use the below tags:
 
 Note that this configuration can generate significant charges due to the unbound nature of the `path` tag.
 
-```.json
-"dogstatsd": {
-  "type": "dogstatsd",
-  "meta": {
-    "address": "localhost:8125",
-    "namespace": "pump",
-    "async_uds": true,
-    "async_uds_write_timeout_seconds": 2,
-    "buffered": true,
-    "buffered_max_messages": 32,
-    "sample_rate": 0.5,
-    "tags": [
-      "method",
-      "response_code",
-      "api_version",
-      "api_name",
-      "api_id",
-      "org_id",
-      "tracked",
-      "path",
-      "oauth_id"
-    ]
+```json
+{
+  "dogstatsd": {
+    "type": "dogstatsd",
+    "meta": {
+      "address": "localhost:8125",
+      "namespace": "pump",
+      "async_uds": true,
+      "async_uds_write_timeout_seconds": 2,
+      "buffered": true,
+      "buffered_max_messages": 32,
+      "sample_rate": 0.5,
+      "tags": [
+        "method",
+        "response_code",
+        "api_version",
+        "api_name",
+        "api_id",
+        "org_id",
+        "tracked",
+        "path",
+        "oauth_id"
+      ]
+    }
   }
-},
+}
 ```
 
 On startup, you should see the loaded configs when initializing the dogstatsd pump
@@ -784,7 +792,7 @@ TYK_PMP_PUMPS_DOGSTATSD_META_TAGS=method,response_code,api_version,api_name,api_
 
 Setting up Splunk with a _HTTP Event Collector_
 
-- `collector_token`: address of the datadog agent including host & port
+- `collector_token`: authorization token for the collector
 - `collector_url`: endpoint the Pump will send analytics too. Should look something like:
 
 `https://splunk:8088/services/collector/event`
@@ -795,7 +803,7 @@ Setting up Splunk with a _HTTP Event Collector_
 - `fields`: (optional) Define which Analytics fields should participate in the Splunk event. Check the available fields in the example below. Type: String Array `[] string`. Default value is `["method", "path", "response_code", "api_key", "time_stamp", "api_version", "api_name", "api_id", "org_id", "oauth_id", "raw_request", "request_time", "raw_response", "ip_address"]`
 - `ignore_tag_prefix_list`: (optional) Choose which tags to be ignored by the Splunk Pump. Keep in mind that the tag name and value are hyphenated. Type: Type: String Array `[] string`. Default value is `[]`
 - `enable_batch`: If this is set to `true`, pump is going to send the analytics records in batch to Splunk. Type: Boolean. Default value is `false`.
-- `max_content_length`: Max content length in bytes to be sent in batch requests. It should match the `max_content_length` configured in Splunk. If the purged analytics records size don't reach the amount of bytes, they're send anyways in each `purge_loop`. Type: Integer. Default value is 838860800 (~ 800 MB), the same default value as Splunk config.
+- `batch_max_content_length`: Max content length in bytes to be sent in batch requests. It should match the `max_content_length` configured in Splunk. If the purged analytics records size don't reach the amount of bytes, they're send anyways in each `purge_loop`. Type: Integer. Default value is 838860800 (~ 800 MB), the same default value as Splunk config.
 - `max_retries`: Max number of retries if failed to send requests to splunk HEC. Default value is `0` (no retries after failure). Connections, network, timeouts, temporary, too many requests and internal server errors are all considered retryable.
 - `"ssl_cert_file"` - Path to the PEM file with client certificate for authentication with the Splunk server.
 - `"ssl_key_file"` - Path to the PEM file with Tyk's private key for authentication with the Splunk server.
@@ -804,54 +812,56 @@ Setting up Splunk with a _HTTP Event Collector_
 ###### JSON / Conf File
 
 ```json
-    "splunk": {
-      "type": "splunk",
-      "meta": {
-        "collector_token": "<token>",
-        "collector_url": "<url>",
-        "ssl_insecure_skip_verify": false,
-        "ssl_cert_file": "<cert-path>",
-        "ssl_key_file": "<key-path>",
-        "ssl_ca_file": "<ca-path>",
-        "ssl_server_name": "<server-name>",
-        "obfuscate_api_keys": true,
-        "obfuscate_api_keys_length": 10,
-        "enable_batch":true,
-        "max_retries": 2,
-        "fields": [
-          "method",
-          "host",
-          "path",
-          "raw_path",
-          "content_length",
-          "user_agent",
-          "response_code",
-          "api_key",
-          "time_stamp",
-          "api_version",
-          "api_name",
-          "api_id",
-          "org_id",
-          "oauth_id",
-          "raw_request",
-          "request_time",
-          "raw_response",
-          "ip_address",
-          "geo",
-          "network",
-          "latency",
-          "tags",
-          "alias",
-          "track_path"
-        ],
-        "ignore_tag_prefix_list": [
-          "key-",
-          "org-",
-          "api-",
-          "original-path-",
-        ]
-      }
-    },
+{
+  "splunk": {
+    "type": "splunk",
+    "meta": {
+      "collector_token": "<token>",
+      "collector_url": "<url>",
+      "ssl_insecure_skip_verify": false,
+      "ssl_cert_file": "<cert-path>",
+      "ssl_key_file": "<key-path>",
+      "ssl_ca_file": "<ca-path>",
+      "ssl_server_name": "<server-name>",
+      "obfuscate_api_keys": true,
+      "obfuscate_api_keys_length": 10,
+      "enable_batch":true,
+      "max_retries": 2,
+      "fields": [
+        "method",
+        "host",
+        "path",
+        "raw_path",
+        "content_length",
+        "user_agent",
+        "response_code",
+        "api_key",
+        "time_stamp",
+        "api_version",
+        "api_name",
+        "api_id",
+        "org_id",
+        "oauth_id",
+        "raw_request",
+        "request_time",
+        "raw_response",
+        "ip_address",
+        "geo",
+        "network",
+        "latency",
+        "tags",
+        "alias",
+        "track_path"
+      ],
+      "ignore_tag_prefix_list": [
+        "key-",
+        "org-",
+        "api-",
+        "original-path-"
+      ]
+    }
+  }
+}
 ```
 
 ###### Env Variables
@@ -879,13 +889,15 @@ Example simplest configuration just needs the token for sending data to your log
 
 ###### JSON / Conf File
 
-```.json
-"logzio": {
-      "type": "logzio",
-      "meta": {
-        "token": "<YOUR-LOGZ.IO-TOKEN>"
-      }
+```json
+{
+  "logzio": {
+    "type": "logzio",
+    "meta": {
+      "token": "<YOUR-LOGZ.IO-TOKEN>"
     }
+  }
+}
 ```
 
 ###### Env Variables
@@ -920,28 +932,28 @@ More advanced fields:
 
 ###### JSON / Conf File
 
-```.json
+```json
 {
-    ...
-    "pumps": {
-      "kafka": {
+  "pumps": {
+    "kafka": {
       "type": "kafka",
       "meta": {
         "broker": [
-            "localhost:9092"
+          "localhost:9092"
         ],
-	"topic": "tyk-pump",
+        "topic": "tyk-pump",
         "use_ssl": true,
         "ssl_insecure_skip_verify": false,
         "client_id": "tyk-pump",
         "timeout": 60,
         "compressed": true,
         "meta_data": {
-            "key": "value"
+          "key": "value"
         },
         "batch_bytes": 1048576
       }
     }
+  }
 }
 ```
 
@@ -977,13 +989,15 @@ Configuration options:
 - `"new_bucket_config"` - If `"create_missing_bucket"`is true, you can configure the new bucket configuration under `"new_bucket_config"`:
   - `"description"` - Description of the bucket. This is going to be visible in the Influx UI.
   - `"retention_rules"`- This is a slice of retention rules for this bucket. An example of this would be:
-  ```.json
-  "retention_rules":[
+  ```json
   {
-  "every_seconds":100000,
-  "type":"expires"
+    "retention_rules": [
+      {
+        "every_seconds":100000,
+        "type":"expires"
+      }
+    ]
   }
-  ]
   ```
   which would mean that the data in the bucket expires every 100000 seconds.
 - `"token"` - Influx DB Auth token
@@ -991,8 +1005,9 @@ Configuration options:
 
 ###### JSON / Conf File
 
-```.json
-"influx2": {
+```json
+{
+  "influx2": {
     "type": "influx2",
     "meta": {
       "organization": "my-org",
@@ -1014,6 +1029,7 @@ Configuration options:
         "response_code"
       ]
     }
+  }
 }
 ```
 
@@ -1046,15 +1062,18 @@ Supported in Tyk Pump v1.0.0+
 
 When working with FluentD, you should provide a [FluentD Parser](https://docs.fluentd.org/input/syslog) based on the OS you are using so that FluentD can correctly read the logs
 
-```.json
-"syslog": {
-  "name": "syslog",
-  "meta": {
-    "transport": "udp",
-    "network_addr": "localhost:5140",
-    "log_level": 6,
-    "tag": "syslog-pump"
+```json
+{
+  "syslog": {
+    "name": "syslog",
+    "meta": {
+      "transport": "udp",
+      "network_addr": "localhost:5140",
+      "log_level": 6,
+      "tag": "syslog-pump"
+    }
   }
+}
 ```
 
 ## Stdout
@@ -1065,14 +1084,16 @@ When working with FluentD, you should provide a [FluentD Parser](https://docs.fl
 
 ###### JSON / Conf File
 
-```
-"stdout": {
+```json
+{
+  "stdout": {
    "type": "stdout",
     "meta": {
       "log_field_name": "tyk-analytics-record",
       "format": "json"
     }
   }
+}
 ```
 
 ###### Env Variables
@@ -1096,15 +1117,17 @@ If `table_sharding` is `false`, all the records are going to be stored in `tyk_a
 
 ###### JSON / Conf File
 
-```
-    "sql": {
-        "name": "sql",
-        "meta": {
-            "type": "postgres",
-            "connection_string": "host=localhost port=5432 user=admin dbname=postgres_test password=test",
-            "table_sharding": false
-        }
-    }
+```json
+{
+  "sql": {
+      "name": "sql",
+      "meta": {
+          "type": "postgres",
+          "connection_string": "host=localhost port=5432 user=admin dbname=postgres_test password=test",
+          "table_sharding": false
+      }
+  }
+}
 ```
 
 ###### Env Variables
@@ -1131,15 +1154,17 @@ If `table_sharding` is `false`, all the records are going to be stored in `tyk_a
 
 ###### JSON / Conf File
 
-```
-    "sql_aggregate": {
-        "name": "sql_aggregate",
-        "meta": {
-            "type": "postgres",
-            "connection_string": "host=localhost port=5432 user=admin dbname=postgres_test password=test",
-            "table_sharding": false
-        }
-    }
+```json
+{
+  "sql_aggregate": {
+      "name": "sql_aggregate",
+      "meta": {
+          "type": "postgres",
+          "connection_string": "host=localhost port=5432 user=admin dbname=postgres_test password=test",
+          "table_sharding": false
+      }
+  }
+}
 ```
 
 ###### Env Variables
@@ -1180,75 +1205,77 @@ If no credentials are provided, Timestream Pump won't be able to connect.
 ###### JSON / Conf File
 
 ```json
-    "timestream": {
-      "type": "timestream",
-      "meta": {
-        "aws_region": "us-east-1",
-        "timestream_table_name": "tyk-pump-table",
-        "timestream_database_name": "tyk-pump",
-        "write_rate_limit": true,
-        "read_geo_from_request": true,
-        "write_zero_values": false,
-        "dimensions": [
-          "Method",
-          "Host",
-          "Path",
-          "RawPath",
-          "APIKey",
-          "APIVersion",
-          "APIName",
-          "APIID",
-          "OrgID",
-          "OauthID"
-        ],
-        "measures": [
-          "ContentLength",
-          "ResponseCode",
-          "RequestTime",
-          "NetworkStats.OpenConnections",
-          "NetworkStats.ClosedConnection",
-          "NetworkStats.BytesIn",
-          "NetworkStats.BytesOut",
-          "Latency.Total",
-          "Latency.Upstream",
-          "RateLimit.Limit",
-          "Ratelimit.Remaining",
-          "Ratelimit.Reset",
-          "UserAgent",
-          "RawRequest",
-          "RawResponse",
-          "IPAddress",
-          "GeoData.Country.ISOCode",
-          "GeoData.City.Names",
-          "GeoData.Location.TimeZone",
-          "GeoData.City.GeoNameID",
-          "GeoData.Location.Latitude",
-          "GeoData.Location.Longitude"
-        ],
-        "field_name_mappings":{
-          "Path": "path",
-          "APIKey": "api_key",
-          "APIVersion": "module",
-          "APIName": "email",
-          "Method": "method",
-          "APIID": "account",
-          "measure_name": "request_metrics",
-          "time": "time",
-          "ResponseCode": "response_code",
-          "GeoData.Country.ISOCode": "country_code",
-          "Latency.Total": "latency_total",
-          "RawResponseSize": "sesponse_size",
-          "RequestTime": "request_time",
-          "GeoData.City.Names": "city",
-          "Latency.Upstream": "latency_upstream",
-          "UserAgent": "user_agent",
-          "IPAddress": "ip_address",
-          "RateLimit.Limit": "quota_max",
-          "Ratelimit.Remaining": "quota_remaining",
-          "Ratelimit.Reset": "quota_renewal_rate"
-        }
+{
+  "timestream": {
+    "type": "timestream",
+    "meta": {
+      "aws_region": "us-east-1",
+      "timestream_table_name": "tyk-pump-table",
+      "timestream_database_name": "tyk-pump",
+      "write_rate_limit": true,
+      "read_geo_from_request": true,
+      "write_zero_values": false,
+      "dimensions": [
+        "Method",
+        "Host",
+        "Path",
+        "RawPath",
+        "APIKey",
+        "APIVersion",
+        "APIName",
+        "APIID",
+        "OrgID",
+        "OauthID"
+      ],
+      "measures": [
+        "ContentLength",
+        "ResponseCode",
+        "RequestTime",
+        "NetworkStats.OpenConnections",
+        "NetworkStats.ClosedConnection",
+        "NetworkStats.BytesIn",
+        "NetworkStats.BytesOut",
+        "Latency.Total",
+        "Latency.Upstream",
+        "RateLimit.Limit",
+        "Ratelimit.Remaining",
+        "Ratelimit.Reset",
+        "UserAgent",
+        "RawRequest",
+        "RawResponse",
+        "IPAddress",
+        "GeoData.Country.ISOCode",
+        "GeoData.City.Names",
+        "GeoData.Location.TimeZone",
+        "GeoData.City.GeoNameID",
+        "GeoData.Location.Latitude",
+        "GeoData.Location.Longitude"
+      ],
+      "field_name_mappings":{
+        "Path": "path",
+        "APIKey": "api_key",
+        "APIVersion": "module",
+        "APIName": "email",
+        "Method": "method",
+        "APIID": "account",
+        "measure_name": "request_metrics",
+        "time": "time",
+        "ResponseCode": "response_code",
+        "GeoData.Country.ISOCode": "country_code",
+        "Latency.Total": "latency_total",
+        "RawResponseSize": "sesponse_size",
+        "RequestTime": "request_time",
+        "GeoData.City.Names": "city",
+        "Latency.Upstream": "latency_upstream",
+        "UserAgent": "user_agent",
+        "IPAddress": "ip_address",
+        "RateLimit.Limit": "quota_max",
+        "Ratelimit.Remaining": "quota_remaining",
+        "Ratelimit.Reset": "quota_renewal_rate"
       }
-    },
+    }
+  }
+}
 ```
 
 ###### Env Variables
@@ -1285,13 +1312,15 @@ Enable this Pump to have Tyk Pump create or modify a CSV file to track API Analy
 
 ###### JSON / Conf File
 
-```
-    "csv": {
-      "type": "csv",
-      "meta": {
-        "csv_dir": "./"
-      }
-    },
+```json
+{
+  "csv": {
+    "type": "csv",
+    "meta": {
+      "csv_dir": "./"
+    }
+  }
+}
 ```
 
 ###### Env Variables
@@ -1335,23 +1364,25 @@ If no credentials are provided, SQS Pump won't be able to connect.
 ###### JSON / Conf File
 
 ```json
-    "sqs": {
-      "type": "sqs",
-      "meta": {
-        "log_field_name": "tyk-analytics-record",
-        "format": "json",
-        "aws_queue_name": "access-logs-queue.fifo",
-        "aws_region": "us-east-1",
-        "aws_key": "key",
-        "aws_secret": "secret",
-        "aws_token": "token",
-        "aws_endpoint": "http://aws-endpoint:4566",
-        "aws_message_group_id": "message_group_id",
-        "aws_sqs_batch_limit": 10,
-        "aws_message_id_deduplication_enabled": true,
-        "aws_delay_seconds": 0
-      }
-    },
+{
+  "sqs": {
+    "type": "sqs",
+    "meta": {
+      "log_field_name": "tyk-analytics-record",
+      "format": "json",
+      "aws_queue_name": "access-logs-queue.fifo",
+      "aws_region": "us-east-1",
+      "aws_key": "key",
+      "aws_secret": "secret",
+      "aws_token": "token",
+      "aws_endpoint": "http://aws-endpoint:4566",
+      "aws_message_group_id": "message_group_id",
+      "aws_sqs_batch_limit": 10,
+      "aws_message_id_deduplication_enabled": true,
+      "aws_delay_seconds": 0
+    }
+  }
+}
 ```
 
 ###### Env Variables
@@ -1392,15 +1423,17 @@ We must authenticate ourselves by providing credentials to AWS. This pump uses t
 ###### JSON / Conf File
 
 ```json
-    "kinesis":{
-      "type": "kinesis",
-      "meta": {
-        "stream_name": "my-stream",
-        "region": "eu-west-2",
-        "batch_size": 100,
-        "kms_key_id": "your-kms-key-id"
-      }
-    },
+{
+  "kinesis": {
+    "type": "kinesis",
+    "meta": {
+      "stream_name": "my-stream",
+      "region": "eu-west-2",
+      "batch_size": 100,
+      "kms_key_id": "your-kms-key-id"
+    }
+  }
+}
 ```
 
 ###### Env Variables
@@ -1414,6 +1447,101 @@ TYK_PMP_PUMPS_KINESIS_META_BATCHSIZE=100
 TYK_PMP_PUMPS_KINESIS_META_KMSKEYID=your-kms-key-id
 ```
 
+## Dynatrace Config
+
+Dynatrace is a software intelligence platform that provides application performance management (APM). This pump is for sending events to Dynatrace Logs via the [Log Ingestion API](https://docs.dynatrace.com/docs/analyze-explore-automate/logs/lma-log-ingestion/lma-log-ingestion-via-api).
+
+Note that this integration is different than sending [Open Telemetry data to Dynatrace](https://tyk.io/docs/api-management/logs-metrics#opentelemetry), as more detail is provided in Tyk Pump as compared to OTeL.
+
+- `api_token`: API Token - must have 'Ingest logs' scope.
+- `endpoint_url`: Endpoint the Pump will send analytics too. Should look something like: `https://{your-environment-id}.live.dynatrace.com` or `https://{your-activegate-domain}:9999/e/{your-environment-id}`
+
+- `ssl_insecure_skip_verify`: Controls whether the pump client verifies the Dynatrace server's certificate chain and host name.
+- `ssl_cert_file`: SSL cert file location.
+- `ssl_key_file`: SSL cert key location.
+- `ssl_server_name`: SSL Server name used in the TLS connection.
+- `obfuscate_api_keys`: (optional) Controls whether the pump client should hide the API key. In case you still need substring of the value, check the next option. Type: Boolean. Default value is `false`.
+- `obfuscate_api_keys_length`: (optional) Define the number of the characters from the end of the API key. The `obfuscate_api_keys` should be set to `true`. Type: Integer. Default value is `0`.
+- `fields`: (optional) Define which Analytics fields should participate in the Dynatrace event. Check the available fields in the example below. Type: String Array `[] string`. Default value is `["http.method", "http.url", "http.status_code", "http.client_ip", "api_key", "api_version", "api_name", "api_id", "org_id", "oauth_id", "raw_request", "request_time", "raw_response"]`
+- `properties`: (optional) Configures a list of additional key/value pairs to attach to events. Type: Map `map[string]string`. Default value is `{}`.
+- `ignore_tag_prefix_list`: (optional) Choose which tags to be ignored by the Dynatrace Pump. Keep in mind that the tag name and value are hyphenated. Type: String Array `[] string`. Default value is `[]`
+- `enable_batch`: If this is set to `true`, pump is going to send the analytics records in batch to Dynatrace. Type: Boolean. Default value is `false`.
+- `batch_max_content_length`: (optional) Max content length in bytes to be sent in batch requests. If the purged analytics records size don't reach the amount of bytes, they're sent anyways during each purge loop. Type: Integer. Default value is `10485760` (10 MB), the Dynatrace API limit.
+- `max_retries`: Max number of retries if failed to send requests to Dynatrace API. Default value is `0` (no retries after failure). Connections, network, timeouts, temporary, too many requests and internal server errors are all considered retryable.
+
+###### JSON / Conf File
+
+```json
+{
+  "dynatrace": {
+    "type": "dynatrace",
+    "meta": {
+      "api_token": "<token>",
+      "endpoint_url": "https://{your-environment-id}.live.dynatrace.com",
+      "ssl_insecure_skip_verify": false,
+      "ssl_cert_file": "<cert-path>",
+      "ssl_key_file": "<key-path>",
+      "ssl_server_name": "<server-name>",
+      "obfuscate_api_keys": true,
+      "obfuscate_api_keys_length": 10,
+      "enable_batch": true,
+      "max_retries": 2,
+      "fields": [
+        "http.method",
+        "http.host",
+        "http.url",
+        "http.status_code",
+        "http.client_ip",
+        "api_key",
+        "geo.city_name",
+        "geo.country_name",
+        "geo.name",
+        "geo.region_name",
+        "content_length",
+        "user_agent",
+        "api_version",
+        "api_name",
+        "api_id",
+        "org_id",
+        "oauth_id",
+        "raw_request",
+        "request_time",
+        "raw_response",
+        "network",
+        "latency",
+        "tags",
+        "alias",
+        "track_path"
+      ],
+      "properties": {
+        "dt.http.application_id": "tyk-pump",
+        "dt.host_group.id": "my-host-group-id"
+      },
+      "ignore_tag_prefix_list": [
+        "key-",
+        "org-",
+        "api-"
+      ]
+    }
+  }
+}
+```
+
+###### Env Variables
+
+```
+TYK_PMP_PUMPS_DYNATRACE_TYPE=dynatrace
+TYK_PMP_PUMPS_DYNATRACE_META_APITOKEN="{TOKEN}"
+TYK_PMP_PUMPS_DYNATRACE_META_ENDPOINTURL="https://{your-environment-id}.live.dynatrace.com"
+TYK_PMP_PUMPS_DYNATRACE_META_SSLINSECURESKIPVERIFY=false
+TYK_PMP_PUMPS_DYNATRACE_META_SSLCERTFILE="{CERT-PATH}"
+TYK_PMP_PUMPS_DYNATRACE_META_SSLKEYFILE="{KEY-PATH}"
+TYK_PMP_PUMPS_DYNATRACE_META_SSLSERVERNAME="{SERVER-NAME}"
+TYK_PMP_PUMPS_DYNATRACE_META_ENABLEBATCH=true
+TYK_PMP_PUMPS_DYNATRACE_META_MAXRETRIES=2
+TYK_PMP_PUMPS_DYNATRACE_META_PROPERTIES=dt.http.application_id:tyk-pump,dt.host_group.id:my-host-group-id
+```
+
 # Base Pump Configurations
 
 The following configurations can be added to any Pump. Keep reading for an example.
@@ -1423,13 +1551,15 @@ The following configurations can be added to any Pump. Keep reading for an examp
 You made add the following config field to each pump called `filters` and its structure is the following:
 
 ```json
-"filters":{
-  "api_ids":[],
-  "org_ids":[],
-  "response_codes":[],
-  "skip_api_ids":[],
-  "skip_org_ids":[],
-  "skip_response_codes":[]
+{
+  "filters": {
+    "api_ids": [],
+    "org_ids": [],
+    "response_codes": [],
+    "skip_api_ids": [],
+    "skip_org_ids": [],
+    "skip_response_codes": []
+  }
 }
 ```
 
@@ -1442,14 +1572,16 @@ Here we see how we can take a CSV Pump, and add a filters section to it:
 ###### JSON / Conf file Example
 
 ```json
-"csv": {
- "type": "csv",
- "filters": {
-   "api_ids": ["123","789"]
- },
- "meta": {
-   "csv_dir": "./bar"
- }
+{
+  "csv": {
+    "type": "csv",
+    "filters": {
+      "api_ids": ["123","789"]
+    },
+    "meta": {
+      "csv_dir": "./bar"
+    }
+  }
 }
 ```
 
@@ -1467,12 +1599,14 @@ You can configure a different timeout for each pump with the configuration optio
 In Mongo pumps, the default value is 10 seconds. If you want to disable the timeout, you can set the value to 0. Take into account that if you disable the timeout, the pump will wait for the writing operation forever, and it could block the pump execution.
 
 ```json
-"mongo": {
-  "type": "mongo",
-  "timeout": 5,
-  "meta": {
-    "collection_name": "tyk_analytics",
-    "mongo_url": "mongodb://username:password@{hostname:port}/{db_name}"
+{
+  "mongo": {
+    "type": "mongo",
+    "timeout": 5,
+    "meta": {
+      "collection_name": "tyk_analytics",
+      "mongo_url": "mongodb://username:password@{hostname:port}/{db_name}"
+    }
   }
 }
 ```
@@ -1498,11 +1632,13 @@ In case that you have a configured timeout, but it still takes more seconds to w
 This can also be set at a pump level. For example:
 
 ```json
-"csv": {
-  "type": "csv",
-  "max_record_size":1000,
-  "meta": {
-    "csv_dir": "./"
+{
+  "csv": {
+    "type": "csv",
+    "max_record_size": 1000,
+    "meta": {
+      "csv_dir": "./"
+    }
   }
 }
 ```
@@ -1515,12 +1651,14 @@ The `driver` setting defines the driver type to use for Mongo Pumps. It can be o
 - `mgo`: Uses the mgo driver. This driver is deprecated. This driver supports Mongo versions lower or equal to v4. You can get more information about this driver [here](https://github.com/go-mgo/mgo)
 
 ```json
-"mongo": {
-  "type": "mongo",
-  "meta": {
-    "mongo_url": "mongodb://tyk-mongo:27017/tyk_analytics",
-    "collection_name": "tyk_analytics",
-    "driver": "mongo-go"
+{
+  "mongo": {
+    "type": "mongo",
+    "meta": {
+      "mongo_url": "mongodb://tyk-mongo:27017/tyk_analytics",
+      "collection_name": "tyk_analytics",
+      "driver": "mongo-go"
+    }
   }
 }
 ```
@@ -1531,13 +1669,15 @@ The `driver` setting defines the driver type to use for Mongo Pumps. It can be o
 You can get more info from the [official MongoDB driver docs](https://www.mongodb.com/docs/drivers/go/current/fundamentals/connection/#direct-connection).
 
 ```json
-"mongo": {
-  "type": "mongo",
-  "meta": {
-    "mongo_url": "mongodb://tyk-mongo:27017/tyk_analytics",
-    "collection_name": "tyk_analytics",
-    "driver": "mongo-go",
-    "mongo_direct_connection": true
+{
+  "mongo": {
+    "type": "mongo",
+    "meta": {
+      "mongo_url": "mongodb://tyk-mongo:27017/tyk_analytics",
+      "collection_name": "tyk_analytics",
+      "driver": "mongo-go",
+      "mongo_direct_connection": true
+    }
   }
 }
 ```
@@ -1548,12 +1688,14 @@ You can get more info from the [official MongoDB driver docs](https://www.mongod
 Fields must be written using JSON tags. For example:
 
 ```json
-"csv": {
- "type": "csv",
- "ignore_fields":["api_id","api_version"],
- "meta": {
-   "csv_dir": "./bar"
- }
+{
+  "csv": {
+    "type": "csv",
+    "ignore_fields":["api_id","api_version"],
+    "meta": {
+      "csv_dir": "./bar"
+    }
+  }
 }
 ```
 
@@ -1563,12 +1705,14 @@ Fields must be written using JSON tags. For example:
 This setting is not available for Mongo and SQL pumps, since dashboard will decode the raw request/response.
 
 ```json
-"csv": {
-  "type": "csv",
-  "raw_request_decoded": true,
-  "raw_response_decoded": true,
-  "meta": {
-    "csv_dir": "./"
+{
+  "csv": {
+    "type": "csv",
+    "raw_request_decoded": true,
+    "raw_response_decoded": true,
+    "meta": {
+      "csv_dir": "./"
+    }
   }
 }
 ```
@@ -1597,9 +1741,10 @@ go test -v ./...
 
 You can run Tyk Pump in demo mode, which will generate fake analytics data and send it to the configured pumps. This is useful for testing and development. To enable demo mode, use the following flags:
 
-- `--demo=<ORG_ID>` - Enables demo mode and sets the organization ID to use for the demo data. **This is required to enable Demo Mode**.
+- `--demo=<ORG_ID>` - Enables demo mode and sets the organization ID to use for the demo data. **This is required to enable Demo Mode**. This can also be configured via environment variable: `TYK_PMP_BUILDDEMODATA=<ORG_ID>`.
 - `--demo-api=<API_ID>` - Configure the value to be recorded as the `API_ID` in the demo transactions. If this option is not set, the Pump Demo mode will use a random `API_ID`. Note that the same `API_ID` will be used for all transaction logs.
 - `--demo-days=<DAYS>` - Sets the number of days of demo data to generate. Defaults to 30.
+- `--demo-hours=<HOURS>` - Sets the number of hours of demo data to generate. If provided, this flag takes precedence over `--demo-days`. Defaults to 0 (disabled).
 - `--demo-records-per-hour=<RECORDS_PER_HOUR>` - Sets the number of records to generate per hour. The default value is a random number between 300 and 500.
 - `--demo-track-path` - Enables tracking of the request path in the demo data. Defaults to false (disabled). Note that setting `track_all_paths` to `true` in your Pump configuration will override this option.
-- `--demo-future-data` - By default, the demo data is generated for the past X days (configured in `demo-days` flag). This option will generate data for the next X days. Defaults to false (disabled).
+- `--demo-future-data` - By default, the demo data is generated for the past X days/hours (configured in `demo-days` or `demo-hours` flag). This option will generate data for the next X days/hours. Defaults to false (disabled).
