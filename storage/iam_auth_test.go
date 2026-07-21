@@ -12,6 +12,7 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
 	"github.com/TykTechnologies/storage/temporal/model"
 	"github.com/stretchr/testify/assert"
@@ -24,15 +25,41 @@ import (
 // token entirely offline. The server and env var are torn down with the test.
 func fakeADC(t *testing.T) {
 	t.Helper()
+	fakeADCWithServer(t, false)
+}
+
+// fakeADCBlocking is like fakeADC but the token server never responds (it blocks
+// until the request is cancelled), so the eager token mint hangs until its
+// context deadline fires. Used to prove the IAM auth call is time-bounded.
+func fakeADCBlocking(t *testing.T) {
+	t.Helper()
+	fakeADCWithServer(t, true)
+}
+
+func fakeADCWithServer(t *testing.T, block bool) {
+	t.Helper()
+
+	// release lets a blocking handler return at cleanup so httptest's Close (which
+	// waits for in-flight requests) doesn't hang on the parked goroutine. The
+	// client under test still fails fast on its own timeout while the handler is
+	// parked; releasing only tears the parked goroutine down afterwards.
+	release := make(chan struct{})
 
 	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		if block {
+			<-release
+			return
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 
 		if _, err := w.Write([]byte(`{"access_token":"fake-token","token_type":"Bearer","expires_in":3600}`)); err != nil {
 			t.Errorf("writing token response: %v", err)
 		}
 	}))
+	// Cleanups run LIFO, so release the parked handler before closing the server.
 	t.Cleanup(srv.Close)
+	t.Cleanup(func() { close(release) })
 
 	key, err := rsa.GenerateKey(rand.Reader, 2048)
 	if err != nil {
@@ -114,6 +141,27 @@ func TestBuildIAMAuthOption_InvalidRefreshDuration(t *testing.T) {
 	// The refresh duration is parsed inside the storage iamauth package; the
 	// error names the offending value.
 	assert.Contains(t, err.Error(), "not-a-duration")
+}
+
+// The eager token mint is a blocking network call; buildIAMAuthOption must bound
+// it so an unresponsive auth endpoint fails fast instead of hanging startup or
+// reconnection indefinitely.
+func TestBuildIAMAuthOption_TimesOut(t *testing.T) {
+	fakeADCBlocking(t)
+
+	restore := iamAuthTimeout
+	iamAuthTimeout = 100 * time.Millisecond
+	t.Cleanup(func() { iamAuthTimeout = restore })
+
+	start := time.Now()
+	opt, err := buildIAMAuthOption(context.Background(), IAMAuthConfig{
+		Enabled:  true,
+		Provider: "gcp",
+	})
+
+	require.Error(t, err)
+	assert.Nil(t, opt)
+	assert.Less(t, time.Since(start), 5*time.Second, "the IAM mint must be time-bounded, not hang")
 }
 
 // With IAM auth enabled, createConnector must build the IAM option and hand a
