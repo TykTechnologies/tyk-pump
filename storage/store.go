@@ -79,6 +79,25 @@ type TemporalStorageConfig struct {
 	// Set this to `true` to tell Pump to ignore database's cert validation.
 	// Deprecated: use SSLInsecureSkipVerify instead.
 	RedisSSLInsecureSkipVerify bool `json:"redis_ssl_insecure_skip_verify" mapstructure:"redis_ssl_insecure_skip_verify"`
+
+	// IAMAuth configures cloud IAM-based authentication for the Redis/Valkey
+	// connection, using short-lived tokens instead of a static password.
+	IAMAuth IAMAuthConfig `json:"iam_auth" mapstructure:"iam_auth"`
+}
+
+// IAMAuthConfig configures cloud IAM-based authentication for the connection.
+// When enabled, the connector obtains short-lived credentials from the cloud
+// provider instead of using a static password.
+type IAMAuthConfig struct {
+	// Provider is the cloud provider identifier, for example "gcp".
+	Provider string `json:"provider" mapstructure:"provider"`
+	// ServiceAccount, when set, is the service account to impersonate.
+	ServiceAccount string `json:"service_account" mapstructure:"service_account"`
+	// TokenRefreshBeforeExpiry is how far ahead of expiry tokens are refreshed,
+	// as a Go duration string (for example "1m"). Empty uses the provider default.
+	TokenRefreshBeforeExpiry string `json:"token_refresh_before_expiry" mapstructure:"token_refresh_before_expiry"`
+	// Enabled turns on IAM-based authentication.
+	Enabled bool `json:"enabled" mapstructure:"enabled"`
 }
 
 type EnvMapString map[string]string
