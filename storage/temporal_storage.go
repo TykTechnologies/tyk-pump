@@ -198,7 +198,7 @@ func createConnector(config *TemporalStorageConfig, opts *model.RedisOptions, tl
 	connectorOpts := []model.Option{model.WithRedisConfig(opts), model.WithTLS(tlsOptions)}
 
 	if config.IAMAuth.Enabled {
-		iamOpt, err := buildIAMAuthOption(ctx, config.IAMAuth)
+		iamOpt, err := buildIAMAuthOption(context.Background(), config.IAMAuth)
 		if err != nil {
 			return nil, nil, nil, err
 		}
