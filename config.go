@@ -7,6 +7,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/kelseyhightower/envconfig"
 
@@ -205,9 +206,10 @@ type TykPumpConfiguration struct {
 	// Set the logger details for tyk-pump. The posible values are: `info`,`debug`,`error` and
 	// `warn`. By default, the log level is `info`.
 	LogLevel string `json:"log_level"`
-	// Set the logger format. The possible values are: `text` and `json`. By default, the log
-	// format is `text`.
-	LogFormat string `json:"log_format"`
+	// Configures the output format used for application logs.
+	// Allowed values are `text`, `json`, or `legacy`.
+	// If not set or left empty, it defaults to `text`.
+	LogFormat logger.Format `json:"log_format"`
 	// TYKCONFIGHEADERSTART
 	// HEADER Health Check
 	// From v2.9.4, we have introduced a `/health` endpoint to confirm the Pump is running. You
@@ -247,7 +249,7 @@ type TykPumpConfiguration struct {
 	OmitDetailedRecording bool `json:"omit_detailed_recording"`
 	// Defines if tyk-pump should ignore all the values in configuration file. Specially useful when setting all configurations in environment variables.
 	OmitConfigFile bool `json:"omit_config_file"`
-	// Expose profiling information to support debugging of Tyk Pump. This operates in the same way as for Tyk Gateway, as explained [here](api-management/troubleshooting-debugging).
+	// Expose profiling information to support debugging of Tyk Pump. This operates in the same way as for Tyk Gateway, as explained [here](/api-management/troubleshooting-debugging).
 	HTTPProfile bool `json:"enable_http_profiler"`
 	// This option was intended to decode raw request payloads from base64 for all Pumps. However, it was never implemented and therefore has no functional effect. It has now been deprecated.
 	// for all pumps. This is set to false by default.
