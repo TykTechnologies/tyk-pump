@@ -26,7 +26,7 @@ jobs:
         mongodb-version: [4.2]
         postgres-version: [15]
         mysql-version: ["8.0"]
-        go: [1.25]
+        go: [1.26]
 
     services:
       redis:
