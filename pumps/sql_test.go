@@ -362,15 +362,29 @@ func TestSQLWriteUptimeDataAggregations(t *testing.T) {
 	}
 
 	assert.Len(t, dbRecords, 3)
-	assert.Equal(t, "url", dbRecords[0].Dimension)
-	assert.Equal(t, "url1", dbRecords[0].DimensionValue)
-	assert.Equal(t, 3, dbRecords[0].Code200)
-	assert.Equal(t, 2, dbRecords[0].Code500)
-	assert.Equal(t, 5, dbRecords[0].Hits)
-	assert.Equal(t, 3, dbRecords[0].Success)
-	assert.Equal(t, 2, dbRecords[0].ErrorTotal)
-	assert.Equal(t, 14.0, dbRecords[0].RequestTime)
-	assert.Equal(t, 70.0, dbRecords[0].TotalRequestTime)
+
+	// Find the row under test by dimension rather than by position. Find() has
+	// no ORDER BY, so the result order follows insertion order, and the pump
+	// sorts each batch by ID before upserting (TT-9424).
+	var urlRec *analytics.UptimeReportAggregateSQL
+	for i := range dbRecords {
+		if dbRecords[i].Dimension == "url" {
+			urlRec = &dbRecords[i]
+			break
+		}
+	}
+	if !assert.NotNil(t, urlRec, `expected a record with dimension "url"`) {
+		return
+	}
+
+	assert.Equal(t, "url1", urlRec.DimensionValue)
+	assert.Equal(t, 3, urlRec.Code200)
+	assert.Equal(t, 2, urlRec.Code500)
+	assert.Equal(t, 5, urlRec.Hits)
+	assert.Equal(t, 3, urlRec.Success)
+	assert.Equal(t, 2, urlRec.ErrorTotal)
+	assert.Equal(t, 14.0, urlRec.RequestTime)
+	assert.Equal(t, 70.0, urlRec.TotalRequestTime)
 }
 
 func TestDecodeRequestAndDecodeResponseSQL(t *testing.T) {
