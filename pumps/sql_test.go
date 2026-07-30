@@ -2,12 +2,14 @@ package pumps
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
@@ -516,5 +518,52 @@ func TestBuildIndexName(t *testing.T) {
 				t.Errorf("buildIndexName(%s, %s) = %s; want %s", tt.indexBaseName, tt.tableName, result, tt.expected)
 			}
 		})
+	}
+}
+
+// TestSQLWriteUptimeData_SQLite exercises WriteUptimeData against in-memory SQLite, so it runs
+// everywhere - including the coverage CI job, which provisions no PostgreSQL and therefore
+// skips every Postgres-gated test in this package.
+//
+// Init() is deliberately not called: Dialect() has not supported sqlite since v1.12.0, so the
+// pump is built directly over the test database. WriteUptimeData does not migrate in the
+// non-sharded branch, so the table has to exist up front.
+//
+// Note this call mutates the package-level `table` variable declared in influx.go, which is
+// shared process-wide - a pre-existing issue recorded on TT-9424. That is why this test must
+// not be made parallel.
+func TestSQLWriteUptimeData_SQLite(t *testing.T) {
+	db := setupTestDBWithJSONTags(t)
+	require.NoError(t, db.Table(analytics.UptimeSQLTable).AutoMigrate(&analytics.UptimeReportAggregateSQL{}))
+
+	pmp := &SQLPump{IsUptime: true, db: db}
+	pmp.SQLConf = &SQLConf{BatchSize: 100}
+	pmp.log = log.WithField("prefix", SQLPrefix+"-uptime")
+
+	ts := time.Date(2025, 6, 15, 10, 0, 0, 0, time.UTC)
+	records := make([]interface{}, 0, 4)
+	for i := 0; i < 4; i++ {
+		encoded, err := msgpack.Marshal(analytics.UptimeReportData{
+			OrgID:        "org1",
+			URL:          fmt.Sprintf("https://upstream.example/%02d", i),
+			APIID:        "api1",
+			ResponseCode: 200,
+			RequestTime:  10,
+			TimeStamp:    ts,
+		})
+		require.NoError(t, err)
+		records = append(records, string(encoded))
+	}
+
+	pmp.WriteUptimeData(records)
+
+	var recs []analytics.UptimeReportAggregateSQL
+	require.NoError(t, pmp.db.Table(analytics.UptimeSQLTable).Find(&recs).Error)
+
+	// One row per distinct URL plus the implicit "total" row.
+	assert.Len(t, recs, 5)
+	for _, rec := range recs {
+		assert.Equal(t, "org1", rec.OrgID)
+		assert.NotEmpty(t, rec.ID)
 	}
 }
