@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
 
+	"github.com/TykTechnologies/storage/kv"
 	"github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/kelseyhightower/envconfig"
@@ -258,6 +260,14 @@ type TykPumpConfiguration struct {
 	// This option was intended to decode raw response payloads from base64 for all Pumps. However, it was never implemented and therefore has no functional effect. It has now been deprecated.
 	// Deprecated: Use pump level raw_response_decoded configuration instead.
 	DecodeRawResponse bool `json:"raw_response_decoded"`
+
+	// KV defines named secret stores (such as HashiCorp Vault, Consul, environment
+	// variables, or inline values) that other configuration values can reference.
+	// This lets sensitive settings like database credentials or the admin secret
+	// be kept in an external store instead of the config file; each referenced
+	// value is resolved from its store once, at startup. This section can only be
+	// set in the config file, not through environment variables.
+	KV kv.Config `json:"kv" ignored:"true"`
 }
 
 func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
@@ -288,6 +298,11 @@ func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
 	errLoadEnvPumps := configStruct.LoadPumpsByEnv()
 	if errLoadEnvPumps != nil {
 		log.Fatal("error loading pumps env vars:", errLoadEnvPumps)
+	}
+
+	err := resolveKVReferences(context.Background(), configStruct)
+	if err != nil {
+		log.Fatal("Failed to load and resolve config", err)
 	}
 }
 
