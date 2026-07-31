@@ -302,7 +302,7 @@ func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
 
 	err := resolveKVReferences(context.Background(), configStruct)
 	if err != nil {
-		log.Fatal("Failed to resolve config", err)
+		log.Fatalf("Failed to resolve config: %v", err)
 	}
 }
 
