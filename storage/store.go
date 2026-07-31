@@ -80,23 +80,29 @@ type TemporalStorageConfig struct {
 	// Deprecated: use SSLInsecureSkipVerify instead.
 	RedisSSLInsecureSkipVerify bool `json:"redis_ssl_insecure_skip_verify" mapstructure:"redis_ssl_insecure_skip_verify"`
 
-	// IAMAuth configures cloud IAM-based authentication for the Redis/Valkey
-	// connection, using short-lived tokens instead of a static password.
+	// Configure the cloud provider's Identity and Access Management (IAM)
+	// solution for temporal storage (for example, GCP MemoryStore IAM)
 	IAMAuth IAMAuthConfig `json:"iam_auth" mapstructure:"iam_auth"`
 }
 
 // IAMAuthConfig configures cloud IAM-based authentication for the connection.
 // When enabled, the connector obtains short-lived credentials from the cloud
-// provider instead of using a static password.
+// instead of the traditional fixed username and password.
 type IAMAuthConfig struct {
-	// Provider is the cloud provider identifier, for example "gcp".
+	// Provider selects the cloud IAM provider. Currently supported: "gcp"
+	// (GCP Memorystore for Valkey and Redis Cluster).
 	Provider string `json:"provider" mapstructure:"provider"`
-	// ServiceAccount, when set, is the service account to impersonate.
+	// ServiceAccount, for GCP, optionally impersonates this service account to
+	// mint tokens instead of using the ambient Application Default Credentials
+	// identity. Leave empty to use the workload's own identity (Workload Identity
+	// on GKE, or GOOGLE_APPLICATION_CREDENTIALS).
 	ServiceAccount string `json:"service_account" mapstructure:"service_account"`
-	// TokenRefreshBeforeExpiry is how far ahead of expiry tokens are refreshed,
-	// as a Go duration string (for example "1m"). Empty uses the provider default.
+	// The access token issued by the IAM will be refreshed before expiry.
+	// Set the time period before expiry when that refresh will take place as
+	// a human readable duration (for example "2m30s", "5m").
+	// Defaults to "5m" (five minutes) when empty.
 	TokenRefreshBeforeExpiry string `json:"token_refresh_before_expiry" mapstructure:"token_refresh_before_expiry"`
-	// Enabled turns on IAM-based authentication.
+	// Set to true to use IAM-based authentication for this storage connection.
 	Enabled bool `json:"enabled" mapstructure:"enabled"`
 }
 
