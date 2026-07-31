@@ -81,13 +81,13 @@ type TemporalStorageConfig struct {
 	RedisSSLInsecureSkipVerify bool `json:"redis_ssl_insecure_skip_verify" mapstructure:"redis_ssl_insecure_skip_verify"`
 
 	// Configure the cloud provider's Identity and Access Management (IAM)
-	// solution for temporal storage (for example, GCP MemoryStore IAM)
+	// authentication solution for temporal storage (for example, GCP MemoryStore IAM)
+	// instead of the traditional fixed username and password.
 	IAMAuth IAMAuthConfig `json:"iam_auth" mapstructure:"iam_auth"`
 }
 
-// IAMAuthConfig configures cloud IAM-based authentication for the connection.
-// When enabled, the connector obtains short-lived credentials from the cloud
-// instead of the traditional fixed username and password.
+// Configure the cloud provider's Identity and Access Management (IAM) authentication
+// for temporal storage (Redis/Valkey). If enabled, the standard username and password are ignored.
 type IAMAuthConfig struct {
 	// Provider selects the cloud IAM provider. Currently supported: "gcp"
 	// (GCP Memorystore for Valkey and Redis Cluster).
