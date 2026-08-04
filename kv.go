@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 
+	"github.com/TykTechnologies/storage/kv"
 	"github.com/TykTechnologies/storage/kv/registry"
 	"github.com/TykTechnologies/storage/kv/resolver"
 	"github.com/sirupsen/logrus"
@@ -37,6 +38,7 @@ func resolveKVReferences(ctx context.Context, config *TykPumpConfiguration) erro
 	reg, err := registry.NewFromConfig(
 		ctx,
 		marshaledBytes,
+		registry.WithFactories(enterpriseKVFactories()),
 		registry.WithInitLogger(kvLogger{l: log}),
 	)
 	if err != nil {
@@ -59,4 +61,15 @@ func resolveKVReferences(ctx context.Context, config *TykPumpConfiguration) erro
 	}
 
 	return nil
+}
+
+func enterpriseKVFactories() map[kv.ProviderType]kv.ProviderFactory {
+	factories := make(map[kv.ProviderType]kv.ProviderFactory)
+
+	// FIX:: Uncomment after providers are added and released
+	// factories[kv.AWS] = aws.NewFactory()
+	// factories[kv.Azure] = azure.NewFactory()
+	// factories[kv.GCP] = gcp.NewFactory()
+
+	return factories
 }
