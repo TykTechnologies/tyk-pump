@@ -70,22 +70,18 @@ func processPumpEnvVars(pump Pump, log *logrus.Entry, cfg interface{}, defaultEn
 		}
 	}
 
-	warnOnUnresolvedKVReferences(log, pump.GetName(), cfg)
+	if hasUnresolvedKVReference(cfg) {
+		log.Fatalf("%s: a KV reference was set via a pump-specific env var; "+
+			"these are applied after resolution and are NOT dereferenced — put KV references in the config file instead",
+			pump.GetName())
+	}
 }
 
-// warnOnUnresolvedKVReferences flags KV references (kv://… or $kv{…}) that were
-// set through a pump-specific env-var override. Those overrides are applied at
-// pump init, after config resolution has already run, so a reference set this
-// way is never dereferenced and would reach the pump as a literal string. KV
-// references are only resolved from the config file.
-func warnOnUnresolvedKVReferences(log *logrus.Entry, name string, cfg any) {
+func hasUnresolvedKVReference(cfg any) bool {
 	raw, err := json.Marshal(cfg)
 	if err != nil {
-		return
+		return false
 	}
 
-	if resolver.ContainsReferences(raw) {
-		log.Warnf("%s: a KV reference was set via a pump-specific env var; "+
-			"these are applied after resolution and are not dereferenced — put KV references in the config file instead", name)
-	}
+	return resolver.ContainsReferences(raw)
 }

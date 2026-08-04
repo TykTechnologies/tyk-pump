@@ -3,10 +3,7 @@ package pumps
 import (
 	"testing"
 
-	"github.com/sirupsen/logrus"
-	logtest "github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 func TestGetPumpByName(t *testing.T) {
@@ -28,38 +25,23 @@ func TestGetPumpByName(t *testing.T) {
 	assert.Equal(t, sqlPump, &SQLPump{})
 }
 
-func TestWarnOnUnresolvedKVReferences_WarnsOnReference(t *testing.T) {
-	log, hook := newTestLogger()
+func TestHasUnresolvedKVReference(t *testing.T) {
+	cases := []struct {
+		name string
+		cfg  any
+		want bool
+	}{
+		{"whole-value reference", map[string]any{"connection_string": "kv://vault/db#password"}, true},
+		{"inline token", map[string]any{"url": "https://$kv{env:HOST}/v1"}, true},
+		{"reference nested in map", map[string]any{"meta": map[string]any{"dsn": "kv://secrets/dsn"}}, true},
+		{"malformed marker still detected", map[string]any{"x": "$kv{env:X"}, true},
+		{"plain value, no reference", map[string]any{"connection_string": "mongodb://localhost:27017/tyk"}, false},
+		{"empty config", map[string]any{}, false},
+	}
 
-	cfg := map[string]interface{}{"connection_string": "kv://vault/db#password"}
-	warnOnUnresolvedKVReferences(log, "mongo", cfg)
-
-	require.Len(t, hook.Entries, 1)
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-	assert.Contains(t, hook.LastEntry().Message, "mongo")
-	assert.Contains(t, hook.LastEntry().Message, "config file")
-}
-
-func TestWarnOnUnresolvedKVReferences_WarnsOnInlineToken(t *testing.T) {
-	log, hook := newTestLogger()
-
-	cfg := map[string]interface{}{"url": "https://$kv{env:HOST}/v1"}
-	warnOnUnresolvedKVReferences(log, "elasticsearch", cfg)
-
-	require.Len(t, hook.Entries, 1)
-	assert.Equal(t, logrus.WarnLevel, hook.LastEntry().Level)
-}
-
-func TestWarnOnUnresolvedKVReferences_SilentWithoutReferences(t *testing.T) {
-	log, hook := newTestLogger()
-
-	cfg := map[string]interface{}{"connection_string": "mongodb://localhost:27017/tyk"}
-	warnOnUnresolvedKVReferences(log, "mongo", cfg)
-
-	assert.Empty(t, hook.Entries)
-}
-
-func newTestLogger() (*logrus.Entry, *logtest.Hook) {
-	l, hook := logtest.NewNullLogger()
-	return logrus.NewEntry(l), hook
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			assert.Equal(t, tc.want, hasUnresolvedKVReference(tc.cfg))
+		})
+	}
 }
