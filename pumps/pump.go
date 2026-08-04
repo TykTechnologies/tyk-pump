@@ -85,7 +85,7 @@ func warnOnUnresolvedKVReferences(log *logrus.Entry, name string, cfg any) {
 	}
 
 	if resolver.ContainsReferences(raw) {
-		log.Warnf("pump %s: a KV reference was set via a pump-specific env var; "+
+		log.Warnf("%s: a KV reference was set via a pump-specific env var; "+
 			"these are applied after resolution and are not dereferenced — put KV references in the config file instead", name)
 	}
 }
