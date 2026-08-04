@@ -11,14 +11,20 @@ import (
 	"github.com/TykTechnologies/storage/kv"
 )
 
-func TestResolveKVReferences_NoStores_IsNoOp(t *testing.T) {
+func TestResolveKVReferences_NoStoresWithNoKVRefs_IsNoOp(t *testing.T) {
+	cfg := &TykPumpConfiguration{
+		StatsdConnectionString: "value",
+	}
+
+	require.NoError(t, resolveKVReferences(t.Context(), cfg))
+}
+
+func TestResolveKVReferences_NoStoresWithKVRefs_IsError(t *testing.T) {
 	cfg := &TykPumpConfiguration{
 		StatsdConnectionString: "kv://secrets/statsd",
 	}
 
-	require.NoError(t, resolveKVReferences(context.Background(), cfg))
-	assert.Equal(t, "kv://secrets/statsd", cfg.StatsdConnectionString,
-		"a benign kv-looking value must be preserved literally when no stores are defined")
+	require.Error(t, resolveKVReferences(t.Context(), cfg))
 }
 
 func TestResolveKVReferences_ResolvesTopLevel(t *testing.T) {

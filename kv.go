@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 
 	"github.com/TykTechnologies/storage/kv/registry"
@@ -17,17 +18,20 @@ func (a kvLogger) Debug(msg string, fields map[string]any) { a.l.WithFields(fiel
 func (a kvLogger) Error(msg string, fields map[string]any) { a.l.WithFields(fields).Error(msg) }
 
 // resolveKVReferences dereferences KV references in an already-loaded config:
-// it builds the KV registry from the kv section and resolves every reference in
-// a single pass. It is a no-op when no stores are configured.
+// it returns an error if the config contains KV references but no stores are
+// configured, and is a no-op when neither references nor stores are present.
 func resolveKVReferences(ctx context.Context, config *TykPumpConfiguration) error {
-	// No stores can be referenced.
-	if len(config.KV.Stores) == 0 {
-		return nil
-	}
-
 	marshaledBytes, err := json.Marshal(config)
 	if err != nil {
 		return fmt.Errorf("encode config: %w", err)
+	}
+
+	if len(config.KV.Stores) == 0 {
+		if resolver.ContainsReferences(marshaledBytes) {
+			return errors.New("config contains KV references but no stores are configured")
+		}
+
+		return nil
 	}
 
 	reg, err := registry.NewFromConfig(
@@ -44,9 +48,7 @@ func resolveKVReferences(ctx context.Context, config *TykPumpConfiguration) erro
 		}
 	}()
 
-	res := resolver.NewResolver(reg)
-
-	resolvedBytes, err := res.ResolveAll(ctx, marshaledBytes)
+	resolvedBytes, err := resolver.NewResolver(reg).ResolveAll(ctx, marshaledBytes)
 	if err != nil {
 		return fmt.Errorf("resolve KV references in config: %w", err)
 	}

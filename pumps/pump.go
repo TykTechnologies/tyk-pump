@@ -2,10 +2,12 @@ package pumps
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
 
+	"github.com/TykTechnologies/storage/kv/resolver"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/kelseyhightower/envconfig"
 	"github.com/sirupsen/logrus"
@@ -66,5 +68,24 @@ func processPumpEnvVars(pump Pump, log *logrus.Entry, cfg interface{}, defaultEn
 		if overrideErr != nil {
 			log.Error(fmt.Sprintf("Failed to process environment variables for %s pump %s with err:%v ", defaultEnv, pump.GetName(), overrideErr))
 		}
+	}
+
+	warnOnUnresolvedKVReferences(log, pump.GetName(), cfg)
+}
+
+// warnOnUnresolvedKVReferences flags KV references (kv://… or $kv{…}) that were
+// set through a pump-specific env-var override. Those overrides are applied at
+// pump init, after config resolution has already run, so a reference set this
+// way is never dereferenced and would reach the pump as a literal string. KV
+// references are only resolved from the config file.
+func warnOnUnresolvedKVReferences(log *logrus.Entry, name string, cfg any) {
+	raw, err := json.Marshal(cfg)
+	if err != nil {
+		return
+	}
+
+	if resolver.ContainsReferences(raw) {
+		log.Warnf("pump %s: a KV reference was set via a pump-specific env var; "+
+			"these are applied after resolution and are not dereferenced — put KV references in the config file instead", name)
 	}
 }
