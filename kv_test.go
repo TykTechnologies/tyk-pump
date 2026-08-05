@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"encoding/json"
 	"testing"
 
@@ -9,7 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/TykTechnologies/storage/kv"
-	"github.com/TykTechnologies/storage/kv/resolver"
 )
 
 func TestResolveKVReferences_NoStoresWithNoKVRefs_IsNoOp(t *testing.T) {
@@ -17,10 +15,10 @@ func TestResolveKVReferences_NoStoresWithNoKVRefs_IsNoOp(t *testing.T) {
 		StatsdConnectionString: "value",
 	}
 
-	reg, res, err := resolveKVReferences(t.Context(), cfg)
+	stores, err := resolveKVReferences(t.Context(), cfg)
 	require.NoError(t, err)
-	assert.Nil(t, reg, "no stores declared means nothing to keep open")
-	assert.Nil(t, res)
+	assert.Nil(t, stores, "no stores declared means nothing to keep open")
+	assert.Nil(t, stores.Resolver(), "a nil kvStores hands out no resolver")
 }
 
 func TestResolveKVReferences_NoStoresWithKVRefs_IsError(t *testing.T) {
@@ -28,10 +26,9 @@ func TestResolveKVReferences_NoStoresWithKVRefs_IsError(t *testing.T) {
 		StatsdConnectionString: "kv://secrets/statsd",
 	}
 
-	reg, res, err := resolveKVReferences(t.Context(), cfg)
+	stores, err := resolveKVReferences(t.Context(), cfg)
 	require.Error(t, err)
-	assert.Nil(t, reg)
-	assert.Nil(t, res)
+	assert.Nil(t, stores)
 }
 
 func TestResolveKVReferences_ResolvesTopLevel(t *testing.T) {
@@ -40,9 +37,9 @@ func TestResolveKVReferences_ResolvesTopLevel(t *testing.T) {
 		KV:                     inlineStore("secrets", map[string]string{"statsd": "statsd-host:8125"}),
 	}
 
-	res := mustResolve(t, cfg)
+	stores := mustResolve(t, cfg)
 	assert.Equal(t, "statsd-host:8125", cfg.StatsdConnectionString)
-	assert.NotNil(t, res, "declared stores must stay usable for the pump env var overrides")
+	assert.NotNil(t, stores.Resolver(), "declared stores must stay usable for the pump env var overrides")
 }
 
 func TestResolveKVReferences_ResolvesInsidePumpMeta(t *testing.T) {
@@ -50,7 +47,7 @@ func TestResolveKVReferences_ResolvesInsidePumpMeta(t *testing.T) {
 		Pumps: map[string]PumpConfig{
 			"sql": {
 				Type: "sql",
-				Meta: map[string]interface{}{
+				Meta: map[string]any{
 					"connection_string": "kv://secrets/sql_dsn",
 				},
 			},
@@ -69,10 +66,9 @@ func TestResolveKVReferences_MissingStoreFailsFast(t *testing.T) {
 		KV:                     inlineStore("secrets", map[string]string{"x": "y"}),
 	}
 
-	reg, res, err := resolveKVReferences(context.Background(), cfg)
+	stores, err := resolveKVReferences(t.Context(), cfg)
 	require.Error(t, err)
-	assert.Nil(t, reg, "a failed resolution must not leak an open registry")
-	assert.Nil(t, res)
+	assert.Nil(t, stores, "a failed resolution must not leak an open registry")
 }
 
 func TestResolveKVReferences_RoundTripPreservesValues(t *testing.T) {
@@ -95,48 +91,51 @@ func TestResolveKVReferences_ResolverStaysUsable(t *testing.T) {
 		KV:                     inlineStore("secrets", map[string]string{"statsd": "statsd-host:8125", "dsn": "postgres://db"}),
 	}
 
-	res := mustResolve(t, cfg)
-	require.NotNil(t, res)
+	stores := mustResolve(t, cfg)
+	require.NotNil(t, stores.Resolver())
 
-	resolved, err := res.ResolveAll(t.Context(), []byte(`{"connection_string":"kv://secrets/dsn"}`))
+	resolved, err := stores.Resolver().ResolveAll(t.Context(), []byte(`{"connection_string":"kv://secrets/dsn"}`))
 	require.NoError(t, err)
 	assert.JSONEq(t, `{"connection_string":"postgres://db"}`, string(resolved))
 }
 
-func TestCloseKVStores_IsSafeWithoutStores(t *testing.T) {
-	kvRegistry = nil
-	assert.NotPanics(t, func() { closeKVStores(context.Background()) })
+func TestKVStores_NilIsUsable(t *testing.T) {
+	var stores *kvStores
+
+	assert.Nil(t, stores.Resolver(), "a nil kvStores hands out no resolver")
+	assert.NotPanics(t, func() { stores.Close(t.Context()) })
 }
 
-func TestCloseKVRegistry_InvalidatesResolver(t *testing.T) {
+func TestKVStores_CloseInvalidatesResolver(t *testing.T) {
 	cfg := &TykPumpConfiguration{
 		StatsdConnectionString: "kv://secrets/statsd",
 		KV:                     inlineStore("secrets", map[string]string{"statsd": "statsd-host:8125"}),
 	}
 
-	reg, res, err := resolveKVReferences(context.Background(), cfg)
+	stores, err := resolveKVReferences(t.Context(), cfg)
 	require.NoError(t, err)
-	require.NotNil(t, res)
+	require.NotNil(t, stores.Resolver())
 
 	doc := []byte(`{"statsd_connection_string":"kv://secrets/statsd"}`)
 
-	_, err = res.ResolveAll(context.Background(), doc)
-	require.NoError(t, err, "the resolver must work while the registry is open")
+	_, err = stores.Resolver().ResolveAll(t.Context(), doc)
+	require.NoError(t, err, "the resolver must work while the stores are open")
 
-	closeKVRegistry(context.Background(), reg)
+	stores.Close(t.Context())
 
-	_, err = res.ResolveAll(context.Background(), doc)
-	require.Error(t, err, "closing the registry must invalidate the resolver")
+	_, err = stores.Resolver().ResolveAll(t.Context(), doc)
+	require.Error(t, err, "closing the stores must invalidate the resolver")
 }
 
-func mustResolve(t *testing.T, cfg *TykPumpConfiguration) resolver.Resolver {
+// mustResolve resolves cfg and closes the stores when the test ends.
+func mustResolve(t *testing.T, cfg *TykPumpConfiguration) *kvStores {
 	t.Helper()
 
-	reg, res, err := resolveKVReferences(context.Background(), cfg)
+	stores, err := resolveKVReferences(t.Context(), cfg)
 	require.NoError(t, err)
-	t.Cleanup(func() { closeKVRegistry(context.Background(), reg) })
+	t.Cleanup(func() { stores.Close(t.Context()) })
 
-	return res
+	return stores
 }
 
 func inlineStore(name string, data map[string]string) kv.Config {

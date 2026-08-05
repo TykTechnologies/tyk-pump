@@ -9,7 +9,6 @@ import (
 	"strings"
 
 	"github.com/TykTechnologies/storage/kv"
-	"github.com/TykTechnologies/storage/kv/registry"
 	"github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/kelseyhightower/envconfig"
@@ -271,7 +270,14 @@ type TykPumpConfiguration struct {
 	KV kv.Config `json:"kv" ignored:"true"`
 }
 
-func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
+// LoadConfig populates configStruct from the config file and the environment, then
+// dereferences any KV reference it holds.
+//
+// It returns the KV stores the resolution ran against, still open, because the pump
+// specific env var overrides resolve against them later - see initialisePumps. The
+// caller must Close them once every pump is up. The result is nil when the config
+// declares no KV stores, and Close is safe on nil.
+func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) *kvStores {
 	if !configStruct.shouldOmitConfigFile() {
 		configuration, err := ioutil.ReadFile(*filePath)
 		if err != nil {
@@ -301,36 +307,12 @@ func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
 		log.Fatal("error loading pumps env vars:", errLoadEnvPumps)
 	}
 
-	reg, res, err := resolveKVReferences(context.Background(), configStruct)
+	stores, err := resolveKVReferences(context.Background(), configStruct)
 	if err != nil {
 		log.Fatalf("Failed to resolve config: %v", err)
 	}
 
-	// Any registry a previous load left open is no longer referenced.
-	closeKVStores(context.Background())
-
-	// Pump specific env var overrides are applied later, when each individual pump
-	// initialises, and resolve against these same stores. The registry therefore stays
-	// open until closeKVStores is called, once every pump is up.
-	kvRegistry = reg
-	pumps.SetKVResolver(res)
-}
-
-// kvRegistry holds the KV stores declared in the config while configuration is still
-// being resolved. It is nil when the config declares no stores.
-var kvRegistry *registry.Registry
-
-// closeKVStores releases the KV store connections opened to resolve the configuration.
-// Pump init is the last thing that dereferences a KV reference, so there is nothing
-// left to resolve against them afterwards.
-//
-// The resolver is dropped in the same breath on purpose: a closed registry reports
-// every store as not found, so a resolve attempt that slipped through would fail with a
-// misleading "store not found" instead of the explicit "no KV stores are configured".
-func closeKVStores(ctx context.Context) {
-	closeKVRegistry(ctx, kvRegistry)
-	kvRegistry = nil
-	pumps.SetKVResolver(nil)
+	return stores
 }
 
 func (cfg *TykPumpConfiguration) shouldOmitConfigFile() bool {
