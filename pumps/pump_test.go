@@ -274,16 +274,22 @@ func TestProcessLegacyPumpEnvVars(t *testing.T) {
 		assert.Equal(t, "legacy_collection", pump.dbConf.CollectionName)
 	})
 
-	t.Run("is fatal when a deprecated var holds a KV reference", func(t *testing.T) {
+	t.Run("is fatal when a deprecated var holds a KV reference and names the offending vars", func(t *testing.T) {
 		out, exits := captureLog(t)
 		pump := newMongoPump()
 		t.Setenv(mongoPumpPrefix+"_MONGOURL", "kv://vault/mongo#url")
+		t.Setenv(mongoPumpPrefix+"_MONGOSSLPEMKEYFILE", "$kv{vault:mongo#pem}")
+		t.Setenv(mongoPumpPrefix+"_COLLECTIONNAME", "tyk_analytics")
 
 		processLegacyPumpEnvVars(pump, pump.log, pump.dbConf, mongoPumpPrefix, mongoDefaultEnv)
 
 		assert.Equal(t, 1, *exits)
-		assert.Contains(t, out.String(), "do not support KV references")
-		assert.Contains(t, out.String(), "PMP_MONGO_MONGOURL")
+		// The fatal must name every offending variable, and only those - not the
+		// plain-value one - so the user knows exactly which to fix.
+		fatalLine := lastLineContaining(out.String(), "do not support KV references")
+		assert.Contains(t, fatalLine, mongoPumpPrefix+"_MONGOURL")
+		assert.Contains(t, fatalLine, mongoPumpPrefix+"_MONGOSSLPEMKEYFILE")
+		assert.NotContains(t, fatalLine, mongoPumpPrefix+"_COLLECTIONNAME")
 	})
 
 	t.Run("points the uptime pump at its own replacement prefix", func(t *testing.T) {
@@ -325,4 +331,19 @@ func captureLog(t *testing.T) (*bytes.Buffer, *int) {
 	})
 
 	return buf, &exits
+}
+
+// lastLineContaining returns the last log line in out that contains substr, so a single
+// log entry can be asserted on without the surrounding entries (e.g. the deprecation
+// warning) interfering.
+func lastLineContaining(out, substr string) string {
+	var match string
+
+	for _, line := range strings.Split(out, "\n") {
+		if strings.Contains(line, substr) {
+			match = line
+		}
+	}
+
+	return match
 }

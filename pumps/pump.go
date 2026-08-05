@@ -128,8 +128,8 @@ func processLegacyPumpEnvVars(pump Pump, log *logrus.Entry, cfg interface{}, leg
 			strings.Join(renamedEnvVars(names, legacyPrefix, replacementPrefix), ", "))
 
 		if refs := envVarsWithKVReference(names); len(refs) > 0 {
-			log.Fatalf("%s: the deprecated %s_* environment variables do not support KV references, but one was set",
-				pump.GetName(), legacyPrefix)
+			log.Fatalf("%s: the deprecated %s_* environment variables do not support KV references, but one was set in: %s",
+				pump.GetName(), legacyPrefix, strings.Join(refs, ", "))
 		}
 	}
 
