@@ -452,7 +452,9 @@ The Mongo pumps also honour a set of environment variables that pre-date the
 These are **deprecated** and will be removed in a future releases. Pump logs a warning
 naming each variable and its replacement whenever one is set. If you have set a custom
 `meta_env_prefix` for a pump, the replacement uses that prefix instead of the default
-shown above. They also **do not support KV references**.
+shown above. They also **do not support KV references**: a `kv://` or `$kv{...}` value
+set through one of them is a fatal startup error. Use the config file or the
+`TYK_PMP_*` equivalent, both of which resolve references normally.
 
 ###### Self Healing
 
