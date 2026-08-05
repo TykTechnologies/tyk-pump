@@ -21,6 +21,14 @@ const PUMPS_ENV_META_PREFIX = "_META"
 // top level configuration, i.e. TYK_PMP_UPTIMEPUMPCONFIG_MONGOURL.
 const uptimeConfEnvPrefix = "TYK_PMP_UPTIMEPUMPCONFIG"
 
+var kvResolver resolver.Resolver
+
+// SetKVResolver installs the resolver used for pump specific env var overrides. Pass
+// nil to drop it once every pump is up and its stores are closed.
+func SetKVResolver(r resolver.Resolver) {
+	kvResolver = r
+}
+
 type Pump interface {
 	GetName() string
 	New() Pump
@@ -60,35 +68,47 @@ func GetPumpByName(name string) (Pump, error) {
 	return nil, errors.New(name + " Not found")
 }
 
-func processPumpEnvVars(pump Pump, log *logrus.Entry, cfg interface{}, defaultEnv string) {
-	if envVar := pump.GetEnvPrefix(); envVar != "" {
-		log.Debug(fmt.Sprintf("Checking %s env variables with prefix %s", pump.GetName(), envVar))
-		overrideErr := envconfig.Process(envVar, cfg)
-		if overrideErr != nil {
-			log.Error(fmt.Sprintf("Failed to process environment variables for %s pump %s with err:%v ", envVar, pump.GetName(), overrideErr))
-		}
-	} else {
-		log.Debug(fmt.Sprintf("Checking default %s env variables with prefix %s", pump.GetName(), defaultEnv))
-		overrideErr := envconfig.Process(defaultEnv, cfg)
-		if overrideErr != nil {
-			log.Error(fmt.Sprintf("Failed to process environment variables for %s pump %s with err:%v ", defaultEnv, pump.GetName(), overrideErr))
-		}
+func processPumpEnvVars(pump Pump, log *logrus.Entry, cfg any, defaultEnv string) {
+	prefix := effectiveEnvPrefix(pump, defaultEnv)
+
+	log.Debug(fmt.Sprintf("Checking %s env variables with prefix %s", pump.GetName(), prefix))
+
+	if overrideErr := envconfig.Process(prefix, cfg); overrideErr != nil {
+		log.Error(fmt.Sprintf("Failed to process environment variables for %s pump %s with err:%v ", prefix, pump.GetName(), overrideErr))
 	}
 
-	if hasUnresolvedKVReference(cfg) {
-		log.Fatalf("%s: a KV reference was set via a pump-specific env var; "+
-			"these are applied after resolution and are NOT dereferenced — put KV references in the config file instead",
-			pump.GetName())
+	if err := resolveKVReferences(context.Background(), cfg); err != nil {
+		log.Fatalf("%s: %v", pump.GetName(), err)
 	}
 }
 
-func hasUnresolvedKVReference(cfg any) bool {
+// resolveKVReferences dereferences the KV references cfg holds, if any, against the
+// stores declared in the configuration. cfg is only rewritten when it actually holds a
+// reference, so a configuration that uses none is left exactly as envconfig left it.
+func resolveKVReferences(ctx context.Context, cfg any) error {
 	raw, err := json.Marshal(cfg)
 	if err != nil {
-		return false
+		return fmt.Errorf("encode config: %w", err)
 	}
 
-	return resolver.ContainsReferences(raw)
+	if !resolver.ContainsReferences(raw) {
+		return nil
+	}
+
+	if kvResolver == nil {
+		return errors.New("a KV reference was set via a pump specific env var but no KV stores are configured")
+	}
+
+	resolved, err := kvResolver.ResolveAll(ctx, raw)
+	if err != nil {
+		return fmt.Errorf("resolve KV references set via pump specific env vars: %w", err)
+	}
+
+	if err := json.Unmarshal(resolved, cfg); err != nil {
+		return fmt.Errorf("decode resolved config: %w", err)
+	}
+
+	return nil
 }
 
 // processLegacyPumpEnvVars applies the deprecated, pump specific env var overrides

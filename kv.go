@@ -21,18 +21,26 @@ func (a kvLogger) Error(msg string, fields map[string]any) { a.l.WithFields(fiel
 // resolveKVReferences dereferences KV references in an already-loaded config:
 // it returns an error if the config contains KV references but no stores are
 // configured, and is a no-op when neither references nor stores are present.
-func resolveKVReferences(ctx context.Context, config *TykPumpConfiguration) error {
+//
+// It returns the store registry alongside the resolver built from it. The pump
+// specific env var overrides are applied later, when each pump initialises, and have
+// to resolve against the same stores - so the registry cannot be closed here. The
+// caller owns closing it.
+func resolveKVReferences(
+	ctx context.Context,
+	config *TykPumpConfiguration,
+) (*registry.Registry, resolver.Resolver, error) {
 	marshaledBytes, err := json.Marshal(config)
 	if err != nil {
-		return fmt.Errorf("encode config: %w", err)
+		return nil, nil, fmt.Errorf("encode config: %w", err)
 	}
 
 	if len(config.KV.Stores) == 0 {
 		if resolver.ContainsReferences(marshaledBytes) {
-			return errors.New("config contains KV references but no stores are configured")
+			return nil, nil, errors.New("config contains KV references but no stores are configured")
 		}
 
-		return nil
+		return nil, nil, nil
 	}
 
 	reg, err := registry.NewFromConfig(
@@ -42,25 +50,36 @@ func resolveKVReferences(ctx context.Context, config *TykPumpConfiguration) erro
 		registry.WithInitLogger(kvLogger{l: log}),
 	)
 	if err != nil {
-		return fmt.Errorf("initialize KV registry: %w", err)
+		return nil, nil, fmt.Errorf("initialize KV registry: %w", err)
 	}
-	defer func() {
-		if cerr := reg.Close(context.WithoutCancel(ctx)); cerr != nil {
-			log.WithError(cerr).Warn("failed to close KV store registry after config resolution")
-		}
-	}()
 
-	resolvedBytes, err := resolver.NewResolver(reg).ResolveAll(ctx, marshaledBytes)
+	res := resolver.NewResolver(reg)
+
+	resolvedBytes, err := res.ResolveAll(ctx, marshaledBytes)
 	if err != nil {
-		return fmt.Errorf("resolve KV references in config: %w", err)
+		closeKVRegistry(ctx, reg)
+
+		return nil, nil, fmt.Errorf("resolve KV references in config: %w", err)
 	}
 
 	err = json.Unmarshal(resolvedBytes, config)
 	if err != nil {
-		return fmt.Errorf("decode resolved config: %w", err)
+		closeKVRegistry(ctx, reg)
+
+		return nil, nil, fmt.Errorf("decode resolved config: %w", err)
 	}
 
-	return nil
+	return reg, res, nil
+}
+
+func closeKVRegistry(ctx context.Context, reg *registry.Registry) {
+	if reg == nil {
+		return
+	}
+
+	if err := reg.Close(context.WithoutCancel(ctx)); err != nil {
+		log.WithError(err).Warn("failed to close KV store registry")
+	}
 }
 
 func enterpriseKVFactories() map[kv.ProviderType]kv.ProviderFactory {

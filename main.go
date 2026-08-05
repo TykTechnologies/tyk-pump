@@ -494,6 +494,10 @@ func main() {
 
 	// prime the pumps
 	initialisePumps()
+
+	// Pump init is the last thing that can dereference a KV reference.
+	closeKVStores(context.Background())
+
 	if *demoMode != "" {
 		log.Info("BUILDING DEMO DATA AND EXITING...")
 		log.Warning("Starting from date: ", time.Now().AddDate(0, 0, -30))
