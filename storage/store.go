@@ -79,6 +79,31 @@ type TemporalStorageConfig struct {
 	// Set this to `true` to tell Pump to ignore database's cert validation.
 	// Deprecated: use SSLInsecureSkipVerify instead.
 	RedisSSLInsecureSkipVerify bool `json:"redis_ssl_insecure_skip_verify" mapstructure:"redis_ssl_insecure_skip_verify"`
+
+	// Configure the cloud provider's Identity and Access Management (IAM)
+	// authentication solution for temporal storage (for example, GCP MemoryStore IAM)
+	// instead of the traditional fixed username and password.
+	IAMAuth IAMAuthConfig `json:"iam_auth" mapstructure:"iam_auth"`
+}
+
+// Configure the cloud provider's Identity and Access Management (IAM) authentication
+// for temporal storage (Redis/Valkey). If enabled, the standard username and password are ignored.
+type IAMAuthConfig struct {
+	// Provider selects the cloud IAM provider. Currently supported: "gcp"
+	// (GCP Memorystore for Valkey and Redis Cluster).
+	Provider string `json:"provider" mapstructure:"provider"`
+	// ServiceAccount, for GCP, optionally impersonates this service account to
+	// mint tokens instead of using the ambient Application Default Credentials
+	// identity. Leave empty to use the workload's own identity (Workload Identity
+	// on GKE, or GOOGLE_APPLICATION_CREDENTIALS).
+	ServiceAccount string `json:"service_account" mapstructure:"service_account"`
+	// The access token issued by the IAM will be refreshed before expiry.
+	// Set the time period before expiry when that refresh will take place as
+	// a human readable duration (for example "2m30s", "5m").
+	// Defaults to "5m" (five minutes) when empty.
+	TokenRefreshBeforeExpiry string `json:"token_refresh_before_expiry" mapstructure:"token_refresh_before_expiry"`
+	// Set to true to use IAM-based authentication for this storage connection.
+	Enabled bool `json:"enabled" mapstructure:"enabled"`
 }
 
 type EnvMapString map[string]string

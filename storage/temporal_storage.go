@@ -182,7 +182,7 @@ func (r *TemporalStorageHandler) resetConnection(config *TemporalStorageConfig) 
 		MinVersion:         config.SSLMinVersion,
 	}
 
-	conn, kv, list, err := createConnector(opts, tlsOptions)
+	conn, kv, list, err := createConnector(config, opts, tlsOptions)
 	if err != nil {
 		return err
 	}
@@ -194,8 +194,23 @@ func (r *TemporalStorageHandler) resetConnection(config *TemporalStorageConfig) 
 	return nil
 }
 
-func createConnector(opts *model.RedisOptions, tlsOptions *model.TLS) (model.Connector, model.KeyValue, model.List, error) {
-	conn, err := connector.NewConnector(model.RedisV9Type, model.WithRedisConfig(opts), model.WithTLS(tlsOptions))
+func createConnector(config *TemporalStorageConfig, opts *model.RedisOptions, tlsOptions *model.TLS) (model.Connector, model.KeyValue, model.List, error) {
+	connectorOpts := []model.Option{model.WithRedisConfig(opts), model.WithTLS(tlsOptions)}
+
+	if config.IAMAuth.Enabled {
+		iamOpt, err := buildIAMAuthOption(context.Background(), config.IAMAuth)
+		if err != nil {
+			return nil, nil, nil, err
+		}
+		if !(config.UseSSL || config.RedisUseSSL) {
+			log.WithFields(logrus.Fields{"prefix": logPrefix}).Warning(
+				"IAM auth is enabled without TLS (use_ssl=false); " +
+					"in-transit encryption is strongly recommended for cloud-managed Redis/Valkey")
+		}
+		connectorOpts = append(connectorOpts, iamOpt)
+	}
+
+	conn, err := connector.NewConnector(model.RedisV9Type, connectorOpts...)
 	if err != nil {
 		return nil, nil, nil, err
 	}
