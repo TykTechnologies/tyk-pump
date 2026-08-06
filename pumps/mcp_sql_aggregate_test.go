@@ -110,14 +110,7 @@ func TestMCPSQLAggregatePump_WriteData(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	tableName := analytics.AggregateMCPSQLTable
 
-	// OmitIndexCreation keeps Init from spawning the background CREATE INDEX
-	// CONCURRENTLY goroutine. That goroutine outlives the subtest that started it and
-	// races the subtest's DROP TABLE cleanup; when the drop loses, the next subtest finds
-	// the table still populated, its writes accumulate onto the stale rows, and the
-	// expected counts no longer match. Index creation is covered by the Init subtests
-	// above and by TestEnsureIndexSQLAggregate, so nothing is lost here.
 	conf := SQLAggregatePumpConf{
-		OmitIndexCreation: true,
 		SQLConf: SQLConf{
 			Type:             "postgres",
 			ConnectionString: getTestPostgresConnectionString(),
