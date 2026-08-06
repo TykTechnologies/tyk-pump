@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"regexp"
+	"sort"
 	"sync"
 	"time"
 
@@ -400,6 +401,11 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 
 				recs = append(recs, rec)
 			}
+
+			// Deterministic lock ordering - see the note in SQLAggregatePump.DoAggregatedWriting
+			// (TT-9424). recs is rebuilt per org and per day-shard, so this must stay in the
+			// innermost scope: hoisting it out would leave later orgs and shards unsorted.
+			sort.Slice(recs, func(i, j int) bool { return recs[i].ID < recs[j].ID })
 
 			for i := 0; i < len(recs); i += c.SQLConf.BatchSize {
 				ends := i + c.SQLConf.BatchSize
