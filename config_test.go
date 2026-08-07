@@ -5,7 +5,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/TykTechnologies/storage/kv"
+	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestToUpperPumps(t *testing.T) {
@@ -277,4 +280,40 @@ func TestLoadPumpsByEnv(t *testing.T) {
 		assert.Equal(t, PUMPS_ENV_PREFIX+"_ELASTICSEARCH"+PUMPS_ENV_META_PREFIX,
 			cfg.Pumps["ELASTICSEARCH"].Meta["meta_env_prefix"])
 	})
+}
+
+func TestKVStoresFromEnv(t *testing.T) {
+	t.Setenv("TYK_PMP_KV_STORES", `{
+		"vault-prod": {
+			"type": "hashicorp_vault",
+			"required": true,
+			"config": {"address": "http://localhost:8200", "namespace": "team-a"}
+		}
+	}`)
+
+	cfg := &TykPumpConfiguration{}
+	require.NoError(t, envconfig.Process(ENV_PREVIX, cfg))
+
+	require.Len(t, cfg.KV.Stores, 1)
+	sc, ok := cfg.KV.Stores["vault-prod"]
+	require.True(t, ok, "TYK_PMP_KV_STORES must define vault-prod")
+	require.Equal(t, kv.Vault, sc.Type)
+	require.True(t, sc.Required)
+	require.JSONEq(t, `{"address": "http://localhost:8200", "namespace": "team-a"}`, string(sc.Config))
+}
+
+func TestKVStoresFromEnvOverridesFile(t *testing.T) {
+	t.Setenv("TYK_PMP_KV_STORES", `{"vault-prod": {"type": "hashicorp_vault", "config": {"namespace": "from-env"}}}`)
+
+	cfg := &TykPumpConfiguration{}
+	cfg.KV.Stores = kv.Stores{
+		"vault-prod": {Type: kv.Vault, Config: []byte(`{"namespace": "from-file"}`)},
+		"local-file": {Type: kv.File, Config: []byte(`{"base_path": "/etc/secrets"}`)},
+	}
+
+	require.NoError(t, envconfig.Process(ENV_PREVIX, cfg))
+
+	require.Len(t, cfg.KV.Stores, 2)
+	require.JSONEq(t, `{"namespace": "from-env"}`, string(cfg.KV.Stores["vault-prod"].Config), "env overrides the file entry")
+	require.Equal(t, kv.File, cfg.KV.Stores["local-file"].Type, "entry absent from env JSON is retained")
 }

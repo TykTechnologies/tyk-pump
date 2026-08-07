@@ -265,9 +265,11 @@ type TykPumpConfiguration struct {
 	// variables, or inline values) that other configuration values can reference.
 	// This lets sensitive settings like database credentials or the admin secret
 	// be kept in an external store instead of the config file; each referenced
-	// value is resolved from its store once, at startup. This section can only be
-	// set in the config file, not through environment variables.
-	KV kv.Config `json:"kv" ignored:"true"`
+	// value is resolved from its store once, at startup. Store definitions may be
+	// set in the config file or supplied as a JSON object through the
+	// TYK_PMP_KV_STORES environment variable; the environment overrides and adds
+	// stores by name, leaving file-defined stores it does not name untouched.
+	KV kv.Config `json:"kv"`
 }
 
 // LoadConfig populates configStruct from the config file and the environment, then
