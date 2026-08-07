@@ -8,7 +8,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
 
@@ -184,10 +183,7 @@ func (m *MongoAggregatePump) Init(config interface{}) error {
 	processPumpEnvVars(m, m.log, m.dbConf, mongoAggregateDefaultEnv)
 
 	// we keep this env check for backward compatibility
-	overrideErr := envconfig.Process(mongoAggregatePumpPrefix, m.dbConf)
-	if overrideErr != nil {
-		m.log.Error("Failed to process environment variables for mongo aggregate pump: ", overrideErr)
-	}
+	processLegacyPumpEnvVars(m, m.log, m.dbConf, mongoAggregatePumpPrefix, effectiveEnvPrefix(m, mongoAggregateDefaultEnv))
 
 	if m.dbConf.ThresholdLenTagList == 0 {
 		m.dbConf.ThresholdLenTagList = ThresholdLenTagList

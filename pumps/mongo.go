@@ -14,7 +14,6 @@ import (
 	"github.com/TykTechnologies/storage/persistent"
 	"github.com/TykTechnologies/storage/persistent/model"
 	"github.com/TykTechnologies/tyk-pump/analytics"
-	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/mapstructure"
 	"github.com/sirupsen/logrus"
 
@@ -216,17 +215,11 @@ func (m *MongoPump) Init(config interface{}) error {
 		processPumpEnvVars(m, m.log, m.dbConf, mongoDefaultEnv)
 
 		// we keep this env check for backward compatibility
-		overrideErr := envconfig.Process(mongoPumpPrefix, m.dbConf)
-		if overrideErr != nil {
-			m.log.Error("Failed to process environment variables for mongo pump: ", overrideErr)
-		}
+		processLegacyPumpEnvVars(m, m.log, m.dbConf, mongoPumpPrefix, effectiveEnvPrefix(m, mongoDefaultEnv))
 	} else if m.dbConf.MongoURL == "" {
 		m.log.Debug("Trying to set uptime pump with PMP_MONGO env vars")
 		// we keep this env check for backward compatibility
-		overrideErr := envconfig.Process(mongoPumpPrefix, m.dbConf)
-		if overrideErr != nil {
-			m.log.Error("Failed to process environment variables for mongo pump: ", overrideErr)
-		}
+		processLegacyPumpEnvVars(m, m.log, m.dbConf, mongoPumpPrefix, uptimeConfEnvPrefix)
 
 		m.dbConf.CollectionName = "tyk_uptime_analytics"
 	}
