@@ -19,9 +19,16 @@ import (
 	"github.com/aws/aws-sdk-go-v2/service/kinesis/types"
 )
 
+// KinesisClient is the interface for Kinesis client operations used by KinesisPump.
+type KinesisClient interface {
+	DescribeStream(ctx context.Context, params *kinesis.DescribeStreamInput, optFns ...func(*kinesis.Options)) (*kinesis.DescribeStreamOutput, error)
+	StartStreamEncryption(ctx context.Context, params *kinesis.StartStreamEncryptionInput, optFns ...func(*kinesis.Options)) (*kinesis.StartStreamEncryptionOutput, error)
+	PutRecords(ctx context.Context, params *kinesis.PutRecordsInput, optFns ...func(*kinesis.Options)) (*kinesis.PutRecordsOutput, error)
+}
+
 // KinesisPump is a Tyk Pump that sends analytics records to AWS Kinesis.
 type KinesisPump struct {
-	client      *kinesis.Client
+	client      KinesisClient
 	kinesisConf *KinesisConf
 	log         *logrus.Entry
 	CommonPumpConfig
@@ -191,6 +198,10 @@ func (p *KinesisPump) WriteData(ctx context.Context, records []interface{}) erro
 				PartitionKey: aws.String(fmt.Sprint(n)),
 			}
 			entries = append(entries, entry)
+		}
+
+		if len(entries) == 0 {
+			continue
 		}
 
 		input := &kinesis.PutRecordsInput{
