@@ -29,6 +29,12 @@ func SetKVResolver(r resolver.Resolver) {
 	kvResolver = r
 }
 
+// GetKVResolver returns the resolver currently installed for pump specific env var
+// overrides, or nil when none is installed.
+func GetKVResolver() resolver.Resolver {
+	return kvResolver
+}
+
 type Pump interface {
 	GetName() string
 	New() Pump
