@@ -139,6 +139,7 @@ func mustResolve(t *testing.T, cfg *TykPumpConfiguration) *kvStores {
 }
 
 func inlineStore(name string, data map[string]string) kv.Config {
+	//nolint:errcheck
 	raw, _ := json.Marshal(map[string]any{"data": data})
 	return kv.Config{
 		Stores: map[string]kv.StoreConfig{
