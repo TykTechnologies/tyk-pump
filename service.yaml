@@ -1,0 +1,90 @@
+apiVersion: backstage.io/v1alpha1
+kind: Component
+metadata:
+  name: Tyk Pump
+spec:
+  type: service
+  dependsOnExt:
+    - name: Ubuntu
+      cpe: cpe:/o:canonical:ubuntu_linux
+      versions:
+        - 20.4
+    - name: Debian
+      id: debian
+      cpe: cpe:/o:debian:debian_linux
+      versions:
+        - 10
+        - 11
+    - name: RedHat
+      cpe: cpe:/o:redhat:enterprise_linux
+      versions:
+        - 7
+        - 8
+    - name: MongoDB
+      cpe: cpe:/a:mongodb:mongodb
+      versions:
+        - 4.2
+        - 4.4
+        - 5.0
+        - 6.0
+    - name: PostgreSQL
+      cpe: cpe:/a:postgresql:postgresql
+      versions:
+        - 9
+        - 10
+        - 11
+        - 12
+        - 13
+        - 14
+    - name: Go
+      cpe: cpe:/a:golang:go
+      versions:
+        - 1.16
+    - name: Redis
+      cpe: cpe:/a:redislabs:redis
+      versions:
+        - 5.0
+    - name: AWS DocumentDB
+      cpe: cpe:/a:amazon:aws_documentdb
+      versions:
+        - 3.6
+        - 4.0
+    - name: Azure CosmosDB Mongo
+      cpe: cpe:/a:microsoft:azure_cosmosdb_nosql
+      versions:
+        - 3.6
+        - 4.2
+    - name: ElasticSearch
+      cpe: cpe:/a:elastic:elasticsearch
+      versions:
+        - 3
+        - 5
+        - 6
+        - 7
+    - name: Graylog
+      cpe: cpe:2.3:a:graylog:graylog
+      versions:
+        - 2.3
+    - name: InfluxDB
+      cpe: cpe:/a:influxdata:influxdb
+      versions:
+        - 1.0
+        - 2.0
+    - name: Apache Kafka
+      cpe: cpe:/a:apache:kafka
+      versions:
+        - 3.4
+        - 3.3
+        - 3.2
+        - 3.1
+        - 3.0
+        - 2.8
+    - name: Prometheus
+      cpe: cpe:2.3:a:prometheus:prometheus
+      versions:
+        - 2.37
+    - name: Splunk
+      cpe: cpe:/a:splunk:splunk
+      versions:
+        - 8.2
+        - 9.0
