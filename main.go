@@ -66,11 +66,14 @@ func showDecodeDeprecationWarnings() {
 	}
 }
 
-func Init() {
+// Init loads the configuration and prepares the process. It returns the KV stores the
+// configuration was resolved against, which the caller must Close once every pump has
+// initialised - see LoadConfig.
+func Init() *kvStores {
 	SystemConfig = TykPumpConfiguration{}
 
 	kingpin.Parse()
-	LoadConfig(conf, &SystemConfig)
+	kvStores := LoadConfig(conf, &SystemConfig)
 
 	showDecodeDeprecationWarnings()
 
@@ -112,6 +115,8 @@ func Init() {
 	if *debugMode {
 		log.Level = logrus.DebugLevel
 	}
+
+	return kvStores
 }
 
 func setupAnalyticsStore() {
@@ -182,7 +187,16 @@ func storeVersion() {
 	}
 }
 
-func initialisePumps() {
+// initialisePumps builds and initialises every configured pump.
+//
+// Each pump applies its own env var overrides while it initialises, which can introduce
+// KV references the config-wide resolution never saw. kvStores is what those resolve
+// against, and it is only reachable to the pumps for the duration of this call - after
+// it, nothing dereferences a reference again.
+func initialisePumps(kvStores *kvStores) {
+	pumps.SetKVResolver(kvStores.Resolver())
+	defer pumps.SetKVResolver(nil)
+
 	Pumps = []pumps.Pump{}
 
 	for key, pmp := range SystemConfig.Pumps {
@@ -481,7 +495,7 @@ func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, pu
 }
 
 func main() {
-	Init()
+	kvStores := Init()
 	SetupInstrumentation()
 	go server.ServeHealthCheck(SystemConfig.HealthCheckEndpointName, SystemConfig.HealthCheckEndpointPort, SystemConfig.HTTPProfile)
 
@@ -493,7 +507,11 @@ func main() {
 	setupAnalyticsStore()
 
 	// prime the pumps
-	initialisePumps()
+	initialisePumps(kvStores)
+
+	// Pump init is the last thing that dereferences a KV reference.
+	kvStores.Close(context.Background())
+
 	if *demoMode != "" {
 		log.Info("BUILDING DEMO DATA AND EXITING...")
 		log.Warning("Starting from date: ", time.Now().AddDate(0, 0, -30))

@@ -10,6 +10,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/TykTechnologies/storage/kv/resolver"
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/sirupsen/logrus"
@@ -474,4 +475,121 @@ func TestDeprecationWarnings(t *testing.T) {
 			}
 		})
 	}
+}
+
+type initRecord struct {
+	resolverAtInit resolver.Resolver
+	called         bool
+}
+
+type recordingPump struct {
+	rec *initRecord
+	pumps.CommonPumpConfig
+}
+
+func (p *recordingPump) New() pumps.Pump { return &recordingPump{rec: p.rec} }
+
+func (p *recordingPump) GetName() string { return "Recording Pump" }
+
+func (p *recordingPump) Init(interface{}) error {
+	p.rec.called = true
+	p.rec.resolverAtInit = pumps.GetKVResolver()
+	return nil
+}
+
+func (p *recordingPump) WriteData(context.Context, []interface{}) error { return nil }
+
+type spyResolver struct{}
+
+func (s *spyResolver) Resolve(_ context.Context, input string) (string, error) { return input, nil }
+
+func (s *spyResolver) ResolveAll(_ context.Context, rawJSON []byte) ([]byte, error) {
+	return rawJSON, nil
+}
+
+func registerRecordingPump(t *testing.T, pumpType string) *initRecord {
+	t.Helper()
+
+	rec := &initRecord{}
+	pumps.AvailablePumps[pumpType] = &recordingPump{rec: rec}
+
+	origPumps := Pumps
+	origConfig := SystemConfig
+	t.Cleanup(func() {
+		delete(pumps.AvailablePumps, pumpType)
+		Pumps = origPumps
+		SystemConfig = origConfig
+		pumps.SetKVResolver(nil)
+	})
+
+	return rec
+}
+
+func TestInitialisePumps_BuildsConfiguredPumps(t *testing.T) {
+	registerRecordingPump(t, "recording")
+
+	SystemConfig = TykPumpConfiguration{
+		DontPurgeUptimeData: true,
+		Pumps: map[string]PumpConfig{
+			"first":  {Type: "recording"},
+			"second": {Type: "recording"},
+		},
+	}
+
+	initialisePumps(nil)
+
+	assert.Len(t, Pumps, 2, "every configured pump must be initialised")
+}
+
+func TestInitialisePumps_SkipsUnknownPumpType(t *testing.T) {
+	registerRecordingPump(t, "recording")
+
+	SystemConfig = TykPumpConfiguration{
+		DontPurgeUptimeData: true,
+		Pumps: map[string]PumpConfig{
+			"known":   {Type: "recording"},
+			"unknown": {Type: "does-not-exist"},
+		},
+	}
+
+	initialisePumps(nil)
+
+	assert.Len(t, Pumps, 1, "an unknown pump type must be skipped, not fatal")
+}
+
+func TestInitialisePumps_InstallsResolverDuringInitAndClearsAfter(t *testing.T) {
+	rec := registerRecordingPump(t, "recording")
+
+	spy := &spyResolver{}
+	stores := &kvStores{resolver: spy}
+
+	SystemConfig = TykPumpConfiguration{
+		DontPurgeUptimeData: true,
+		Pumps: map[string]PumpConfig{
+			"only": {Type: "recording"},
+		},
+	}
+
+	initialisePumps(stores)
+
+	assert.True(t, rec.called, "the pump must have initialised")
+	assert.Same(t, spy, rec.resolverAtInit, "the resolver from kvStores must be installed while pumps initialise")
+	assert.Nil(t, pumps.GetKVResolver(), "the resolver must be cleared once every pump is up")
+}
+
+func TestInitialisePumps_NilKVStoresInstallsNoResolver(t *testing.T) {
+	rec := registerRecordingPump(t, "recording")
+
+	SystemConfig = TykPumpConfiguration{
+		DontPurgeUptimeData: true,
+		Pumps: map[string]PumpConfig{
+			"only": {Type: "recording"},
+		},
+	}
+
+	assert.NotPanics(t, func() { initialisePumps(nil) }, "a nil kvStores must be safe")
+
+	assert.True(t, rec.called, "the pump must have initialised")
+	assert.Nil(t, rec.resolverAtInit, "a nil kvStores installs no resolver")
+	assert.Len(t, Pumps, 1)
 }

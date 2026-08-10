@@ -5,7 +5,6 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/kelseyhightower/envconfig"
 	"github.com/mitchellh/mapstructure"
 
 	"gopkg.in/vmihailenco/msgpack.v2"
@@ -87,10 +86,7 @@ func (m *MongoSelectivePump) Init(config interface{}) error {
 	processPumpEnvVars(m, m.log, m.dbConf, mongoSelectiveDefaultEnv)
 
 	// we keep this env check for backward compatibility
-	overrideErr := envconfig.Process(mongoSelectivePumpPrefix, m.dbConf)
-	if overrideErr != nil {
-		m.log.Error("Failed to process environment variables for mongo selective pump: ", overrideErr)
-	}
+	processLegacyPumpEnvVars(m, m.log, m.dbConf, mongoSelectivePumpPrefix, effectiveEnvPrefix(m, mongoSelectiveDefaultEnv))
 
 	if m.dbConf.MaxInsertBatchSizeBytes == 0 {
 		m.log.Info("-- No max batch size set, defaulting to 10MB")
