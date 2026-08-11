@@ -210,16 +210,16 @@ func TestSerializer_OriginalPathAndListenPathRoundTrip(t *testing.T) {
 func BenchmarkProtobufEncoding(b *testing.B) {
 	serializer := NewAnalyticsSerializer(PROTOBUF_SERIALIZER)
 	records := []analytics.AnalyticsRecord{
-		demo.GenerateRandomAnalyticRecord("org_1", true),
-		demo.GenerateRandomAnalyticRecord("org_1", true),
-		demo.GenerateRandomAnalyticRecord("org_1", true),
-		demo.GenerateRandomAnalyticRecord("org_1", true),
-		demo.GenerateRandomAnalyticRecord("org_1", true),
-		demo.GenerateRandomAnalyticRecord("org_2", true),
-		demo.GenerateRandomAnalyticRecord("org_2", true),
-		demo.GenerateRandomAnalyticRecord("org_2", true),
-		demo.GenerateRandomAnalyticRecord("org_2", true),
-		demo.GenerateRandomAnalyticRecord("org_2", true),
+		demo.GenerateRandomAnalyticRecord("org_1", true, 50),
+		demo.GenerateRandomAnalyticRecord("org_1", true, 50),
+		demo.GenerateRandomAnalyticRecord("org_1", true, 50),
+		demo.GenerateRandomAnalyticRecord("org_1", true, 50),
+		demo.GenerateRandomAnalyticRecord("org_1", true, 50),
+		demo.GenerateRandomAnalyticRecord("org_2", true, 50),
+		demo.GenerateRandomAnalyticRecord("org_2", true, 50),
+		demo.GenerateRandomAnalyticRecord("org_2", true, 50),
+		demo.GenerateRandomAnalyticRecord("org_2", true, 50),
+		demo.GenerateRandomAnalyticRecord("org_2", true, 50),
 	}
 	b.Helper()
 	b.ReportAllocs()
@@ -237,16 +237,16 @@ func BenchmarkProtobufEncoding(b *testing.B) {
 func BenchmarkMsgpEncoding(b *testing.B) {
 	serializer := NewAnalyticsSerializer(MSGP_SERIALIZER)
 	records := []analytics.AnalyticsRecord{
-		demo.GenerateRandomAnalyticRecord("org_1", true),
-		demo.GenerateRandomAnalyticRecord("org_1", true),
-		demo.GenerateRandomAnalyticRecord("org_1", true),
-		demo.GenerateRandomAnalyticRecord("org_1", true),
-		demo.GenerateRandomAnalyticRecord("org_1", true),
-		demo.GenerateRandomAnalyticRecord("org_2", true),
-		demo.GenerateRandomAnalyticRecord("org_2", true),
-		demo.GenerateRandomAnalyticRecord("org_2", true),
-		demo.GenerateRandomAnalyticRecord("org_2", true),
-		demo.GenerateRandomAnalyticRecord("org_2", true),
+		demo.GenerateRandomAnalyticRecord("org_1", true, 50),
+		demo.GenerateRandomAnalyticRecord("org_1", true, 50),
+		demo.GenerateRandomAnalyticRecord("org_1", true, 50),
+		demo.GenerateRandomAnalyticRecord("org_1", true, 50),
+		demo.GenerateRandomAnalyticRecord("org_1", true, 50),
+		demo.GenerateRandomAnalyticRecord("org_2", true, 50),
+		demo.GenerateRandomAnalyticRecord("org_2", true, 50),
+		demo.GenerateRandomAnalyticRecord("org_2", true, 50),
+		demo.GenerateRandomAnalyticRecord("org_2", true, 50),
+		demo.GenerateRandomAnalyticRecord("org_2", true, 50),
 	}
 	b.Helper()
 	b.ReportAllocs()

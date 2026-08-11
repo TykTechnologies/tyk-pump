@@ -17,6 +17,7 @@ func TestGenerateDemoData(t *testing.T) {
 		recordsPerHour int
 		trackPath      bool
 		futureData     bool
+		apikeysCount   int
 	}
 
 	tests := []struct {
@@ -31,6 +32,7 @@ func TestGenerateDemoData(t *testing.T) {
 				orgID:          "test",
 				trackPath:      false,
 				futureData:     true,
+				apikeysCount:   50,
 				writer: func(data []interface{}, job *health.Job, ts time.Time, n int) {
 				},
 			},
@@ -42,6 +44,7 @@ func TestGenerateDemoData(t *testing.T) {
 				recordsPerHour: 1,
 				orgID:          "test",
 				trackPath:      true,
+				apikeysCount:   50,
 				writer:         func([]interface{}, *health.Job, time.Time, int) {},
 			},
 		},
@@ -52,6 +55,7 @@ func TestGenerateDemoData(t *testing.T) {
 				recordsPerHour: 2,
 				orgID:          "test",
 				trackPath:      false,
+				apikeysCount:   50,
 				writer:         func([]interface{}, *health.Job, time.Time, int) {},
 			},
 		},
@@ -62,6 +66,7 @@ func TestGenerateDemoData(t *testing.T) {
 				recordsPerHour: 2,
 				orgID:          "test",
 				trackPath:      true,
+				apikeysCount:   50,
 				writer:         func([]interface{}, *health.Job, time.Time, int) {},
 			},
 		},
@@ -72,6 +77,7 @@ func TestGenerateDemoData(t *testing.T) {
 				recordsPerHour: 100,
 				orgID:          "test",
 				trackPath:      false,
+				apikeysCount:   50,
 				writer:         func([]interface{}, *health.Job, time.Time, int) {},
 			},
 		},
@@ -82,6 +88,7 @@ func TestGenerateDemoData(t *testing.T) {
 				recordsPerHour: 0,
 				orgID:          "test",
 				trackPath:      true,
+				apikeysCount:   50,
 				writer:         func([]interface{}, *health.Job, time.Time, int) {},
 			},
 		},
@@ -92,6 +99,7 @@ func TestGenerateDemoData(t *testing.T) {
 				recordsPerHour: 0,
 				orgID:          "test",
 				trackPath:      false,
+				apikeysCount:   50,
 				writer:         func([]interface{}, *health.Job, time.Time, int) {},
 			},
 		},
@@ -121,7 +129,7 @@ func TestGenerateDemoData(t *testing.T) {
 				}
 			}
 
-			GenerateDemoData(tt.args.days, tt.args.recordsPerHour, tt.args.orgID, tt.args.futureData, tt.args.trackPath, tt.args.writer)
+			GenerateDemoData(tt.args.days, tt.args.recordsPerHour, tt.args.orgID, tt.args.futureData, tt.args.trackPath, tt.args.apikeysCount, tt.args.writer)
 			if tt.args.recordsPerHour == 0 {
 				isValid := counter >= 300*tt.args.days || counter <= 500*tt.args.days
 				assert.True(t, isValid)
