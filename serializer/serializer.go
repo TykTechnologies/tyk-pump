@@ -2,10 +2,9 @@ package serializer
 
 import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
-	logger "github.com/TykTechnologies/tyk-pump/logger"
+	"github.com/TykTechnologies/tyk-pump/logger"
+	"github.com/sirupsen/logrus"
 )
-
-var log = logger.GetLogger()
 
 type AnalyticsSerializer interface {
 	Encode(record *analytics.AnalyticsRecord) ([]byte, error)
@@ -13,18 +12,46 @@ type AnalyticsSerializer interface {
 	GetSuffix() string
 }
 
-const MSGP_SERIALIZER = "msgpack"
-const PROTOBUF_SERIALIZER = "protobuf"
+const (
+	MSGP_SERIALIZER     = "msgpack"
+	PROTOBUF_SERIALIZER = "protobuf"
+)
 
-func NewAnalyticsSerializer(serializerType string) AnalyticsSerializer {
+type analyticsSerializerOptions struct {
+	logger *logrus.Logger
+}
+
+type NewAnalyticsSerializerOpt func(*analyticsSerializerOptions)
+
+func NewAnalyticsSerializer(
+	serializerType string,
+	options ...NewAnalyticsSerializerOpt,
+) AnalyticsSerializer {
+	opt := analyticsSerializerOptions{
+		logger: logger.GetLogger(),
+	}
+
+	for _, apply := range options {
+		apply(&opt)
+	}
+
 	switch serializerType {
 	case PROTOBUF_SERIALIZER:
 		serializer := &ProtobufSerializer{}
-		log.Debugf("Using serializer %v for analytics \n", PROTOBUF_SERIALIZER)
+		opt.logger.Debugf("Using serializer %v for analytics \n", PROTOBUF_SERIALIZER)
 		return serializer
 	case MSGP_SERIALIZER:
+		fallthrough
 	default:
-		log.Debugf("Using serializer %v for analytics \n", MSGP_SERIALIZER)
+		opt.logger.Debugf("Using serializer %v for analytics \n", MSGP_SERIALIZER)
+		return &MsgpSerializer{}
 	}
-	return &MsgpSerializer{}
+}
+
+// WithLogger
+// Overrides default logger.
+func WithLogger(logger *logrus.Logger) NewAnalyticsSerializerOpt {
+	return func(o *analyticsSerializerOptions) {
+		o.logger = logger
+	}
 }
