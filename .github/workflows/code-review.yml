@@ -1,0 +1,30 @@
+name: Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+  issue_comment:
+    types: [created]
+
+# Define permissions needed for the workflow
+permissions:
+  issues: write
+  pull-requests: write
+  contents: write
+
+jobs:
+  code_review:
+    if: |
+      (github.event_name == 'pull_request' && (github.event.action == 'opened' || github.event.action == 'synchronize')) ||
+      (github.event_name == 'issue_comment' && github.event.action == 'created' &&
+       (contains(github.event.comment.body, '/code') || contains(github.event.comment.body, '/sec')))
+    uses: buger/probe/.github/workflows/probe.yml@main
+    with:
+      command_prefix: "/code-review"
+      allow_edit: true
+      prompt: ".probe/code-reviewer.md"
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.PROBE_ANTHROPIC_API_KEY }}
+      ANTHROPIC_API_URL: ${{ secrets.PROBE_ANTHROPIC_URL }}
+      APP_ID: ${{ secrets.PROBE_APP_ID }}
+      APP_PRIVATE_KEY: ${{ secrets.PROBE_APP_PRIVATE_KEY }}
