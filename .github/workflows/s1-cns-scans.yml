@@ -13,6 +13,7 @@ jobs:
       contents: read
     with:
       iac_enabled: false
+      vuln_enabled: false
       policy_id: ${{ vars.S1_POLICY_ID }}
       scope_type: ACCOUNT
     secrets:

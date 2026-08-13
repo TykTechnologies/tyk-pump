@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"sort"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/mitchellh/mapstructure"
@@ -174,9 +173,6 @@ func (s *GraphSQLAggregatePump) DoAggregatedWriting(ctx context.Context, table, 
 		rec.Counter.ErrorMap = nil
 		recs = append(recs, rec)
 	}
-
-	// Deterministic lock ordering - see the note in SQLAggregatePump.DoAggregatedWriting (TT-9424).
-	sort.Slice(recs, func(i, j int) bool { return recs[i].ID < recs[j].ID })
 
 	for i := 0; i < len(recs); i += s.SQLConf.BatchSize {
 		ends := i + s.SQLConf.BatchSize

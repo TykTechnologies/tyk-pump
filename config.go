@@ -1,12 +1,14 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"strings"
 
+	"github.com/TykTechnologies/storage/kv"
 	"github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/kelseyhightower/envconfig"
@@ -258,9 +260,26 @@ type TykPumpConfiguration struct {
 	// This option was intended to decode raw response payloads from base64 for all Pumps. However, it was never implemented and therefore has no functional effect. It has now been deprecated.
 	// Deprecated: Use pump level raw_response_decoded configuration instead.
 	DecodeRawResponse bool `json:"raw_response_decoded"`
+
+	// KV defines named secret stores (such as HashiCorp Vault, Consul, environment
+	// variables, or inline values) that other configuration values can reference.
+	// This lets sensitive settings like database credentials or the admin secret
+	// be kept in an external store instead of the config file; each referenced
+	// value is resolved from its store once, at startup. Store definitions may be
+	// set in the config file or supplied as a JSON object through the
+	// TYK_PMP_KV_STORES environment variable; the environment overrides and adds
+	// stores by name, leaving file-defined stores it does not name untouched.
+	KV kv.Config `json:"kv"`
 }
 
-func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
+// LoadConfig populates configStruct from the config file and the environment, then
+// dereferences any KV reference it holds.
+//
+// It returns the KV stores the resolution ran against, still open, because the pump
+// specific env var overrides resolve against them later - see initialisePumps. The
+// caller must Close them once every pump is up. The result is nil when the config
+// declares no KV stores, and Close is safe on nil.
+func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) *kvStores {
 	if !configStruct.shouldOmitConfigFile() {
 		configuration, err := ioutil.ReadFile(*filePath)
 		if err != nil {
@@ -289,6 +308,13 @@ func LoadConfig(filePath *string, configStruct *TykPumpConfiguration) {
 	if errLoadEnvPumps != nil {
 		log.Fatal("error loading pumps env vars:", errLoadEnvPumps)
 	}
+
+	stores, err := resolveKVReferences(context.Background(), configStruct)
+	if err != nil {
+		log.Fatalf("Failed to resolve config: %v", err)
+	}
+
+	return stores
 }
 
 func (cfg *TykPumpConfiguration) shouldOmitConfigFile() bool {

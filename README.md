@@ -438,6 +438,24 @@ TYK_PMP_PUMPS_MONGOAGG_META_AGGREGATIONTIME=50
 TYK_PMP_PUMPS_MONGOAGG_META_ENABLESELFHEALING=true
 ```
 
+###### Deprecated `PMP_MONGO*` Env Variables
+
+The Mongo pumps also honour a set of environment variables that pre-date the
+`TYK_PMP_*` coverage of the whole configuration:
+
+| Deprecated prefix | Pump            | Use instead                                                                        |
+| ----------------- | --------------- | ---------------------------------------------------------------------------------- |
+| `PMP_MONGO_*`     | Mongo           | `TYK_PMP_PUMPS_MONGO_META_*` (or `TYK_PMP_UPTIMEPUMPCONFIG_*` for the uptime pump) |
+| `PMP_MONGOAGG_*`  | Mongo Aggregate | `TYK_PMP_PUMPS_MONGOAGGREGATE_META_*`                                              |
+| `PMP_MONGOSEL_*`  | Mongo Selective | `TYK_PMP_PUMPS_MONGOSELECTIVE_META_*`                                              |
+
+These are **deprecated** and will be removed in a future releases. Pump logs a warning
+naming each variable and its replacement whenever one is set. If you have set a custom
+`meta_env_prefix` for a pump, the replacement uses that prefix instead of the default
+shown above. They also **do not support KV references**: a `kv://` or `$kv{...}` value
+set through one of them is a fatal startup error. Use the config file or the
+`TYK_PMP_*` equivalent, both of which resolve references normally.
+
 ###### Self Healing
 
 By default, the maximum size of a document in MongoDB is 16MB. If we try to update a document that has grown to this size, an error is received.
