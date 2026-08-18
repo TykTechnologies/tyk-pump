@@ -150,6 +150,8 @@ func TestMCPRecord_BSONRoundTripProtocolContext(t *testing.T) {
 
 	var document bson.M
 	require.NoError(t, bson.Unmarshal(encoded, &document))
+	assert.Equal(t, "tools/call", document["jsonrpcmethod"])
+	assert.NotContains(t, document, "jsonrpc_method")
 	assert.Equal(t, "2026-07-28", document["effective_protocol_version"])
 	assert.Equal(t, "2026-07-28", document["declared_protocol_version"])
 	assert.Equal(t, "header_body", document["protocol_version_source"])

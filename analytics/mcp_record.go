@@ -10,9 +10,9 @@ var MCPSQLTableName string
 // efficient querying while embedding the full AnalyticsRecord for all
 // standard analytics dimensions.
 type MCPRecord struct {
-	JSONRPCMethod            string `json:"jsonrpc_method" bson:"jsonrpc_method" gorm:"column:jsonrpc_method"`
-	PrimitiveType            string `json:"primitive_type" bson:"primitive_type" gorm:"column:primitive_type"`
-	PrimitiveName            string `json:"primitive_name" bson:"primitive_name" gorm:"column:primitive_name"`
+	JSONRPCMethod            string `gorm:"column:jsonrpc_method"`
+	PrimitiveType            string `gorm:"column:primitive_type"`
+	PrimitiveName            string `gorm:"column:primitive_name"`
 	EffectiveProtocolVersion string `json:"effective_protocol_version" bson:"effective_protocol_version" gorm:"column:effective_protocol_version"`
 	DeclaredProtocolVersion  string `json:"declared_protocol_version" bson:"declared_protocol_version" gorm:"column:declared_protocol_version"`
 	ProtocolVersionSource    string `json:"protocol_version_source" bson:"protocol_version_source" gorm:"column:protocol_version_source"`
