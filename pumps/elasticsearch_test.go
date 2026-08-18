@@ -17,10 +17,13 @@ func TestGetMapping_MCPFieldsForMCPRecord(t *testing.T) {
 		ResponseCode: 200,
 		TimeStamp:    time.Now(),
 		MCPStats: analytics.MCPStats{
-			IsMCP:         true,
-			JSONRPCMethod: "tools/call",
-			PrimitiveType: "tool",
-			PrimitiveName: "get_weather",
+			IsMCP:                    true,
+			JSONRPCMethod:            "tools/call",
+			PrimitiveType:            "tool",
+			PrimitiveName:            "get_weather",
+			EffectiveProtocolVersion: "2026-07-28",
+			DeclaredProtocolVersion:  "2026-07-28",
+			ProtocolVersionSource:    "header_body",
 		},
 	}
 
@@ -32,6 +35,9 @@ func TestGetMapping_MCPFieldsForMCPRecord(t *testing.T) {
 	assert.Equal(t, "tools/call", mapping[esMCPMethod])
 	assert.Equal(t, "tool", mapping[esMCPPrimitiveType])
 	assert.Equal(t, "get_weather", mapping[esMCPPrimitiveName])
+	assert.Equal(t, "2026-07-28", mapping[esMCPEffectiveProtocolVersion])
+	assert.Equal(t, "2026-07-28", mapping[esMCPDeclaredProtocolVersion])
+	assert.Equal(t, "header_body", mapping[esMCPProtocolVersionSource])
 }
 
 // TestGetMapping_NoMCPFieldsForNonMCPRecord verifies backward compatibility:
@@ -48,6 +54,9 @@ func TestGetMapping_NoMCPFieldsForNonMCPRecord(t *testing.T) {
 	assert.NotContains(t, mapping, esMCPMethod, "mcp_method must not appear for non-MCP records")
 	assert.NotContains(t, mapping, esMCPPrimitiveType, "mcp_primitive_type must not appear for non-MCP records")
 	assert.NotContains(t, mapping, esMCPPrimitiveName, "mcp_primitive_name must not appear for non-MCP records")
+	assert.NotContains(t, mapping, esMCPEffectiveProtocolVersion)
+	assert.NotContains(t, mapping, esMCPDeclaredProtocolVersion)
+	assert.NotContains(t, mapping, esMCPProtocolVersionSource)
 }
 
 // TestGetIndexNameForRecord_MCPIndexSet verifies that MCP records are routed to
