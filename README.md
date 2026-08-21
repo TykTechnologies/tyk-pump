@@ -1062,6 +1062,8 @@ Supported in Tyk Pump v1.0.0+
 
 `"tag"` - Prefix tag
 
+`"include_tags"` - If set to `true`, includes the `tags` field from the analytics record in the output. Defaults to `false`, so the emitted message is unchanged when upgrading. Env var: `TYK_PMP_PUMPS_SYSLOG_META_INCLUDETAGS`. See [Output fields](#output-fields) below before enabling it on high-tag deployments.
+
 When working with FluentD, you should provide a [FluentD Parser](https://docs.fluentd.org/input/syslog) based on the OS you are using so that FluentD can correctly read the logs
 
 ```.json
@@ -1074,6 +1076,35 @@ When working with FluentD, you should provide a [FluentD Parser](https://docs.fl
     "tag": "syslog-pump"
   }
 ```
+
+###### Output fields
+
+Each analytics record is written as a single line containing `timestamp`, `method`, `path`,
+`raw_path`, `response_code`, `alias`, `api_key`, `api_version`, `api_name`, `api_id`, `org_id`,
+`oauth_id`, `raw_request`, `request_time_ms`, `raw_response`, `ip_address`, `host`,
+`content_length`, `user_agent` and `tags`.
+
+`tags` is **only emitted when `include_tags` is set to `true`** — by default it is absent, so
+upgrading does not change the message your collector receives. When enabled, it carries the tags
+the gateway attached to the request (key, organisation, API, policy and developer identifiers, plus
+any tags set on the session or API definition), and is present on every record, rendering as
+`tags:[]` when a record has none.
+
+Three things to be aware of before enabling it:
+
+- **Field order is alphabetical, not stable across versions.** Fields are rendered in sorted key
+  order, so `tags` appears in the middle of the line — between `response_code` and `timestamp` —
+  rather than at the end. Parse by key rather than by position.
+- **`tags` is unbounded, and the default `udp` transport sends one datagram per record.** RFC 3164
+  caps a syslog message at 1024 bytes, and some daemons and relays enforce that. For reference, a
+  representative record measures 537 bytes with `tags:[]`, 643 with 3 tags, 701 with 5 and 768 with
+  10 — so how much headroom you have depends on your own field and tag lengths. Because `tags` sorts
+  before `timestamp` and `user_agent`, those are the fields lost first if a message is truncated.
+  Records with `raw_request`/`raw_response` populated by detailed recording can exceed the limit
+  regardless of tags. Prefer `tcp` or `tls` transport for high-tag or detailed-recording
+  deployments.
+- **Tag values such as the per-key identifier are high cardinality by nature.** If you index this
+  output downstream, treat `tags` accordingly.
 
 ## Stdout
 
