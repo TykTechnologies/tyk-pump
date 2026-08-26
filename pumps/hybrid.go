@@ -68,6 +68,10 @@ type HybridPump struct {
 	// WriteData goroutines while a reconnect may be replacing them.
 	clientMu sync.RWMutex
 
+	// clientGen counts published clients, so a recovery that waited for connectMu can tell
+	// whether the client whose failure sent it there has already been replaced.
+	clientGen atomic.Uint64
+
 	clientSingleton   *gorpc.Client
 	dispatcher        *gorpc.Dispatcher
 	clientIsConnected atomic.Value
@@ -201,6 +205,8 @@ func (p *HybridPump) startDispatcher(client *gorpc.Client) {
 	p.dispatcher = dispatcher
 	p.clientSingleton = client
 	p.funcClientSingleton = funcClient
+
+	p.clientGen.Add(1)
 }
 
 // stopClient stops the current RPC client, if there is one, and clears it.
@@ -472,11 +478,35 @@ func (p *HybridPump) sendMCPAggregates(data []interface{}) error {
 
 // connectAndLogin connects to RPC server and logs in if retry is true, it will retry with retryAndLog func
 func (p *HybridPump) connectAndLogin(retry bool) error {
+	// Which client this recovery is trying to replace. Read before queueing on the lock, so it
+	// can be compared with whatever is current once the lock is held.
+	observedGen := p.clientGen.Load()
+
 	// One recovery at a time, covering the retry loop and the login that follows it. Locking
 	// only around a single connect attempt would let two recoveries interleave, each stopping
 	// the client the other had just published.
 	p.connectMu.Lock()
 	defer p.connectMu.Unlock()
+
+	// When several purge cycles overlap they all fail together and all end up here, queued on
+	// the lock. Only the first of them needs to reconnect: rebuilding again would stop a client
+	// that is already working and that another purge may be part way through writing through,
+	// and a purge that fails loses its records for good, because the purge loop deletes them
+	// from the temporal store before handing them over.
+	if p.clientGen.Load() != observedGen {
+		err := p.RPCLogin()
+		if err == nil {
+			p.log.Debug("Reusing the MDCB connection another purge just established")
+
+			return nil
+		}
+
+		// Credentials are wrong rather than the connection being broken. Reconnecting cannot
+		// fix that, and doing so would tear down a usable client for nothing.
+		if errors.Is(err, ErrRPCLogin) {
+			return err
+		}
+	}
 
 	connectFn := p.connectRPC
 	loginFn := p.RPCLogin

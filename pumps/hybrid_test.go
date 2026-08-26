@@ -1269,6 +1269,12 @@ func TestConcurrentReconnectKeepsSingleClient(t *testing.T) {
 		return len(ln.liveConnIDs()) == 1 && ln.totalLive() == poolSize
 	})
 
+	// Only the first of them should have rebuilt at all. The rest have to reuse what it
+	// published: replacing a working client would stop one that another purge may be part way
+	// through writing through, and those records are already gone from the temporal store.
+	assert.LessOrEqual(t, len(ln.totalConnIDs()), 3,
+		"each queued recovery built its own client instead of reusing the first one")
+
 	// The survivor must be the published one, i.e. the pump's state is not torn.
 	_, err := pump.callRPCFn("Ping", nil)
 	assert.NoError(t, err)
@@ -1337,5 +1343,107 @@ func TestInitFailureReleasesRPCClient(t *testing.T) {
 	// And the connections have to go - see rpcReleaseBudget for why that is not immediate.
 	waitForLive(t, ln, rpcReleaseBudget, "Init left an RPC client connected", func() bool {
 		return ln.totalLive() == 0
+	})
+}
+
+func TestQueuedRecoveryReusesTheNewClient(t *testing.T) {
+	const poolSize = 2
+
+	pump, ln := newLeakTestPump(t, map[string]interface{}{
+		"Ping":               func() bool { return true },
+		"Login":              func(_, _ string) bool { return true },
+		"PurgeAnalyticsData": func(_, _ string) error { return nil },
+	}, poolSize)
+
+	require.NoError(t, pump.connectAndLogin(false))
+
+	// Hold the reconnect lock, so the recovery started below gets as far as reading the current
+	// generation and then waits - which is where every overlapping purge cycle ends up when one
+	// of them is already reconnecting.
+	pump.connectMu.Lock()
+
+	queued := make(chan error, 1)
+	started := make(chan struct{})
+
+	go func() {
+		close(started)
+
+		queued <- pump.connectAndLogin(false)
+	}()
+
+	// Only an atomic load separates the goroutine from the lock, so this is a generous wait. If
+	// it were not enough the goroutine would read the new generation instead of the old one and
+	// rebuild, which fails the assertions below rather than passing them for the wrong reason.
+	<-started
+	time.Sleep(50 * time.Millisecond)
+
+	// The recovery that holds the lock finishes and publishes a working client.
+	require.NoError(t, pump.connectRPC())
+	published := pump.clientSingleton
+	require.NotNil(t, published)
+	built := len(ln.totalConnIDs())
+
+	pump.connectMu.Unlock()
+
+	require.NoError(t, <-queued)
+
+	// The queued recovery has to reuse that client, not replace it.
+	assert.Equal(t, built, len(ln.totalConnIDs()), "the queued recovery built another client")
+	assert.Same(t, published, pump.clientSingleton, "the queued recovery replaced a working client")
+
+	waitForLive(t, ln, rpcReleaseBudget, "the published client lost connections", func() bool {
+		return ln.totalLive() == poolSize
+	})
+
+	// The point of all of it: a purge writing through that client still gets through. Records are
+	// deleted from the temporal store before WriteData is called, so a write broken by someone
+	// else's reconnect loses them for good.
+	_, err := pump.callRPCFn("PurgeAnalyticsData", "[]")
+	assert.NoError(t, err)
+}
+
+func TestQueuedRecoveryKeepsClientWhenCredentialsAreRejected(t *testing.T) {
+	const poolSize = 2
+
+	var logins int64
+
+	pump, ln := newLeakTestPump(t, map[string]interface{}{
+		"Ping": func() bool { return true },
+		// Only the first login succeeds, so the queued recovery below finds the freshly published
+		// client rejecting its credentials.
+		"Login": func(_, _ string) bool { return atomic.AddInt64(&logins, 1) == 1 },
+	}, poolSize)
+
+	require.NoError(t, pump.connectAndLogin(false))
+
+	pump.connectMu.Lock()
+
+	queued := make(chan error, 1)
+	started := make(chan struct{})
+
+	go func() {
+		close(started)
+
+		queued <- pump.connectAndLogin(false)
+	}()
+
+	<-started
+	time.Sleep(50 * time.Millisecond)
+
+	require.NoError(t, pump.connectRPC())
+	published := pump.clientSingleton
+	built := len(ln.totalConnIDs())
+
+	pump.connectMu.Unlock()
+
+	// Rejected credentials are reported rather than reconnected around: another client would not
+	// be given a different answer, and building one would tear down a usable connection.
+	require.ErrorIs(t, <-queued, ErrRPCLogin)
+
+	assert.Equal(t, built, len(ln.totalConnIDs()), "a rejected login triggered another client")
+	assert.Same(t, published, pump.clientSingleton, "a rejected login replaced a working client")
+
+	waitForLive(t, ln, rpcReleaseBudget, "the published client was stopped", func() bool {
+		return ln.totalLive() == poolSize
 	})
 }
