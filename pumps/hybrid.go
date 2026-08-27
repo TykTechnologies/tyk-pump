@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -53,6 +54,23 @@ var (
 // HybridPump allows to send analytics to MDCB over RPC
 type HybridPump struct {
 	CommonPumpConfig
+
+	// connectMu serialises connecting, reconnecting and shutting down. A WriteData call that
+	// outlives the configured pump timeout is abandoned and started again on the next purge
+	// cycle, so two recoveries can be in flight at once; without this lock each would build a
+	// client and could stop the other's brand-new one.
+	//
+	// Lock order is connectMu then clientMu, never the reverse. clientMu is only ever held to
+	// assign or read the pointers below, never across an RPC.
+	connectMu sync.Mutex
+
+	// clientMu guards clientSingleton and funcClientSingleton, which callRPCFn reads from the
+	// WriteData goroutines while a reconnect may be replacing them.
+	clientMu sync.RWMutex
+
+	// clientGen counts published clients, so a recovery that waited for connectMu can tell
+	// whether the client whose failure sent it there has already been replaced.
+	clientGen atomic.Uint64
 
 	clientSingleton   *gorpc.Client
 	dispatcher        *gorpc.Dispatcher
@@ -149,22 +167,76 @@ func (p *HybridPump) Init(config interface{}) error {
 
 	if err := p.connectAndLogin(true); err != nil {
 		p.log.Error(err)
+
+		// The connect may well have succeeded and only the login failed, leaving a running
+		// client behind. Nothing shuts down a pump whose Init returned an error, so its pool
+		// would stay up for the lifetime of the process.
+		p.connectMu.Lock()
+		p.stopClient()
+		p.connectMu.Unlock()
+
 		return err
 	}
 
 	return nil
 }
 
-func (p *HybridPump) startDispatcher() {
-	p.dispatcher = gorpc.NewDispatcher()
+// startDispatcher publishes an already started client along with a dispatcher client bound to
+// it. A gorpc.DispatcherClient cannot be pointed at a different gorpc.Client, so both have to be
+// rebuilt for every connection.
+//
+// The dispatcher is built in a local and published as a whole. Assigning it to the pump first
+// and filling it in afterwards let two concurrent reconnects register their functions into
+// whichever dispatcher happened to win the field, which is a concurrent map write.
+//
+// The caller must hold connectMu.
+func (p *HybridPump) startDispatcher(client *gorpc.Client) {
+	dispatcher := gorpc.NewDispatcher()
 
 	for funcName, funcBody := range dispatcherFuncs {
-		p.dispatcher.AddFunc(funcName, funcBody)
+		dispatcher.AddFunc(funcName, funcBody)
 	}
 
-	p.funcClientSingleton = p.dispatcher.NewFuncClient(p.clientSingleton)
+	funcClient := dispatcher.NewFuncClient(client)
+
+	p.clientMu.Lock()
+	defer p.clientMu.Unlock()
+
+	p.dispatcher = dispatcher
+	p.clientSingleton = client
+	p.funcClientSingleton = funcClient
+
+	p.clientGen.Add(1)
 }
 
+// stopClient stops the current RPC client, if there is one, and clears it.
+//
+// A client is published only after gorpc.Client.Start() has returned (see connectRPC), so a
+// non-nil clientSingleton is always a running client and is safe to stop exactly once - gorpc
+// panics both on stopping a client that was never started and on stopping one twice.
+//
+// The caller must hold connectMu.
+func (p *HybridPump) stopClient() {
+	p.clientMu.Lock()
+	client := p.clientSingleton
+	p.clientSingleton = nil
+	p.funcClientSingleton = nil
+	p.clientMu.Unlock()
+
+	p.clientIsConnected.Store(false)
+
+	if client == nil {
+		return
+	}
+
+	// Bounded even when MDCB is unreachable: the pooled handlers return as soon as the client's
+	// stop channel is closed and do not wait for an outstanding dial.
+	client.Stop()
+}
+
+// connectRPC replaces the current RPC client with a freshly connected one.
+//
+// The caller must hold connectMu.
 func (p *HybridPump) connectRPC() error {
 	p.log.Debug("Setting new MDCB connection!")
 
@@ -179,30 +251,42 @@ func (p *HybridPump) connectRPC() error {
 		return errors.New("connID is too long")
 	}
 
+	var client *gorpc.Client
+
 	if p.hybridConfig.UseSSL {
 		// #nosec G402
 		clientCfg := &tls.Config{
 			InsecureSkipVerify: p.hybridConfig.SSLInsecureSkipVerify,
 		}
 
-		p.clientSingleton = gorpc.NewTLSClient(p.hybridConfig.ConnectionString, clientCfg)
+		client = gorpc.NewTLSClient(p.hybridConfig.ConnectionString, clientCfg)
 	} else {
-		p.clientSingleton = gorpc.NewTCPClient(p.hybridConfig.ConnectionString)
+		client = gorpc.NewTCPClient(p.hybridConfig.ConnectionString)
 	}
 
 	if p.log.Level != logrus.DebugLevel {
-		p.clientSingleton.LogError = gorpc.NilErrorLogger
+		client.LogError = gorpc.NilErrorLogger
 	}
 
-	p.clientSingleton.OnConnect = p.onConnectFunc
+	client.OnConnect = p.onConnectFunc
 
-	p.clientSingleton.Conns = p.hybridConfig.RPCPoolSize
+	client.Conns = p.hybridConfig.RPCPoolSize
 
-	p.clientSingleton.Dial = getDialFn(connID, p.hybridConfig)
+	client.Dial = getDialFn(connID, p.hybridConfig)
 
-	p.clientSingleton.Start()
+	// Release the client being replaced before starting its successor (TT-14423). Every
+	// gorpc.Client keeps rpc_pool_size goroutines redialling MDCB until it is stopped, so simply
+	// overwriting the pointer abandoned the whole pool - goroutines here, connections and memory
+	// on MDCB - on every single reconnect, and nothing ever closed them. Stopping first also
+	// keeps the pump within rpc_pool_size connections at every instant, including while the
+	// retrying connect below is working through its attempts.
+	p.stopClient()
 
-	p.startDispatcher()
+	client.Start()
+
+	// Published only now: until Start() has returned there is nothing to stop, and callers
+	// reading the pointer must never see a client that is not running.
+	p.startDispatcher(client)
 
 	_, err = p.callRPCFn("Ping", nil)
 
@@ -218,7 +302,18 @@ func (p *HybridPump) onConnectFunc(conn net.Conn) (net.Conn, string, error) {
 }
 
 func (p *HybridPump) callRPCFn(funcName string, request interface{}) (interface{}, error) {
-	return p.funcClientSingleton.CallTimeout(funcName, request, time.Duration(p.hybridConfig.CallTimeout)*time.Second)
+	p.clientMu.RLock()
+	funcClient := p.funcClientSingleton
+	p.clientMu.RUnlock()
+
+	// Nil between a stop and the next successful connect, and for the whole life of a pump whose
+	// Init failed. Reporting it beats both dereferencing nil and burning a full call timeout on a
+	// client that has been stopped.
+	if funcClient == nil {
+		return nil, errors.New("not connected to Tyk MDCB")
+	}
+
+	return funcClient.CallTimeout(funcName, request, time.Duration(p.hybridConfig.CallTimeout)*time.Second)
 }
 
 func getDialFn(connID string, config *HybridPumpConf) func(addr string) (conn net.Conn, err error) {
@@ -327,11 +422,13 @@ func (p *HybridPump) WriteData(ctx context.Context, data []interface{}) error {
 
 func (p *HybridPump) Shutdown() error {
 	p.log.Info("Shutting down...")
-	p.clientSingleton.Stop()
-	p.clientSingleton = nil
-	p.funcClientSingleton = nil
 
-	p.clientIsConnected.Store(false)
+	// Waits for a reconnect that is already under way rather than stopping a client from under
+	// it. Nil-safe and repeatable, both of which matter: a pump whose Init failed never got a
+	// client and is shut down along with the others.
+	p.connectMu.Lock()
+	p.stopClient()
+	p.connectMu.Unlock()
 
 	p.log.Info("Pump shut down.")
 	return nil
@@ -381,6 +478,36 @@ func (p *HybridPump) sendMCPAggregates(data []interface{}) error {
 
 // connectAndLogin connects to RPC server and logs in if retry is true, it will retry with retryAndLog func
 func (p *HybridPump) connectAndLogin(retry bool) error {
+	// Which client this recovery is trying to replace. Read before queueing on the lock, so it
+	// can be compared with whatever is current once the lock is held.
+	observedGen := p.clientGen.Load()
+
+	// One recovery at a time, covering the retry loop and the login that follows it. Locking
+	// only around a single connect attempt would let two recoveries interleave, each stopping
+	// the client the other had just published.
+	p.connectMu.Lock()
+	defer p.connectMu.Unlock()
+
+	// When several purge cycles overlap they all fail together and all end up here, queued on
+	// the lock. Only the first of them needs to reconnect: rebuilding again would stop a client
+	// that is already working and that another purge may be part way through writing through,
+	// and a purge that fails loses its records for good, because the purge loop deletes them
+	// from the temporal store before handing them over.
+	if p.clientGen.Load() != observedGen {
+		err := p.RPCLogin()
+		if err == nil {
+			p.log.Debug("Reusing the MDCB connection another purge just established")
+
+			return nil
+		}
+
+		// Credentials are wrong rather than the connection being broken. Reconnecting cannot
+		// fix that, and doing so would tear down a usable client for nothing.
+		if errors.Is(err, ErrRPCLogin) {
+			return err
+		}
+	}
+
 	connectFn := p.connectRPC
 	loginFn := p.RPCLogin
 
