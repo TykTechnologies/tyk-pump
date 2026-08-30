@@ -84,6 +84,9 @@ type PumpConfig struct {
 	Timeout int `json:"timeout"`
 	// Reduce the size of the traffic logs generated for each request by setting this to true. Tyk Pump will
 	// then not include the `raw_request` and `raw_response` in the logs. Defaults to `false`.
+	//
+	// This setting has no effect on aggregate pumps (`mongo-pump-aggregate`, `sql_aggregate`), because
+	// aggregated analytics records never include `raw_request` or `raw_response` data.
 	OmitDetailedRecording bool `json:"omit_detailed_recording"`
 	// Defines maximum size (in bytes) for Raw Request and Raw Response logs, this value defaults
 	// to 0. If it is not set then tyk-pump will not trim any data and will store the full
@@ -97,6 +100,9 @@ type PumpConfig struct {
 	//   }
 	// }
 	// ```
+	//
+	// This setting has no effect on aggregate pumps (`mongo-pump-aggregate`, `sql_aggregate`), because
+	// aggregated analytics records never include `raw_request` or `raw_response` data.
 	MaxRecordSize int `json:"max_record_size"`
 	// IgnoreFields defines a list of analytics fields that will be ignored when writing to the pump.
 	// This can be used to avoid writing sensitive information to the Database, or data that you don't really need to have.
