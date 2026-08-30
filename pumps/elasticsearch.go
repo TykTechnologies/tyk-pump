@@ -37,6 +37,12 @@ const (
 	esMCPPrimitiveType = "mcp_primitive_type"
 	// esMCPPrimitiveName is the Elasticsearch field name for the MCP primitive name.
 	esMCPPrimitiveName = "mcp_primitive_name"
+	// esMCPEffectiveProtocolVersion is the normalized version used to handle the MCP request.
+	esMCPEffectiveProtocolVersion = "effective_protocol_version"
+	// esMCPDeclaredProtocolVersion is the version agreed by the request declarations.
+	esMCPDeclaredProtocolVersion = "declared_protocol_version"
+	// esMCPProtocolVersionSource describes how the effective version was selected.
+	esMCPProtocolVersionSource = "protocol_version_source"
 )
 
 // @PumpConf Elasticsearch
@@ -488,6 +494,9 @@ func getMapping(datum analytics.AnalyticsRecord, extendedStatistics bool, genera
 		mapping[esMCPMethod] = record.MCPStats.JSONRPCMethod
 		mapping[esMCPPrimitiveType] = record.MCPStats.PrimitiveType
 		mapping[esMCPPrimitiveName] = record.MCPStats.PrimitiveName
+		mapping[esMCPEffectiveProtocolVersion] = record.MCPStats.EffectiveProtocolVersion
+		mapping[esMCPDeclaredProtocolVersion] = record.MCPStats.DeclaredProtocolVersion
+		mapping[esMCPProtocolVersionSource] = record.MCPStats.ProtocolVersionSource
 	}
 
 	if generateID {
