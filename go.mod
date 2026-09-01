@@ -44,7 +44,7 @@ require (
 	golang.org/x/oauth2 v0.36.0
 	google.golang.org/protobuf v1.36.11
 	gopkg.in/alecthomas/kingpin.v2 v2.2.6
-	gopkg.in/olivere/elastic.v3 v3.0.56
+	gopkg.in/olivere/elastic.v3 v3.0.75
 	gopkg.in/olivere/elastic.v5 v5.0.85
 	gopkg.in/olivere/elastic.v6 v6.2.31
 	gopkg.in/vmihailenco/msgpack.v2 v2.9.1
