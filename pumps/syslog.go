@@ -53,6 +53,13 @@ type SyslogConf struct {
 	//   }
 	// ```
 	Tag string `json:"tag" mapstructure:"tag"`
+	// If set to `true`, includes the `tags` field from the analytics record in the output.
+	// Defaults to `false`, so the emitted message is unchanged when upgrading.
+	//
+	// Tags are unbounded in length. Over the default `udp` transport a record with a large
+	// tag set can exceed syslog datagram limits and truncate the fields that sort after
+	// `tags` — prefer `tcp` or `tls` when enabling this.
+	IncludeTags bool `json:"include_tags" mapstructure:"include_tags"`
 }
 
 func (s *SyslogPump) GetName() string {
@@ -174,6 +181,10 @@ func (s *SyslogPump) WriteData(ctx context.Context, data []interface{}) error {
 				"user_agent":      decoded.UserAgent,
 			}
 
+			if s.syslogConf.IncludeTags {
+				message["tags"] = escapeTags(decoded.Tags)
+			}
+
 			// Print to Syslog using original map format (maintains backward compatibility)
 			_, _ = fmt.Fprintf(s.writer, "%s", message)
 		}
@@ -181,6 +192,36 @@ func (s *SyslogPump) WriteData(ctx context.Context, data []interface{}) error {
 	s.log.Info("Purged ", len(data), " records...")
 
 	return nil
+}
+
+// escapeTags escapes newlines in tag values, matching how raw_request and
+// raw_response are handled: tags are user-supplied, and an unescaped newline would
+// split one record across two syslog lines, which a collector reads as two separate
+// records.
+//
+// Returns the input slice unchanged when nothing needs escaping, so the common path
+// allocates nothing.
+func escapeTags(tags []string) []string {
+	needsEscaping := false
+
+	for _, tag := range tags {
+		if strings.Contains(tag, "\n") {
+			needsEscaping = true
+
+			break
+		}
+	}
+
+	if !needsEscaping {
+		return tags
+	}
+
+	escaped := make([]string, len(tags))
+	for i, tag := range tags {
+		escaped[i] = strings.ReplaceAll(tag, "\n", "\\n")
+	}
+
+	return escaped
 }
 
 func (s *SyslogPump) SetTimeout(timeout int) {
