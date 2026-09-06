@@ -109,4 +109,5 @@ message MCPStats {
   string EffectiveProtocolVersion = 5;
   string DeclaredProtocolVersion = 6;
   string ProtocolVersionSource = 7;
+  int32 JSONRPCErrorCode = 8;
 }

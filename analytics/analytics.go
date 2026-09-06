@@ -123,6 +123,7 @@ type GraphQLStats struct {
 }
 
 type MCPStats struct {
+	JSONRPCErrorCode         int    `json:"jsonrpc_error_code"`
 	IsMCP                    bool   `json:"is_mcp"`
 	JSONRPCMethod            string `json:"jsonrpc_method"`
 	PrimitiveType            string `json:"primitive_type"`
