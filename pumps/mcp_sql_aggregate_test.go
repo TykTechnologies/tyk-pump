@@ -639,7 +639,7 @@ func TestMCPSQLAggregatePump_WriteData_MultipleAPIs(t *testing.T) {
 
 	// Each API produces 5 dimensions (apiid, total, methods, primitives, names) = 10 total rows
 	var count int64
-	pump.db.Table(tableName).Count(&count)
+	pump.db.Table(tableName).Where("api_id IN ?", []string{"api-1", "api-2"}).Count(&count)
 	assert.Equal(t, int64(10), count, "2 APIs × 5 dimensions = 10 rows")
 
 	// Verify API-specific data

@@ -368,6 +368,11 @@ func TestMCPSQLPump_WriteData_SQLite(t *testing.T) {
 		analytics.AnalyticsRecord{APIID: "rest", OrgID: "org1", ResponseCode: 200, TimeStamp: ts}, // non-MCP, must be skipped
 		mcpRecord(ts, "resources/read", "resource", "docs", 500),
 	}
+	modern := data[0].(analytics.AnalyticsRecord)
+	modern.MCPStats.EffectiveProtocolVersion = "2026-07-28"
+	modern.MCPStats.DeclaredProtocolVersion = "2026-07-28"
+	modern.MCPStats.ProtocolVersionSource = "header_body"
+	data[0] = modern
 
 	require.NoError(t, pump.WriteData(context.Background(), data))
 
@@ -380,7 +385,13 @@ func TestMCPSQLPump_WriteData_SQLite(t *testing.T) {
 	pump.db.Find(&results)
 	require.Len(t, results, 2)
 	assert.Equal(t, "tools/call", results[0].JSONRPCMethod)
+	assert.Equal(t, "2026-07-28", results[0].EffectiveProtocolVersion)
+	assert.Equal(t, "2026-07-28", results[0].DeclaredProtocolVersion)
+	assert.Equal(t, "header_body", results[0].ProtocolVersionSource)
 	assert.Equal(t, "resources/read", results[1].JSONRPCMethod)
+	assert.Empty(t, results[1].EffectiveProtocolVersion)
+	assert.Empty(t, results[1].DeclaredProtocolVersion)
+	assert.Empty(t, results[1].ProtocolVersionSource)
 }
 
 func TestMCPSQLPump_WriteData_Sharded_SQLite(t *testing.T) {

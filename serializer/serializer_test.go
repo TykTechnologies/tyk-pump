@@ -103,10 +103,13 @@ func TestSerializer_MCPStats_Roundtrip(t *testing.T) {
 				OrgID:    "org_1",
 				ExpireAt: time.Now().Add(time.Hour).Round(0),
 				MCPStats: analytics.MCPStats{
-					IsMCP:         true,
-					JSONRPCMethod: "tools/call",
-					PrimitiveType: "tool",
-					PrimitiveName: "get_weather",
+					IsMCP:                    true,
+					JSONRPCMethod:            "tools/call",
+					PrimitiveType:            "tool",
+					PrimitiveName:            "get_weather",
+					EffectiveProtocolVersion: "2026-07-28",
+					DeclaredProtocolVersion:  "2026-07-28",
+					ProtocolVersionSource:    "header_body",
 				},
 			}
 
@@ -121,6 +124,25 @@ func TestSerializer_MCPStats_Roundtrip(t *testing.T) {
 			assert.Equal(t, record.MCPStats, decoded.MCPStats)
 		})
 	}
+}
+
+func TestSerializer_ProtobufOlderMCPRecordDefaultsProtocolContext(t *testing.T) {
+	serializer := NewAnalyticsSerializer(PROTOBUF_SERIALIZER)
+	record := analytics.AnalyticsRecord{
+		MCPStats: analytics.MCPStats{
+			IsMCP:         true,
+			JSONRPCMethod: "tools/call",
+		},
+	}
+
+	encoded, err := serializer.Encode(&record)
+	assert.NoError(t, err)
+
+	decoded := &analytics.AnalyticsRecord{}
+	assert.NoError(t, serializer.Decode(encoded, decoded))
+	assert.Empty(t, decoded.MCPStats.EffectiveProtocolVersion)
+	assert.Empty(t, decoded.MCPStats.DeclaredProtocolVersion)
+	assert.Empty(t, decoded.MCPStats.ProtocolVersionSource)
 }
 
 func TestSerializer_NonMCP_NoMCPStats(t *testing.T) {
