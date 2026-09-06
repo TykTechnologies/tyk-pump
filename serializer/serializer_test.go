@@ -110,6 +110,7 @@ func TestSerializer_MCPStats_Roundtrip(t *testing.T) {
 					EffectiveProtocolVersion: "2026-07-28",
 					DeclaredProtocolVersion:  "2026-07-28",
 					ProtocolVersionSource:    "header_body",
+					JSONRPCErrorCode:         -33002,
 				},
 			}
 

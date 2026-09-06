@@ -124,6 +124,7 @@ func (pb *ProtobufSerializer) TransformSingleRecordToProto(rec analytics.Analyti
 
 	if rec.MCPStats.IsMCP {
 		record.MCPStats = &analyticsproto.MCPStats{
+			JSONRPCErrorCode:         int32(rec.MCPStats.JSONRPCErrorCode),
 			IsMCP:                    true,
 			JSONRPCMethod:            rec.MCPStats.JSONRPCMethod,
 			PrimitiveType:            rec.MCPStats.PrimitiveType,
@@ -229,6 +230,7 @@ func (pb *ProtobufSerializer) TransformSingleProtoToAnalyticsRecord(rec *analyti
 
 	if rec.MCPStats != nil {
 		tmpRecord.MCPStats = analytics.MCPStats{
+			JSONRPCErrorCode:         int(rec.MCPStats.JSONRPCErrorCode),
 			IsMCP:                    rec.MCPStats.IsMCP,
 			JSONRPCMethod:            rec.MCPStats.JSONRPCMethod,
 			PrimitiveType:            rec.MCPStats.PrimitiveType,

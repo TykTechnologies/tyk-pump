@@ -491,6 +491,7 @@ func getMapping(datum analytics.AnalyticsRecord, extendedStatistics bool, genera
 	}
 
 	if datum.IsMCPRecord() {
+		mapping["jsonrpc_error_code"] = record.MCPStats.JSONRPCErrorCode
 		mapping[esMCPMethod] = record.MCPStats.JSONRPCMethod
 		mapping[esMCPPrimitiveType] = record.MCPStats.PrimitiveType
 		mapping[esMCPPrimitiveName] = record.MCPStats.PrimitiveName
