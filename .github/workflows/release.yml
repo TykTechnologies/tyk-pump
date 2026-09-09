@@ -27,6 +27,7 @@ jobs:
       contents: read    # actions/checkout
     with:
       repo_name: tyk-pump
+      upgrade_repo: tyk-pump
       golang_cross: 1.26-bookworm
       cgo: '0'
       platforms_std: 'linux/amd64,linux/arm64'
