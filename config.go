@@ -82,27 +82,17 @@ type PumpConfig struct {
 	// If there is a timeout configured, but pump's write operation is still taking longer than the purging loop, the following warning log will be generated:
 	// `Pump {pump_name} is taking more time than the value configured of purge_delay. You should try lowering the timeout configured for this pump.`.
 	Timeout int `json:"timeout"`
-	// Reduce the size of the traffic logs generated for each request by setting this to true. Tyk Pump will
-	// then not include the `raw_request` and `raw_response` in the logs. Defaults to `false`.
+	// Reduce the size of the traffic logs generated for each request by setting this to `true`. This Pump will
+	// then not include the request or response body in the logs. Defaults to `false`.
 	//
-	// This setting has no effect on aggregate pumps (`mongo-pump-aggregate`, `sql_aggregate`), because
-	// aggregated analytics records never include `raw_request` or `raw_response` data.
+	// This setting has no effect for aggregate pumps used to generate [Tyk Dashboard Analytics](/api-management/dashboard-analytics) which do not directly transmit the Traffic Logs.
 	OmitDetailedRecording bool `json:"omit_detailed_recording"`
-	// Defines maximum size (in bytes) for Raw Request and Raw Response logs, this value defaults
-	// to 0. If it is not set then tyk-pump will not trim any data and will store the full
-	// information. This can also be set at a pump level. For example:
-	// ```{.json}
-	// "csv": {
-	//   "type": "csv",
-	//   "max_record_size":1000,
-	//   "meta": {
-	//     "csv_dir": "./"
-	//   }
-	// }
-	// ```
+	// Defines maximum size (in bytes) of an individual Traffic Log that this Pump will transfer.
 	//
-	// This setting has no effect on aggregate pumps (`mongo-pump-aggregate`, `sql_aggregate`), because
-	// aggregated analytics records never include `raw_request` or `raw_response` data.
+	// This is useful when using Detailed Recording to capture the request and response payloads in the Traffic Log, to avoid overloading the logging databases. Pump will trim the log to the maximum configured size.
+	// If omitted or set to 0 (default) then Pump will transfer the full Traffic Log.
+	//
+	// This setting has no effect for aggregate pumps used to generate [Tyk Dashboard Analytics](/api-management/dashboard-analytics) which do not directly transmit the Traffic Logs.
 	MaxRecordSize int `json:"max_record_size"`
 	// IgnoreFields defines a list of analytics fields that will be ignored when writing to the pump.
 	// This can be used to avoid writing sensitive information to the Database, or data that you don't really need to have.
