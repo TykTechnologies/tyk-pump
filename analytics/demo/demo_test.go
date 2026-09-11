@@ -14,6 +14,7 @@ func TestGenerateDemoData(t *testing.T) {
 		writer         func([]interface{}, *health.Job, time.Time, int)
 		orgID          string
 		days           int
+		hours          int
 		recordsPerHour int
 		trackPath      bool
 		futureData     bool
@@ -95,6 +96,40 @@ func TestGenerateDemoData(t *testing.T) {
 				writer:         func([]interface{}, *health.Job, time.Time, int) {},
 			},
 		},
+		{
+			name: "generating demo data for 5 hours, 10 records per hour -> 50 records",
+			args: args{
+				hours:          5,
+				recordsPerHour: 10,
+				orgID:          "test",
+				trackPath:      false,
+				futureData:     false,
+				writer:         func([]interface{}, *health.Job, time.Time, int) {},
+			},
+		},
+		{
+			name: "generating demo data for 12 hours (future), 5 records per hour -> 60 records",
+			args: args{
+				hours:          12,
+				recordsPerHour: 5,
+				orgID:          "test",
+				trackPath:      true,
+				futureData:     true,
+				writer:         func([]interface{}, *health.Job, time.Time, int) {},
+			},
+		},
+		{
+			name: "hours overrides days: 3 hours, 2 days set, 1 record per hour -> 3 records",
+			args: args{
+				days:           2,
+				hours:          3,
+				recordsPerHour: 1,
+				orgID:          "test",
+				trackPath:      false,
+				futureData:     false,
+				writer:         func([]interface{}, *health.Job, time.Time, int) {},
+			},
+		},
 	}
 
 	for _, tt := range tests {
@@ -110,18 +145,39 @@ func TestGenerateDemoData(t *testing.T) {
 					// checking timestamp:
 					// if futureData is true, then timestamp should be in the present and future
 					// if futureData is false, then timestamp should be in the past
-					ts := time.Now()
+					now := time.Now().UTC()
+					var hourStart int
+					if tt.args.hours > 0 {
+						hourStart = now.Hour() // Compare against the start of the current hour
+					}
+					compareTime := time.Date(now.Year(), now.Month(), now.Day(), hourStart, 0, 0, 0, time.UTC)
+
 					if tt.args.futureData {
-						val := analyticsRecord.TimeStamp.After(time.Date(ts.Year(), ts.Month(), ts.Day(), 0, 0, 0, 0, time.UTC)) || analyticsRecord.TimeStamp.Equal(time.Date(ts.Year(), ts.Month(), ts.Day(), 0, 0, 0, 0, time.UTC))
+						// Future data should be >= the start of current period
+						val := analyticsRecord.TimeStamp.After(compareTime) || analyticsRecord.TimeStamp.Equal(compareTime)
 						assert.True(t, val)
 					} else {
-						assert.True(t, analyticsRecord.TimeStamp.Before(time.Date(ts.Year(), ts.Month(), ts.Day(), 0, 0, 0, 0, time.UTC)))
+						// Past data should be < the start of current period
+						assert.True(t, analyticsRecord.TimeStamp.Before(compareTime))
 					}
 					assert.Equal(t, tt.args.trackPath, analyticsRecord.TrackPath)
 				}
 			}
 
-			GenerateDemoData(tt.args.days, tt.args.recordsPerHour, tt.args.orgID, tt.args.futureData, tt.args.trackPath, tt.args.writer)
+			GenerateDemoData(tt.args.days, tt.args.hours, tt.args.recordsPerHour, tt.args.orgID, tt.args.futureData, tt.args.trackPath, tt.args.writer)
+
+			// If hours is set, calculate expected count based on hours
+			if tt.args.hours > 0 {
+				if tt.args.recordsPerHour == 0 {
+					isValid := counter >= 300*tt.args.hours || counter <= 500*tt.args.hours
+					assert.True(t, isValid)
+					return
+				}
+				assert.Equal(t, tt.args.hours*tt.args.recordsPerHour, counter)
+				return
+			}
+
+			// Otherwise use days logic
 			if tt.args.recordsPerHour == 0 {
 				isValid := counter >= 300*tt.args.days || counter <= 500*tt.args.days
 				assert.True(t, isValid)

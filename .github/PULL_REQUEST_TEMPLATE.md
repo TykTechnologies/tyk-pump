@@ -39,5 +39,5 @@ the code, etc. -->
 - [ ] I have added tests to cover my changes.
 - [ ] All new and existing tests passed.
 - [ ] Check your code additions will not fail linting checks:
-  - [ ] `go fmt -s`
+  - [ ] `go fmt ./...`
   - [ ] `go vet`
