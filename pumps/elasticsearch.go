@@ -43,6 +43,8 @@ const (
 	esMCPDeclaredProtocolVersion = "declared_protocol_version"
 	// esMCPProtocolVersionSource describes how the effective version was selected.
 	esMCPProtocolVersionSource = "protocol_version_source"
+	// esMCPJSONRPCErrorCode is the signed top-level JSON-RPC error code.
+	esMCPJSONRPCErrorCode = "jsonrpc_error_code"
 )
 
 // @PumpConf Elasticsearch
@@ -491,7 +493,7 @@ func getMapping(datum analytics.AnalyticsRecord, extendedStatistics bool, genera
 	}
 
 	if datum.IsMCPRecord() {
-		mapping["jsonrpc_error_code"] = record.MCPStats.JSONRPCErrorCode
+		mapping[esMCPJSONRPCErrorCode] = record.MCPStats.JSONRPCErrorCode
 		mapping[esMCPMethod] = record.MCPStats.JSONRPCMethod
 		mapping[esMCPPrimitiveType] = record.MCPStats.PrimitiveType
 		mapping[esMCPPrimitiveName] = record.MCPStats.PrimitiveName

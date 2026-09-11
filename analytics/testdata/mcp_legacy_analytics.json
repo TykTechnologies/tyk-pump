@@ -1,0 +1,10 @@
+{
+  "api_id": "legacy-api",
+  "org_id": "legacy-org",
+  "mcp_stats": {
+    "is_mcp": true,
+    "jsonrpc_method": "tools/call",
+    "primitive_type": "tool",
+    "primitive_name": "legacy_tool"
+  }
+}
