@@ -2,12 +2,14 @@ package pumps
 
 import (
 	"context"
+	"fmt"
 	"os"
 	"testing"
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gopkg.in/vmihailenco/msgpack.v2"
 )
 
@@ -362,15 +364,29 @@ func TestSQLWriteUptimeDataAggregations(t *testing.T) {
 	}
 
 	assert.Len(t, dbRecords, 3)
-	assert.Equal(t, "url", dbRecords[0].Dimension)
-	assert.Equal(t, "url1", dbRecords[0].DimensionValue)
-	assert.Equal(t, 3, dbRecords[0].Code200)
-	assert.Equal(t, 2, dbRecords[0].Code500)
-	assert.Equal(t, 5, dbRecords[0].Hits)
-	assert.Equal(t, 3, dbRecords[0].Success)
-	assert.Equal(t, 2, dbRecords[0].ErrorTotal)
-	assert.Equal(t, 14.0, dbRecords[0].RequestTime)
-	assert.Equal(t, 70.0, dbRecords[0].TotalRequestTime)
+
+	// Find the row under test by dimension rather than by position. Find() has
+	// no ORDER BY, so the result order follows insertion order, and the pump
+	// sorts each batch by ID before upserting (TT-9424).
+	var urlRec *analytics.UptimeReportAggregateSQL
+	for i := range dbRecords {
+		if dbRecords[i].Dimension == "url" {
+			urlRec = &dbRecords[i]
+			break
+		}
+	}
+	if !assert.NotNil(t, urlRec, `expected a record with dimension "url"`) {
+		return
+	}
+
+	assert.Equal(t, "url1", urlRec.DimensionValue)
+	assert.Equal(t, 3, urlRec.Code200)
+	assert.Equal(t, 2, urlRec.Code500)
+	assert.Equal(t, 5, urlRec.Hits)
+	assert.Equal(t, 3, urlRec.Success)
+	assert.Equal(t, 2, urlRec.ErrorTotal)
+	assert.Equal(t, 14.0, urlRec.RequestTime)
+	assert.Equal(t, 70.0, urlRec.TotalRequestTime)
 }
 
 func TestDecodeRequestAndDecodeResponseSQL(t *testing.T) {
@@ -502,5 +518,52 @@ func TestBuildIndexName(t *testing.T) {
 				t.Errorf("buildIndexName(%s, %s) = %s; want %s", tt.indexBaseName, tt.tableName, result, tt.expected)
 			}
 		})
+	}
+}
+
+// TestSQLWriteUptimeData_SQLite exercises WriteUptimeData against in-memory SQLite, so it runs
+// everywhere - including the coverage CI job, which provisions no PostgreSQL and therefore
+// skips every Postgres-gated test in this package.
+//
+// Init() is deliberately not called: Dialect() has not supported sqlite since v1.12.0, so the
+// pump is built directly over the test database. WriteUptimeData does not migrate in the
+// non-sharded branch, so the table has to exist up front.
+//
+// Note this call mutates the package-level `table` variable declared in influx.go, which is
+// shared process-wide - a pre-existing issue recorded on TT-9424. That is why this test must
+// not be made parallel.
+func TestSQLWriteUptimeData_SQLite(t *testing.T) {
+	db := setupTestDBWithJSONTags(t)
+	require.NoError(t, db.Table(analytics.UptimeSQLTable).AutoMigrate(&analytics.UptimeReportAggregateSQL{}))
+
+	pmp := &SQLPump{IsUptime: true, db: db}
+	pmp.SQLConf = &SQLConf{BatchSize: 100}
+	pmp.log = log.WithField("prefix", SQLPrefix+"-uptime")
+
+	ts := time.Date(2025, 6, 15, 10, 0, 0, 0, time.UTC)
+	records := make([]interface{}, 0, 4)
+	for i := 0; i < 4; i++ {
+		encoded, err := msgpack.Marshal(analytics.UptimeReportData{
+			OrgID:        "org1",
+			URL:          fmt.Sprintf("https://upstream.example/%02d", i),
+			APIID:        "api1",
+			ResponseCode: 200,
+			RequestTime:  10,
+			TimeStamp:    ts,
+		})
+		require.NoError(t, err)
+		records = append(records, string(encoded))
+	}
+
+	pmp.WriteUptimeData(records)
+
+	var recs []analytics.UptimeReportAggregateSQL
+	require.NoError(t, pmp.db.Table(analytics.UptimeSQLTable).Find(&recs).Error)
+
+	// One row per distinct URL plus the implicit "total" row.
+	assert.Len(t, recs, 5)
+	for _, rec := range recs {
+		assert.Equal(t, "org1", rec.OrgID)
+		assert.NotEmpty(t, rec.ID)
 	}
 }
