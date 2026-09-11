@@ -2,6 +2,7 @@ package pumps
 
 import (
 	"context"
+	"os"
 	"testing"
 
 	"github.com/TykTechnologies/storage/persistent/model"
@@ -146,17 +147,22 @@ func TestMCPMongoPump_WriteData_EmptyData(t *testing.T) {
 
 func newMCPMongoPump(t *testing.T) *MCPMongoPump {
 	t.Helper()
+	oldTableName := analytics.MCPSQLTableName
 	analytics.MCPSQLTableName = ""
+	t.Cleanup(func() { analytics.MCPSQLTableName = oldTableName })
 
 	conf := defaultConf()
-	conf.CollectionName = "test_mcp_records"
+	if mongoURL := os.Getenv("TYK_TEST_MCP_MONGO_URL"); mongoURL != "" {
+		conf.MongoURL = mongoURL
+	}
+	conf.CollectionName = "test_mcp_" + string(model.NewObjectID())
 	pump := &MCPMongoPump{}
 	pump.dbConf = &conf
 	pump.log = log.WithField("prefix", mongoMCPPrefix)
 	pump.MongoPump.CommonPumpConfig = pump.CommonPumpConfig
 	pump.connect()
 	t.Cleanup(func() {
-		_ = pump.store.DropDatabase(context.Background())
+		require.NoError(t, pump.store.Drop(context.Background(), dbObject{tableName: conf.CollectionName}))
 	})
 	return pump
 }

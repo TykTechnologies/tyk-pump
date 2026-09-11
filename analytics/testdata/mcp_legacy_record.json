@@ -1,0 +1,9 @@
+{
+  "JSONRPCMethod": "tools/call",
+  "PrimitiveType": "tool",
+  "PrimitiveName": "legacy_tool",
+  "AnalyticsRecord": {
+    "api_id": "legacy-api",
+    "org_id": "legacy-org"
+  }
+}

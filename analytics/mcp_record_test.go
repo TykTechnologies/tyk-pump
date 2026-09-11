@@ -162,10 +162,14 @@ func TestMCPRecord_BSONRoundTripProtocolContext(t *testing.T) {
 	assert.Equal(t, record.DeclaredProtocolVersion, decoded.DeclaredProtocolVersion)
 	assert.Equal(t, record.ProtocolVersionSource, decoded.ProtocolVersionSource)
 
-	oldEncoded, err := bson.Marshal(bson.M{"jsonrpc_method": "tools/call"})
+	oldEncoded, err := bson.Marshal(bson.M{"jsonrpcmethod": "tools/call", "apiid": "legacy-api", "orgid": "legacy-org"})
 	require.NoError(t, err)
 	var oldRecord MCPRecord
 	require.NoError(t, bson.Unmarshal(oldEncoded, &oldRecord))
+	assert.Equal(t, "tools/call", oldRecord.JSONRPCMethod)
+	assert.Equal(t, "legacy-api", oldRecord.AnalyticsRecord.APIID)
+	assert.Equal(t, "legacy-org", oldRecord.AnalyticsRecord.OrgID)
+	assert.Zero(t, oldRecord.JSONRPCErrorCode)
 	assert.Empty(t, oldRecord.EffectiveProtocolVersion)
 	assert.Empty(t, oldRecord.DeclaredProtocolVersion)
 	assert.Empty(t, oldRecord.ProtocolVersionSource)
