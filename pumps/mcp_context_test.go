@@ -30,7 +30,7 @@ func loadMCPContextCases(t *testing.T) []mcpContextCase {
 	return cases
 }
 
-func assertMCPContextRecord(t *testing.T, expected *analytics.AnalyticsRecord, actual analytics.MCPRecord) {
+func assertMCPContextRecord(t *testing.T, expected *analytics.AnalyticsRecord, actual *analytics.MCPRecord) {
 	t.Helper()
 	assert.Equal(t, expected.APIID, actual.AnalyticsRecord.APIID)
 	assert.Equal(t, expected.OrgID, actual.AnalyticsRecord.OrgID)

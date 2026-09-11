@@ -197,7 +197,8 @@ func TestMCPMongoPump_WriteData_Roundtrip(t *testing.T) {
 	for _, tc := range cases {
 		t.Run(tc.Name, func(t *testing.T) {
 			require.Contains(t, byAPI, tc.Record.APIID)
-			assertMCPContextRecord(t, &tc.Record, byAPI[tc.Record.APIID])
+			actual := byAPI[tc.Record.APIID]
+			assertMCPContextRecord(t, &tc.Record, &actual)
 			require.Contains(t, rawByAPI, tc.Record.APIID)
 			raw := rawByAPI[tc.Record.APIID]
 			assert.Equal(t, tc.Record.MCPStats.JSONRPCMethod, raw.Lookup("jsonrpcmethod").StringValue())
