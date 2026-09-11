@@ -1,8 +1,10 @@
 package analytics
 
 import (
+	"bytes"
 	"encoding/hex"
 	"encoding/json"
+	"math"
 	"os"
 	"strings"
 	"testing"
@@ -15,18 +17,54 @@ import (
 func TestMCPContextJSONBSONCompatibility(t *testing.T) {
 	data, err := os.ReadFile("testdata/mcp_context_cases.json")
 	require.NoError(t, err)
-	var cases []struct {
-		Name string `json:"name"`
+	type contextCase struct {
+		Name   string          `json:"name"`
 		Record AnalyticsRecord `json:"record"`
 	}
+	var cases []contextCase
 	require.NoError(t, json.Unmarshal(data, &cases))
 	require.Len(t, cases, 9)
-	for _, tc := range cases {
+	type rawCase struct {
+		Record map[string]interface{} `json:"record"`
+	}
+	var rawCases []rawCase
+	rawDecoder := json.NewDecoder(bytes.NewReader(data))
+	rawDecoder.UseNumber()
+	require.NoError(t, rawDecoder.Decode(&rawCases))
+	for name, code := range map[string]int64{"zero": 0, "reserved-denial": -33002, "min32": math.MinInt32, "max32": math.MaxInt32, "below32": -2147483649, "above32": 2147483648, "min64": math.MinInt64, "max64": math.MaxInt64} {
+		boundaryJSON, readErr := os.ReadFile("testdata/mcp_signed_codes/" + name + ".json")
+		require.NoError(t, readErr)
+		var boundary AnalyticsRecord
+		decodeErr := json.Unmarshal(boundaryJSON, &boundary)
+		if code < int64(math.MinInt) || code > int64(math.MaxInt) {
+			require.Error(t, decodeErr, "wide JSON must not silently narrow on a native32 target")
+			continue
+		}
+		require.NoError(t, decodeErr)
+		require.Equal(t, code, int64(boundary.MCPStats.JSONRPCErrorCode))
+		var rawBoundary map[string]interface{}
+		boundaryDecoder := json.NewDecoder(bytes.NewReader(boundaryJSON))
+		boundaryDecoder.UseNumber()
+		require.NoError(t, boundaryDecoder.Decode(&rawBoundary))
+		cases = append(cases, contextCase{Name: "signed-" + name, Record: boundary})
+		rawCases = append(rawCases, rawCase{Record: rawBoundary})
+	}
+	for index, tc := range cases {
 		t.Run(tc.Name, func(t *testing.T) {
-			encoded, err := json.Marshal(tc.Record)
+			require.NotContains(t, rawCases[index].Record, "api_key")
+			require.Empty(t, tc.Record.APIKey)
+			recordJSON, err := json.Marshal(tc.Record)
 			require.NoError(t, err)
+			var actualJSON map[string]interface{}
+			actualDecoder := json.NewDecoder(bytes.NewReader(recordJSON))
+			actualDecoder.UseNumber()
+			require.NoError(t, actualDecoder.Decode(&actualJSON))
+			assert.Equal(t, "", actualJSON["api_key"])
+			for key, expected := range rawCases[index].Record {
+				assert.Equal(t, expected, actualJSON[key], "fixture JSON field %s must survive exact public names", key)
+			}
 			var decoded AnalyticsRecord
-			require.NoError(t, json.Unmarshal(encoded, &decoded))
+			require.NoError(t, json.Unmarshal(recordJSON, &decoded))
 			assert.Equal(t, tc.Record.MCPStats, decoded.MCPStats)
 			assert.Equal(t, tc.Record.APIID, decoded.APIID)
 			assert.Equal(t, tc.Record.OrgID, decoded.OrgID)
@@ -43,15 +81,15 @@ func TestMCPContextJSONBSONCompatibility(t *testing.T) {
 			assert.Equal(t, tc.Record.OrgID, converted.AnalyticsRecord.OrgID)
 
 			for _, codec := range []struct {
-				name string
-				marshal func(interface{}) ([]byte, error)
+				marshal   func(interface{}) ([]byte, error)
 				unmarshal func([]byte, interface{}) error
-			}{{"json", json.Marshal, json.Unmarshal}, {"bson", bson.Marshal, bson.Unmarshal}} {
+				name      string
+			}{{json.Marshal, json.Unmarshal, "json"}, {bson.Marshal, bson.Unmarshal, "bson"}} {
 				t.Run(codec.name, func(t *testing.T) {
-					encoded, err := codec.marshal(converted)
+					codecBytes, err := codec.marshal(converted)
 					require.NoError(t, err)
 					var restored MCPRecord
-					require.NoError(t, codec.unmarshal(encoded, &restored))
+					require.NoError(t, codec.unmarshal(codecBytes, &restored))
 					assert.Equal(t, converted.JSONRPCMethod, restored.JSONRPCMethod)
 					assert.Equal(t, converted.PrimitiveType, restored.PrimitiveType)
 					assert.Equal(t, converted.PrimitiveName, restored.PrimitiveName)
@@ -63,9 +101,9 @@ func TestMCPContextJSONBSONCompatibility(t *testing.T) {
 					assert.Equal(t, converted.AnalyticsRecord.OrgID, restored.AnalyticsRecord.OrgID)
 				})
 			}
-			encoded, err = bson.Marshal(converted)
+			bsonBytes, err := bson.Marshal(converted)
 			require.NoError(t, err)
-			raw := bson.Raw(encoded)
+			raw := bson.Raw(bsonBytes)
 			assert.Equal(t, converted.JSONRPCMethod, raw.Lookup("jsonrpcmethod").StringValue())
 			assert.Equal(t, int64(converted.JSONRPCErrorCode), raw.Lookup("jsonrpc_error_code").AsInt64())
 			assert.Equal(t, converted.EffectiveProtocolVersion, raw.Lookup("effective_protocol_version").StringValue())

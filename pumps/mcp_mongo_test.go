@@ -2,6 +2,7 @@ package pumps
 
 import (
 	"context"
+	"math"
 	"os"
 	"testing"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.mongodb.org/mongo-driver/bson"
 )
 
 func TestFilterMCPData(t *testing.T) {
@@ -155,7 +157,7 @@ func newMCPMongoPump(t *testing.T) *MCPMongoPump {
 	if mongoURL := os.Getenv("TYK_TEST_MCP_MONGO_URL"); mongoURL != "" {
 		conf.MongoURL = mongoURL
 	}
-	conf.CollectionName = "test_mcp_" + string(model.NewObjectID())
+	conf.CollectionName = "test_mcp_" + model.NewObjectID().Hex()
 	pump := &MCPMongoPump{}
 	pump.dbConf = &conf
 	pump.log = log.WithField("prefix", mongoMCPPrefix)
@@ -169,39 +171,48 @@ func newMCPMongoPump(t *testing.T) *MCPMongoPump {
 
 func TestMCPMongoPump_WriteData_Roundtrip(t *testing.T) {
 	pump := newMCPMongoPump(t)
-
-	records := []interface{}{
-		analytics.AnalyticsRecord{
-			APIID: "api1", OrgID: "org1", ResponseCode: 200,
-			MCPStats: analytics.MCPStats{
-				IsMCP: true, JSONRPCMethod: "tools/call",
-				PrimitiveType: "tool", PrimitiveName: "get_weather",
-			},
-		},
-		analytics.AnalyticsRecord{
-			APIID: "api1", OrgID: "org1", ResponseCode: 500,
-			MCPStats: analytics.MCPStats{
-				IsMCP: true, JSONRPCMethod: "resources/read",
-				PrimitiveType: "resource", PrimitiveName: "docs",
-			},
-		},
-		// non-MCP record — must NOT appear in the collection
-		analytics.AnalyticsRecord{
-			APIID: "api1", OrgID: "org1", ResponseCode: 200,
-		},
+	cases := append(loadMCPContextCases(t), loadMCPSignedCodeCases(t)...)
+	records := make([]interface{}, 0, len(cases)+1)
+	for _, tc := range cases {
+		records = append(records, tc.Record)
 	}
-
+	records = append(records, analytics.AnalyticsRecord{APIID: "non-mcp", OrgID: "mcp-compatibility", ResponseCode: 200})
 	require.NoError(t, pump.WriteData(context.Background(), records))
-
+	collection := dbObject{tableName: pump.dbConf.CollectionName}
 	var results []analytics.MCPRecord
-	d := dbObject{tableName: pump.dbConf.CollectionName}
-	require.NoError(t, pump.store.Query(context.Background(), d, &results, nil))
-
-	require.Len(t, results, 2, "only MCP records should be stored")
-	assert.Equal(t, "tools/call", results[0].JSONRPCMethod)
-	assert.Equal(t, "tool", results[0].PrimitiveType)
-	assert.Equal(t, "get_weather", results[0].PrimitiveName)
-	assert.Equal(t, "resources/read", results[1].JSONRPCMethod)
-	assert.Equal(t, "resource", results[1].PrimitiveType)
-	assert.Equal(t, "docs", results[1].PrimitiveName)
+	require.NoError(t, pump.store.Query(context.Background(), collection, &results, nil))
+	require.Len(t, results, len(cases), "non-MCP record must not be persisted")
+	byAPI := make(map[string]analytics.MCPRecord, len(results))
+	for _, result := range results {
+		require.NotContains(t, byAPI, result.AnalyticsRecord.APIID, "no duplicate identity")
+		byAPI[result.AnalyticsRecord.APIID] = result
+	}
+	var rawResults []bson.Raw
+	require.NoError(t, pump.store.Query(context.Background(), collection, &rawResults, nil))
+	require.Len(t, rawResults, len(cases))
+	rawByAPI := make(map[string]bson.Raw, len(rawResults))
+	for _, raw := range rawResults {
+		rawByAPI[raw.Lookup("apiid").StringValue()] = raw
+	}
+	for _, tc := range cases {
+		t.Run(tc.Name, func(t *testing.T) {
+			require.Contains(t, byAPI, tc.Record.APIID)
+			assertMCPContextRecord(t, &tc.Record, byAPI[tc.Record.APIID])
+			require.Contains(t, rawByAPI, tc.Record.APIID)
+			raw := rawByAPI[tc.Record.APIID]
+			assert.Equal(t, tc.Record.MCPStats.JSONRPCMethod, raw.Lookup("jsonrpcmethod").StringValue())
+			assert.Equal(t, tc.Record.MCPStats.EffectiveProtocolVersion, raw.Lookup("effective_protocol_version").StringValue())
+			assert.Equal(t, tc.Record.MCPStats.DeclaredProtocolVersion, raw.Lookup("declared_protocol_version").StringValue())
+			assert.Equal(t, tc.Record.MCPStats.ProtocolVersionSource, raw.Lookup("protocol_version_source").StringValue())
+			assert.Equal(t, int64(tc.Record.MCPStats.JSONRPCErrorCode), raw.Lookup("jsonrpc_error_code").AsInt64())
+			code := int64(tc.Record.MCPStats.JSONRPCErrorCode)
+			expectedType := bson.TypeInt64
+			if code >= math.MinInt32 && code <= math.MaxInt32 {
+				expectedType = bson.TypeInt32
+			}
+			assert.Equal(t, expectedType, raw.Lookup("jsonrpc_error_code").Type)
+			_, err := raw.LookupErr("jsonrpc_method")
+			assert.Error(t, err, "do not rename historical BSON method")
+		})
+	}
 }
