@@ -27,8 +27,10 @@ type ElasticsearchPump struct {
 	CommonPumpConfig
 }
 
-var elasticsearchPrefix = "elasticsearch-pump"
-var elasticsearchDefaultENV = PUMPS_ENV_PREFIX + "_ELASTICSEARCH" + PUMPS_ENV_META_PREFIX
+var (
+	elasticsearchPrefix     = "elasticsearch-pump"
+	elasticsearchDefaultENV = PUMPS_ENV_PREFIX + "_ELASTICSEARCH" + PUMPS_ENV_META_PREFIX
+)
 
 const (
 	// esMCPMethod is the Elasticsearch field name for the MCP JSON-RPC method.
@@ -191,7 +193,6 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 	case "3":
 		op := new(Elasticsearch3Operator)
 		op.esClient, err = elasticv3.NewClient(elasticv3.SetURL(urls...), elasticv3.SetSniff(conf.EnableSniffing), elasticv3.SetBasicAuth(conf.Username, conf.Password), elasticv3.SetHttpClient(httpClient))
-
 		if err != nil {
 			return op, err
 		}
@@ -229,7 +230,6 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 		op := new(Elasticsearch5Operator)
 
 		op.esClient, err = elasticv5.NewClient(elasticv5.SetURL(urls...), elasticv5.SetSniff(conf.EnableSniffing), elasticv5.SetBasicAuth(conf.Username, conf.Password), elasticv5.SetHttpClient(httpClient))
-
 		if err != nil {
 			return op, err
 		}
@@ -266,7 +266,6 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 		op := new(Elasticsearch6Operator)
 
 		op.esClient, err = elasticv6.NewClient(elasticv6.SetURL(urls...), elasticv6.SetSniff(conf.EnableSniffing), elasticv6.SetBasicAuth(conf.Username, conf.Password), elasticv6.SetHttpClient(httpClient))
-
 		if err != nil {
 			return op, err
 		}
@@ -303,7 +302,6 @@ func (e *ElasticsearchPump) getOperator() (ElasticsearchOperator, error) {
 		op := new(Elasticsearch7Operator)
 
 		op.esClient, err = elasticv7.NewClient(elasticv7.SetURL(urls...), elasticv7.SetSniff(conf.EnableSniffing), elasticv7.SetBasicAuth(conf.Username, conf.Password), elasticv7.SetHttpClient(httpClient))
-
 		if err != nil {
 			return op, err
 		}
@@ -390,7 +388,7 @@ func (e *ElasticsearchPump) Init(config interface{}) error {
 		e.log.Fatal("Invalid version: ", err)
 	}
 
-	var re = regexp.MustCompile(`(.*)\/\/(.*):(.*)\@(.*)`)
+	re := regexp.MustCompile(`(.*)\/\/(.*):(.*)\@(.*)`)
 	printableURL := re.ReplaceAllString(e.esConf.ElasticsearchURL, `$1//***:***@$4`)
 
 	e.log.Info("Elasticsearch URL: ", printableURL)
@@ -436,7 +434,7 @@ func getIndexName(esConf *ElasticsearchConf) string {
 
 	if esConf.RollingIndex {
 		currentTime := time.Now()
-		//This formats the date to be YYYY.MM.DD but Golang makes you use a specific date for its date formatting
+		// This formats the date to be YYYY.MM.DD but Golang makes you use a specific date for its date formatting
 		indexName += "-" + currentTime.Format("2006.01.02")
 	}
 	return indexName
@@ -457,7 +455,7 @@ func getIndexNameForRecord(esConf *ElasticsearchConf, record analytics.Analytics
 	return getIndexName(esConf)
 }
 
-func getMapping(datum analytics.AnalyticsRecord, extendedStatistics bool, generateID bool, decodeBase64 bool) (map[string]interface{}, string) {
+func getMapping(datum analytics.AnalyticsRecord, extendedStatistics, generateID, decodeBase64 bool) (map[string]interface{}, string) {
 	record := datum
 
 	mapping := map[string]interface{}{

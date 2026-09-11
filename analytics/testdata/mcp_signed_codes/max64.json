@@ -1,0 +1,35 @@
+{
+  "method": "POST",
+  "host": "qa-pump.invalid",
+  "path": "/qa-pump-signed-code/max64",
+  "raw_path": "/qa-pump-signed-code/max64",
+  "user_agent": "RUN_MARKER-max64",
+  "response_code": 400,
+  "timestamp": "2026-09-11T12:00:00Z",
+  "day": 11,
+  "month": 9,
+  "year": 2026,
+  "hour": 12,
+  "api_version": "Default",
+  "api_name": "TT18010 synthetic signed-code producer",
+  "api_id": "BOUNDARY_API_ID",
+  "org_id": "tt18010-pump-boundary",
+  "request_time": 1,
+  "raw_request": "",
+  "raw_response": "",
+  "ip_address": "127.0.0.1",
+  "tags": [
+    "tt18010-signed-code-fixture"
+  ],
+  "expireAt": "2100-01-01T00:00:00Z",
+  "mcp_stats": {
+    "is_mcp": true,
+    "jsonrpc_method": "tools/call",
+    "primitive_type": "tool",
+    "primitive_name": "signed_code_probe",
+    "effective_protocol_version": "2026-07-28",
+    "declared_protocol_version": "2026-07-28",
+    "protocol_version_source": "header_body",
+    "jsonrpc_error_code": 9223372036854775807
+  }
+}
