@@ -53,6 +53,13 @@ type SyslogConf struct {
 	//   }
 	// ```
 	Tag string `json:"tag" mapstructure:"tag"`
+	// If set to `true`, includes the `tags` field from the analytics record in the output.
+	// Defaults to `false`, so the emitted message is unchanged when upgrading.
+	//
+	// Tags are unbounded in length. Over the default `udp` transport a record with a large
+	// tag set can exceed syslog datagram limits and truncate the fields that sort after
+	// `tags` — prefer `tcp` or `tls` when enabling this.
+	IncludeTags bool `json:"include_tags" mapstructure:"include_tags"`
 }
 
 func (s *SyslogPump) GetName() string {
@@ -130,6 +137,15 @@ func (s *SyslogPump) initConfigs() {
 	if s.syslogConf.LogLevel == 0 {
 		s.log.Warn("Using Log Level 0 (KERNEL) for Syslog pump")
 	}
+
+	// Tags are unbounded and sort before timestamp and user_agent, so on a datagram
+	// transport a large tag set silently truncates fields the pump emits today.
+	// Worth a line at startup: the failure is silent at the point it happens.
+	if s.syslogConf.IncludeTags && s.syslogConf.Transport == "udp" {
+		s.log.Warn("include_tags is enabled on the 'udp' transport: records with " +
+			"large tag sets may exceed the syslog datagram limit and lose the " +
+			"fields that sort after 'tags'. Consider 'tcp' or 'tls'.")
+	}
 }
 
 /**
@@ -174,6 +190,10 @@ func (s *SyslogPump) WriteData(ctx context.Context, data []interface{}) error {
 				"user_agent":      decoded.UserAgent,
 			}
 
+			if s.syslogConf.IncludeTags {
+				message["tags"] = escapeTags(decoded.Tags)
+			}
+
 			// Print to Syslog using original map format (maintains backward compatibility)
 			_, _ = fmt.Fprintf(s.writer, "%s", message)
 		}
@@ -181,6 +201,124 @@ func (s *SyslogPump) WriteData(ctx context.Context, data []interface{}) error {
 	s.log.Info("Purged ", len(data), " records...")
 
 	return nil
+}
+
+const syslogHexDigits = "0123456789abcdef"
+
+// hasControlChars reports whether s contains a C0 control character or DEL.
+//
+// Scanned byte-wise rather than rune-wise, which is safe here: every byte of a
+// multi-byte UTF-8 sequence is >= 0x80, so no control byte can be part of one.
+func hasControlChars(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] < 0x20 || s[i] == 0x7f {
+			return true
+		}
+	}
+
+	return false
+}
+
+// appendEscapedTag appends s to dst with control characters replaced by their
+// printable escape sequences.
+func appendEscapedTag(dst []byte, s string) []byte {
+	for i := 0; i < len(s); i++ {
+		c := s[i]
+
+		if c >= 0x20 && c != 0x7f {
+			dst = append(dst, c)
+
+			continue
+		}
+
+		switch c {
+		case '\n':
+			dst = append(dst, `\n`...)
+		case '\r':
+			dst = append(dst, `\r`...)
+		case '\t':
+			dst = append(dst, `\t`...)
+		case '\b':
+			dst = append(dst, `\b`...)
+		case '\f':
+			dst = append(dst, `\f`...)
+		case '\v':
+			dst = append(dst, `\v`...)
+		default:
+			dst = append(dst, `\x`...)
+			dst = append(dst, syslogHexDigits[c>>4], syslogHexDigits[c&0x0f])
+		}
+	}
+
+	return dst
+}
+
+// escapeTags replaces control characters in tag values with printable escape
+// sequences, so that a tag cannot alter the log stream it is written into.
+//
+// Tags are user-supplied and reach the log verbatim, and the characters cause
+// distinct problems. A newline splits one record across two syslog lines, which a
+// collector reads as two records -- the second malformed. A carriage return or
+// backspace does not split the record, but moves the cursor back in terminals and
+// log viewers that act on it, so following text overwrites what came before: a tag
+// can be crafted to hide the rest of the record from whoever is reading the log.
+// An ESC begins an ANSI sequence, which can recolour or clear the reader's screen.
+// A NUL truncates the record in consumers that treat it as a string terminator,
+// which includes C-based daemons such as rsyslog.
+//
+// The pumps that already emit this field -- Elasticsearch, Kafka, Kinesis, Moesif
+// -- encode the record as JSON, and Go's JSON encoder escapes every one of these
+// characters. Escaping the whole C0 range plus DEL therefore brings Syslog into
+// line with them rather than inventing a rule for this pump.
+//
+// This is stricter than the treatment raw_request and raw_response get, which
+// escape \n only. Widening those would change bytes this pump already emits, so it
+// is left to its own change; tags are new and opt-in, so nothing existing moves.
+//
+// The escaping is defensive, not reversible: a tag containing the literal two
+// characters \n is indistinguishable from one containing a newline, exactly as it
+// already was.
+//
+// Multi-byte Unicode separators such as U+2028 and U+0085 are left alone. Syslog
+// framing is byte-oriented -- a record ends at an LF or at an octet count -- and the
+// UTF-8 encodings of those runes contain no 0x0A, so they cannot end a record.
+// A Unicode-aware viewer further downstream may still render them as a break.
+//
+// Returns the input slice unchanged when nothing needs escaping, so the common path
+// allocates nothing.
+func escapeTags(tags []string) []string {
+	needsEscaping := false
+
+	for _, tag := range tags {
+		if hasControlChars(tag) {
+			needsEscaping = true
+
+			break
+		}
+	}
+
+	if !needsEscaping {
+		return tags
+	}
+
+	escaped := make([]string, len(tags))
+	buf := make([]byte, 0, 64)
+
+	for i, tag := range tags {
+		// Deliberately re-scanned: the loop above stops at the first dirty tag, so
+		// this is the only thing keeping clean tags in a dirty slice from being
+		// copied. Not a leftover from the scan above.
+		if !hasControlChars(tag) {
+			escaped[i] = tag
+
+			continue
+		}
+
+		buf = appendEscapedTag(buf[:0], tag)
+		escaped[i] = string(buf)
+	}
+
+	return escaped
 }
 
 func (s *SyslogPump) SetTimeout(timeout int) {
