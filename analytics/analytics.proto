@@ -106,4 +106,7 @@ message MCPStats {
   string JSONRPCMethod = 2;
   string PrimitiveType = 3;
   string PrimitiveName = 4;
+  string EffectiveProtocolVersion = 5;
+  string DeclaredProtocolVersion = 6;
+  string ProtocolVersionSource = 7;
 }

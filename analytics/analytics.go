@@ -123,10 +123,13 @@ type GraphQLStats struct {
 }
 
 type MCPStats struct {
-	IsMCP         bool   `json:"is_mcp"`
-	JSONRPCMethod string `json:"jsonrpc_method"`
-	PrimitiveType string `json:"primitive_type"`
-	PrimitiveName string `json:"primitive_name"`
+	IsMCP                    bool   `json:"is_mcp"`
+	JSONRPCMethod            string `json:"jsonrpc_method"`
+	PrimitiveType            string `json:"primitive_type"`
+	PrimitiveName            string `json:"primitive_name"`
+	EffectiveProtocolVersion string `json:"effective_protocol_version"`
+	DeclaredProtocolVersion  string `json:"declared_protocol_version"`
+	ProtocolVersionSource    string `json:"protocol_version_source"`
 }
 
 type GraphError struct {
