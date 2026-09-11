@@ -172,6 +172,7 @@ func (s *SyslogPump) WriteData(ctx context.Context, data []interface{}) error {
 				"host":            decoded.Host,
 				"content_length":  decoded.ContentLength,
 				"user_agent":      decoded.UserAgent,
+				"tags":            decoded.Tags,
 			}
 
 			// Print to Syslog using original map format (maintains backward compatibility)
