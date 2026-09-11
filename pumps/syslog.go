@@ -203,7 +203,7 @@ func (s *SyslogPump) WriteData(ctx context.Context, data []interface{}) error {
 	return nil
 }
 
-const hexDigits = "0123456789abcdef"
+const syslogHexDigits = "0123456789abcdef"
 
 // hasControlChars reports whether s contains a C0 control character or DEL.
 //
@@ -246,7 +246,7 @@ func appendEscapedTag(dst []byte, s string) []byte {
 			dst = append(dst, `\v`...)
 		default:
 			dst = append(dst, `\x`...)
-			dst = append(dst, hexDigits[c>>4], hexDigits[c&0x0f])
+			dst = append(dst, syslogHexDigits[c>>4], syslogHexDigits[c&0x0f])
 		}
 	}
 
@@ -305,6 +305,9 @@ func escapeTags(tags []string) []string {
 	buf := make([]byte, 0, 64)
 
 	for i, tag := range tags {
+		// Deliberately re-scanned: the loop above stops at the first dirty tag, so
+		// this is the only thing keeping clean tags in a dirty slice from being
+		// copied. Not a leftover from the scan above.
 		if !hasControlChars(tag) {
 			escaped[i] = tag
 
