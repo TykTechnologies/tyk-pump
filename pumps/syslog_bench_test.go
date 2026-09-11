@@ -226,3 +226,61 @@ func BenchmarkSyslogPump_WriteData_Batch(b *testing.B) {
 		})
 	}
 }
+
+// BenchmarkSyslogPump_EscapeTags measures the escaping path directly, which the
+// WriteData benchmarks do not: their fixtures are clean, so they only ever exercise
+// the fast path that returns the input slice untouched.
+//
+// The gap matters because the two paths differ by more than a branch -- the escaping
+// path allocates a slice, a scratch buffer and a string per dirty tag. A deployment
+// whose tags routinely carry control characters pays that on every record.
+func BenchmarkSyslogPump_EscapeTags(b *testing.B) {
+	clean := syslogTestTagsBench(10)
+
+	oneDirty := append([]string(nil), clean...)
+	oneDirty[9] = "env-production\nINJECTED"
+
+	allDirty := make([]string, len(clean))
+	for i, tag := range clean {
+		allDirty[i] = tag + "\x1b[31m\r"
+	}
+
+	for _, bc := range []struct {
+		name string
+		tags []string
+	}{
+		{"Clean_FastPath", clean},
+		{"OneDirtyTag", oneDirty},
+		{"AllDirtyTags", allDirty},
+	} {
+		b.Run(bc.name, func(b *testing.B) {
+			b.ReportAllocs()
+			b.ResetTimer()
+
+			for i := 0; i < b.N; i++ {
+				_ = escapeTags(bc.tags)
+			}
+		})
+	}
+}
+
+// syslogTestTagsBench mirrors the tag fixture used by the WriteData benchmarks.
+func syslogTestTagsBench(n int) []string {
+	all := []string{
+		"key-test-api-key-aaaaaaaaaaaaaaaaaaaaaaa",
+		"org-5e9d9544a1dcd60001d0ed20",
+		"api-b84fe1a04e5648927971c0557971565c",
+		"pol-6a1b2c3d4e5f60718293a4b5",
+		"dev-9f8e7d6c5b4a39281706f5e4",
+		"cached-response",
+		"tier-gold",
+		"region-emea",
+		"team-payments",
+		"env-production",
+	}
+	if n > len(all) {
+		n = len(all)
+	}
+
+	return all[:n]
+}

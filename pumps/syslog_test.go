@@ -7,9 +7,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/sirupsen/logrus"
+	"github.com/sirupsen/logrus/hooks/test"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/TykTechnologies/tyk-pump/analytics"
 )
 
 // mockSyslogServer creates a simple UDP syslog server for testing
@@ -452,11 +455,67 @@ func TestSyslogPump_WriteData_Tags(t *testing.T) {
 			wantContain: `tags:[bad\ntag ok]`,
 		},
 		{
-			// Only \n is escaped, matching raw_request/raw_response. A tab passes
-			// through literally; a lone \r does not start a new syslog line.
-			name:        "tab and carriage return pass through without fragmenting",
+			name:        "tab and CRLF are escaped, not emitted raw",
 			tags:        []string{"a\tb", "c\r\nd"},
-			wantContain: "tags:[a\tb c\r\\nd]",
+			wantContain: `tags:[a\tb c\r\nd]`,
+		},
+		{
+			// A lone \r does not fragment the record, but in a terminal or log
+			// viewer that acts on it the cursor returns to the start of the line and
+			// what follows overwrites what came before -- so a crafted tag can hide
+			// the rest of the record from whoever is reading the log.
+			name:        "lone carriage return in a tag is escaped, not emitted raw",
+			tags:        []string{"visible\rhidden"},
+			wantContain: `tags:[visible\rhidden]`,
+		},
+		{
+			// Backspace moves the cursor back one column, achieving the same
+			// overwrite as a carriage return one character at a time.
+			name:        "backspace in a tag is escaped, not emitted raw",
+			tags:        []string{"visible\b\b\bhidden"},
+			wantContain: `tags:[visible\b\b\bhidden]`,
+		},
+		{
+			// ESC begins an ANSI control sequence. Emitted raw, this one clears the
+			// screen and homes the cursor of anyone who cats the log.
+			name:        "ANSI escape sequence in a tag is escaped, not emitted raw",
+			tags:        []string{"\x1b[2J\x1b[H", "\x1b[31mred"},
+			wantContain: `tags:[\x1b[2J\x1b[H \x1b[31mred]`,
+		},
+		{
+			// NUL terminates a string in C-based consumers, rsyslog among them,
+			// truncating the record at that point.
+			name:        "NUL byte in a tag is escaped, not emitted raw",
+			tags:        []string{"visible\x00truncated"},
+			wantContain: `tags:[visible\x00truncated]`,
+		},
+		{
+			// Vertical tab and form feed are treated as line breaks by some syslog
+			// parsers; DEL and BEL are display noise. All are C0/DEL, all escaped.
+			name:        "remaining control characters are escaped",
+			tags:        []string{"a\vb", "c\fd", "e\x07f", "g\x7fh"},
+			wantContain: `tags:[a\vb c\fd e\x07f g\x7fh]`,
+		},
+		{
+			// Printable characters that happen to be meaningful in the output format
+			// are NOT escaped -- see the ambiguity note in the README. Pinned so the
+			// behaviour is a decision rather than an accident.
+			name:        "printable separator characters pass through unescaped",
+			tags:        []string{"a]b", "c:d", "e\\f"},
+			wantContain: `tags:[a]b c:d e\f]`,
+		},
+		{
+			// An empty tag is indistinguishable from no tags at all, and two empty
+			// tags render as a single space. Pinned because a consumer cannot tell
+			// these apart and should not be surprised by it.
+			name:        "single empty tag renders like no tags",
+			tags:        []string{""},
+			wantContain: "tags:[]",
+		},
+		{
+			name:        "two empty tags render as a single space",
+			tags:        []string{"", ""},
+			wantContain: "tags:[ ]",
 		},
 		{
 			name:        "unicode and emoji in tags",
@@ -690,4 +749,97 @@ func TestSyslogPump_IncludeTags_EnvVarOverridesConfig(t *testing.T) {
 		}))
 		assert.False(t, pump.syslogConf.IncludeTags, "env var should override config")
 	})
+}
+
+// TestSyslogPump_EscapeTags_DoesNotMutateRecord pins an invariant the pump depends
+// on but never states: escapeTags must not write through to the caller's slice.
+//
+// WriteData copies the record by value, but AnalyticsRecord.Tags is a slice, so the
+// copy shares its backing array with the record every other configured pump sees.
+// Escaping in place would corrupt the tags those pumps emit, and the damage would
+// depend on pump ordering -- close to undebuggable in production.
+func TestSyslogPump_EscapeTags_DoesNotMutateRecord(t *testing.T) {
+	original := []string{"clean-tag", "dirty\ntag", "ansi\x1b[31m"}
+
+	snapshot := make([]string, len(original))
+	copy(snapshot, original)
+
+	escaped := escapeTags(original)
+
+	require.Equal(t, snapshot, original, "escapeTags must not modify its input")
+	require.NotEqual(t, original, escaped, "a tag needing escaping should differ")
+	require.Equal(t, `dirty\ntag`, escaped[1])
+	require.Equal(t, `ansi\x1b[31m`, escaped[2])
+}
+
+// TestSyslogPump_EscapeTags_CleanTagsAreNotCopied pins the fast path: when no tag
+// needs escaping, the input slice is returned as-is rather than duplicated. This is
+// what keeps the common case allocation-free, and it is invisible to any output
+// assertion, so nothing else would catch its loss.
+func TestSyslogPump_EscapeTags_CleanTagsAreNotCopied(t *testing.T) {
+	clean := []string{"key-abc123", "org-5e9d", "unicode-中文-🚀"}
+
+	escaped := escapeTags(clean)
+
+	require.Equal(t, clean, escaped)
+
+	if len(clean) > 0 && len(escaped) > 0 {
+		require.Same(t, &clean[0], &escaped[0], "clean tags should not be copied")
+	}
+}
+
+// TestSyslogPump_InitConfigs_WarnsOnUDPWithTags covers the startup guard for the
+// feature's one silent failure mode: on a datagram transport a large tag set pushes
+// a record past the syslog limit and drops the fields sorting after tags, with
+// nothing logged at the point it happens.
+//
+// Worth a test despite being only a log line -- the condition pairs two config
+// fields and is easy to invert, and a warning that never fires looks identical to
+// one that was never needed.
+func TestSyslogPump_InitConfigs_WarnsOnUDPWithTags(t *testing.T) {
+	const wantFragment = "include_tags is enabled on the 'udp' transport"
+
+	//nolint:govet // field alignment is irrelevant for a test table
+	tests := []struct {
+		name        string
+		transport   string
+		includeTags bool
+		wantWarn    bool
+	}{
+		{"udp with tags warns", "udp", true, true},
+		{"udp without tags is silent", "udp", false, false},
+		{"tcp with tags is silent", "tcp", true, false},
+		{"tls with tags is silent", "tls", true, false},
+		{"defaulted transport is udp, so warns", "", true, true},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			logger, hook := test.NewNullLogger()
+
+			pump := &SyslogPump{
+				syslogConf: &SyslogConf{
+					Transport:   tt.transport,
+					IncludeTags: tt.includeTags,
+					LogLevel:    3,
+				},
+			}
+			pump.log = logger.WithField("prefix", syslogPrefix)
+
+			pump.initConfigs()
+
+			var warned bool
+
+			for _, entry := range hook.AllEntries() {
+				if strings.Contains(entry.Message, wantFragment) {
+					warned = true
+
+					require.Equal(t, logrus.WarnLevel, entry.Level)
+				}
+			}
+
+			require.Equal(t, tt.wantWarn, warned,
+				"transport=%q include_tags=%v", tt.transport, tt.includeTags)
+		})
+	}
 }

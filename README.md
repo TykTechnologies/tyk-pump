@@ -1091,21 +1091,45 @@ the gateway attached to the request (key, organisation, API, policy and develope
 any tags set on the session or API definition), and is present on every record, rendering as
 `tags:[]` when a record has none.
 
-Three things to be aware of before enabling it:
+Control characters in a tag value are replaced by printable escape sequences — `\n`, `\r`, `\t`,
+`\b`, `\f`, `\v`, and `\xNN` for anything else below `0x20` plus `DEL`. Tag values are supplied by
+you rather than by the gateway, so this stops a tag splitting a record across two syslog lines,
+hiding part of a record from a log viewer, or emitting an ANSI sequence to a terminal. The pumps
+that already emit `tags` encode records as JSON, whose encoder escapes the same characters, so this
+brings Syslog into line with them.
 
+Five things to be aware of before enabling it:
+
+- **Custom tags may contain sensitive data.** Alongside the identifiers the gateway attaches
+  automatically, `tags` carries any tags set on your API definitions or session objects. Those are
+  free-form and defined by you, so review them before enabling this option — whatever they hold is
+  exported to your logging system, which may be a different trust boundary to your gateway.
 - **Field order is alphabetical, not stable across versions.** Fields are rendered in sorted key
   order, so `tags` appears in the middle of the line — between `response_code` and `timestamp` —
   rather than at the end. Parse by key rather than by position.
 - **`tags` is unbounded, and the default `udp` transport sends one datagram per record.** RFC 3164
   caps a syslog message at 1024 bytes, and some daemons and relays enforce that. For reference, a
   representative record measures 537 bytes with `tags:[]`, 643 with 3 tags, 701 with 5 and 768 with
-  10 — so how much headroom you have depends on your own field and tag lengths. Because `tags` sorts
-  before `timestamp` and `user_agent`, those are the fields lost first if a message is truncated.
+  10 — so how much headroom you have depends on your own field and tag lengths. Note that the
+  empty case is not a realistic baseline: the gateway attaches `api-`, and usually `key-`, `org-`,
+  `pol-` and `dev-`, so an authenticated request typically starts at 3-5 tags — roughly 640-700
+  bytes — before you add any of your own. Because `tags` sorts before `timestamp` and
+  `user_agent`, those are the fields lost first if a message is truncated.
   Records with `raw_request`/`raw_response` populated by detailed recording can exceed the limit
   regardless of tags. Prefer `tcp` or `tls` transport for high-tag or detailed-recording
   deployments.
-- **Tag values such as the per-key identifier are high cardinality by nature.** If you index this
-  output downstream, treat `tags` accordingly.
+- **The gateway's own `key-` tag is unbounded cardinality, and you get it without adding
+  anything.** `key-<hashed key>` takes a distinct value for every API key in your deployment, and
+  it is attached automatically rather than configured. If you index this output downstream, that
+  is the field that will grow your index, not the tags you set yourself. Tyk's Splunk and SQL
+  aggregate pumps both offer an `ignore_tag_prefix_list` for exactly this; the Syslog pump has no
+  equivalent yet, so filter downstream if cardinality matters to you.
+- **The tag list is not unambiguously parseable.** Tags are rendered space-separated inside a
+  single pair of brackets, so a tag containing a space is indistinguishable from two tags, and one
+  containing `]` looks like the end of the list. An empty tag is indistinguishable from no tags at
+  all. This is a property of the pump's output format rather than of tags specifically — the same
+  applies to `user_agent`, `path` and every other free-text field — so avoid spaces and brackets in
+  tag values if you intend to parse them apart downstream.
 
 ## Stdout
 
