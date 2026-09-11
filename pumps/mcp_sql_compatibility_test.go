@@ -105,7 +105,8 @@ func TestMCPSQLPostgresContextCompatibility(t *testing.T) {
 			for _, tc := range cases {
 				t.Run(tc.Name, func(t *testing.T) {
 					require.Contains(t, byAPI, tc.Record.APIID)
-					assertMCPContextRecord(t, &tc.Record, byAPI[tc.Record.APIID])
+					actual := byAPI[tc.Record.APIID]
+					assertMCPContextRecord(t, &tc.Record, &actual)
 				})
 			}
 			var restCount int64

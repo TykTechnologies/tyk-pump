@@ -18,23 +18,49 @@ import (
 func TestMCPSQLAggregatePump_Init(t *testing.T) {
 	skipTestIfNoPostgres(t)
 	tableName := analytics.AggregateMCPSQLTable
-	pump := &MCPSQLAggregatePump{}
+	// Each instance owns asynchronous indexing and must not be reinitialized by another case.
 
 	t.Run("successful", func(t *testing.T) {
+		pump := &MCPSQLAggregatePump{}
 		conf := SQLAggregatePumpConf{
 			SQLConf: SQLConf{
 				Type:             "postgres",
 				ConnectionString: getTestPostgresConnectionString(),
 			},
 		}
+		setupDB, err := OpenGormDB(&conf.SQLConf, log.WithField("prefix", "mcp-aggregate-init-test"))
+		require.NoError(t, err)
+		setupConnection, err := setupDB.DB()
+		require.NoError(t, err)
+		t.Cleanup(func() { require.NoError(t, setupConnection.Close()) })
+		t.Cleanup(func() { require.NoError(t, setupDB.Migrator().DropTable(tableName)) })
+		// An existing index does not produce a notification; own a fresh task-database table.
+		require.NoError(t, setupDB.Migrator().DropTable(tableName))
 		require.NoError(t, pump.Init(conf))
-		t.Cleanup(func() {
-			pump.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %q", tableName))
-		})
+		connection, err := pump.db.DB()
+		require.NoError(t, err)
+		t.Cleanup(func() { require.NoError(t, connection.Close()) })
+		require.NotNil(t, pump.backgroundIndexCreated)
+		wait := 10 * time.Second
+		if deadline, ok := t.Deadline(); ok && time.Until(deadline) < wait {
+			wait = time.Until(deadline)
+		}
+		require.Positive(t, wait)
+		timer := time.NewTimer(wait)
+		defer timer.Stop()
+		select {
+		case complete := <-pump.backgroundIndexCreated:
+			require.True(t, complete)
+		case <-timer.C:
+			t.Fatal("background composite index creation did not complete before cleanup")
+		}
+		// This signals completed database work; the final informational log may still run.
 		assert.True(t, pump.db.Migrator().HasTable(tableName))
+		assert.True(t, pump.db.Migrator().HasIndex(tableName, tableName+"_"+newAggregatedIndexName))
 	})
 
 	t.Run("invalid connection details", func(t *testing.T) {
+		pump := &MCPSQLAggregatePump{}
 		conf := SQLConf{
 			Type:             "postgres",
 			ConnectionString: "host=localhost user=gorm password=gorm DB.name=gorm port=9920 sslmode=disable",
@@ -43,11 +69,13 @@ func TestMCPSQLAggregatePump_Init(t *testing.T) {
 	})
 
 	t.Run("should fail with unsupported type", func(t *testing.T) {
+		pump := &MCPSQLAggregatePump{}
 		conf := SQLConf{ConnectionString: "random"}
 		assert.ErrorContains(t, pump.Init(conf), "Unsupported `config_storage.type` value:")
 	})
 
 	t.Run("invalid config", func(t *testing.T) {
+		pump := &MCPSQLAggregatePump{}
 		conf := map[string]interface{}{
 			"connection_string": 1,
 		}
@@ -55,17 +83,22 @@ func TestMCPSQLAggregatePump_Init(t *testing.T) {
 	})
 
 	t.Run("decode from map", func(t *testing.T) {
+		pump := &MCPSQLAggregatePump{}
 		conf := map[string]interface{}{
 			"type":              "postgres",
 			"table_sharding":    true,
 			"connection_string": getTestPostgresConnectionString(),
 		}
 		require.NoError(t, pump.Init(conf))
+		connection, err := pump.db.DB()
+		require.NoError(t, err)
+		t.Cleanup(func() { require.NoError(t, connection.Close()) })
 		assert.Equal(t, "postgres", pump.SQLConf.Type)
 		assert.True(t, pump.SQLConf.TableSharding)
 	})
 
 	t.Run("sharded table does not create base table", func(t *testing.T) {
+		pump := &MCPSQLAggregatePump{}
 		conf := SQLAggregatePumpConf{
 			SQLConf: SQLConf{
 				Type:             "postgres",
@@ -74,10 +107,14 @@ func TestMCPSQLAggregatePump_Init(t *testing.T) {
 			},
 		}
 		require.NoError(t, pump.Init(conf))
+		connection, err := pump.db.DB()
+		require.NoError(t, err)
+		t.Cleanup(func() { require.NoError(t, connection.Close()) })
 		assert.False(t, pump.db.Migrator().HasTable(tableName))
 	})
 
 	t.Run("init from env", func(t *testing.T) {
+		pump := &MCPSQLAggregatePump{}
 		envPrefix := fmt.Sprintf("%s_SQLMCPAGGREGATE%s", PUMPS_ENV_PREFIX, PUMPS_ENV_META_PREFIX) + "_%s"
 		envKeyVal := map[string]string{
 			"TYPE":              "postgres",
@@ -101,6 +138,9 @@ func TestMCPSQLAggregatePump_Init(t *testing.T) {
 			},
 		}
 		require.NoError(t, pump.Init(conf))
+		connection, err := pump.db.DB()
+		require.NoError(t, err)
+		t.Cleanup(func() { require.NoError(t, connection.Close()) })
 		assert.Equal(t, "postgres", pump.SQLConf.Type)
 		assert.True(t, pump.SQLConf.TableSharding)
 	})
