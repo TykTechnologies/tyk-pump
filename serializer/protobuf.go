@@ -1,6 +1,8 @@
 package serializer
 
 import (
+	"fmt"
+	"math"
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
@@ -8,8 +10,7 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-type ProtobufSerializer struct {
-}
+type ProtobufSerializer struct{}
 
 func (pb *ProtobufSerializer) GetSuffix() string {
 	return "_protobuf"
@@ -124,10 +125,14 @@ func (pb *ProtobufSerializer) TransformSingleRecordToProto(rec analytics.Analyti
 
 	if rec.MCPStats.IsMCP {
 		record.MCPStats = &analyticsproto.MCPStats{
-			IsMCP:         true,
-			JSONRPCMethod: rec.MCPStats.JSONRPCMethod,
-			PrimitiveType: rec.MCPStats.PrimitiveType,
-			PrimitiveName: rec.MCPStats.PrimitiveName,
+			JSONRPCErrorCode:         int64(rec.MCPStats.JSONRPCErrorCode),
+			IsMCP:                    true,
+			JSONRPCMethod:            rec.MCPStats.JSONRPCMethod,
+			PrimitiveType:            rec.MCPStats.PrimitiveType,
+			PrimitiveName:            rec.MCPStats.PrimitiveName,
+			EffectiveProtocolVersion: rec.MCPStats.EffectiveProtocolVersion,
+			DeclaredProtocolVersion:  rec.MCPStats.DeclaredProtocolVersion,
+			ProtocolVersionSource:    rec.MCPStats.ProtocolVersionSource,
 		}
 	}
 
@@ -225,11 +230,19 @@ func (pb *ProtobufSerializer) TransformSingleProtoToAnalyticsRecord(rec *analyti
 	}
 
 	if rec.MCPStats != nil {
+		code := rec.MCPStats.JSONRPCErrorCode
+		if code < int64(math.MinInt) || code > int64(math.MaxInt) {
+			return fmt.Errorf("MCP JSON-RPC error code %d cannot be represented as int", code)
+		}
 		tmpRecord.MCPStats = analytics.MCPStats{
-			IsMCP:         rec.MCPStats.IsMCP,
-			JSONRPCMethod: rec.MCPStats.JSONRPCMethod,
-			PrimitiveType: rec.MCPStats.PrimitiveType,
-			PrimitiveName: rec.MCPStats.PrimitiveName,
+			JSONRPCErrorCode:         int(code),
+			IsMCP:                    rec.MCPStats.IsMCP,
+			JSONRPCMethod:            rec.MCPStats.JSONRPCMethod,
+			PrimitiveType:            rec.MCPStats.PrimitiveType,
+			PrimitiveName:            rec.MCPStats.PrimitiveName,
+			EffectiveProtocolVersion: rec.MCPStats.EffectiveProtocolVersion,
+			DeclaredProtocolVersion:  rec.MCPStats.DeclaredProtocolVersion,
+			ProtocolVersionSource:    rec.MCPStats.ProtocolVersionSource,
 		}
 	}
 
