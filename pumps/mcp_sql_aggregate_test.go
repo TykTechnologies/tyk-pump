@@ -155,6 +155,10 @@ func TestMCPSQLAggregatePump_WriteData(t *testing.T) {
 			Type:             "postgres",
 			ConnectionString: getTestPostgresConnectionString(),
 		},
+		// Index creation is exercised by TestMCPSQLAggregatePump_Init. Keeping it
+		// synchronous-free here prevents cleanup from racing PostgreSQL's
+		// CREATE INDEX CONCURRENTLY before the sharded test starts.
+		OmitIndexCreation: true,
 	}
 
 	sampleRecord := analytics.AnalyticsRecord{
