@@ -406,6 +406,7 @@ func TestMCPSQLAggregatePump_WriteData_EmptyData(t *testing.T) {
 			Type:             "postgres",
 			ConnectionString: getTestPostgresConnectionString(),
 		},
+		OmitIndexCreation: true,
 	}))
 	err := pump.WriteData(context.Background(), []interface{}{})
 	assert.NoError(t, err)
@@ -421,6 +422,7 @@ func TestMCPSQLAggregatePump_WriteData_Upsert(t *testing.T) {
 			Type:             "postgres",
 			ConnectionString: getTestPostgresConnectionString(),
 		},
+		OmitIndexCreation: true,
 	}))
 	t.Cleanup(func() {
 		pump.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %q", tableName))
@@ -457,6 +459,7 @@ func TestMCPSQLAggregatePump_WriteData_SmallBatchSize(t *testing.T) {
 			ConnectionString: getTestPostgresConnectionString(),
 			BatchSize:        1, // force 1-record batches to exercise batch loop
 		},
+		OmitIndexCreation: true,
 	}))
 	t.Cleanup(func() {
 		pump.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %q", tableName))
@@ -660,6 +663,7 @@ func TestMCPSQLAggregatePump_WriteData_MultipleAPIs(t *testing.T) {
 			Type:             "postgres",
 			ConnectionString: getTestPostgresConnectionString(),
 		},
+		OmitIndexCreation: true,
 	}))
 	t.Cleanup(func() {
 		pump.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %q", tableName))
