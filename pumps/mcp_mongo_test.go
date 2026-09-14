@@ -2,7 +2,6 @@ package pumps
 
 import (
 	"context"
-	"math"
 	"os"
 	"testing"
 
@@ -206,12 +205,8 @@ func TestMCPMongoPump_WriteData_Roundtrip(t *testing.T) {
 			assert.Equal(t, tc.Record.MCPStats.DeclaredProtocolVersion, raw.Lookup("declared_protocol_version").StringValue())
 			assert.Equal(t, tc.Record.MCPStats.ProtocolVersionSource, raw.Lookup("protocol_version_source").StringValue())
 			assert.Equal(t, tc.Record.MCPStats.JSONRPCErrorCode, raw.Lookup("jsonrpc_error_code").AsInt64())
-			code := tc.Record.MCPStats.JSONRPCErrorCode
-			expectedType := bson.TypeInt64
-			if code >= math.MinInt32 && code <= math.MaxInt32 {
-				expectedType = bson.TypeInt32
-			}
-			assert.Equal(t, expectedType, raw.Lookup("jsonrpc_error_code").Type)
+			assert.Equal(t, bson.TypeInt64, raw.Lookup("jsonrpc_error_code").Type,
+				"the persisted producer contract must remain int64 even for narrow values")
 			_, err := raw.LookupErr("jsonrpc_method")
 			assert.Error(t, err, "do not rename historical BSON method")
 		})
