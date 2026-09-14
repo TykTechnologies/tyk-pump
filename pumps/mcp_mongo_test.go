@@ -205,8 +205,8 @@ func TestMCPMongoPump_WriteData_Roundtrip(t *testing.T) {
 			assert.Equal(t, tc.Record.MCPStats.EffectiveProtocolVersion, raw.Lookup("effective_protocol_version").StringValue())
 			assert.Equal(t, tc.Record.MCPStats.DeclaredProtocolVersion, raw.Lookup("declared_protocol_version").StringValue())
 			assert.Equal(t, tc.Record.MCPStats.ProtocolVersionSource, raw.Lookup("protocol_version_source").StringValue())
-			assert.Equal(t, int64(tc.Record.MCPStats.JSONRPCErrorCode), raw.Lookup("jsonrpc_error_code").AsInt64())
-			code := int64(tc.Record.MCPStats.JSONRPCErrorCode)
+			assert.Equal(t, tc.Record.MCPStats.JSONRPCErrorCode, raw.Lookup("jsonrpc_error_code").AsInt64())
+			code := tc.Record.MCPStats.JSONRPCErrorCode
 			expectedType := bson.TypeInt64
 			if code >= math.MinInt32 && code <= math.MaxInt32 {
 				expectedType = bson.TypeInt32

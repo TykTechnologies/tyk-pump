@@ -35,13 +35,8 @@ func TestMCPContextJSONBSONCompatibility(t *testing.T) {
 		boundaryJSON, readErr := os.ReadFile("testdata/mcp_signed_codes/" + name + ".json")
 		require.NoError(t, readErr)
 		var boundary AnalyticsRecord
-		decodeErr := json.Unmarshal(boundaryJSON, &boundary)
-		if code < int64(math.MinInt) || code > int64(math.MaxInt) {
-			require.Error(t, decodeErr, "wide JSON must not silently narrow on a native32 target")
-			continue
-		}
-		require.NoError(t, decodeErr)
-		require.Equal(t, code, int64(boundary.MCPStats.JSONRPCErrorCode))
+		require.NoError(t, json.Unmarshal(boundaryJSON, &boundary))
+		require.Equal(t, code, boundary.MCPStats.JSONRPCErrorCode)
 		var rawBoundary map[string]interface{}
 		boundaryDecoder := json.NewDecoder(bytes.NewReader(boundaryJSON))
 		boundaryDecoder.UseNumber()
@@ -105,7 +100,7 @@ func TestMCPContextJSONBSONCompatibility(t *testing.T) {
 			require.NoError(t, err)
 			raw := bson.Raw(bsonBytes)
 			assert.Equal(t, converted.JSONRPCMethod, raw.Lookup("jsonrpcmethod").StringValue())
-			assert.Equal(t, int64(converted.JSONRPCErrorCode), raw.Lookup("jsonrpc_error_code").AsInt64())
+			assert.Equal(t, converted.JSONRPCErrorCode, raw.Lookup("jsonrpc_error_code").AsInt64())
 			assert.Equal(t, converted.EffectiveProtocolVersion, raw.Lookup("effective_protocol_version").StringValue())
 			assert.Equal(t, converted.DeclaredProtocolVersion, raw.Lookup("declared_protocol_version").StringValue())
 			assert.Equal(t, converted.ProtocolVersionSource, raw.Lookup("protocol_version_source").StringValue())

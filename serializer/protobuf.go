@@ -1,8 +1,6 @@
 package serializer
 
 import (
-	"fmt"
-	"math"
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
@@ -125,7 +123,7 @@ func (pb *ProtobufSerializer) TransformSingleRecordToProto(rec analytics.Analyti
 
 	if rec.MCPStats.IsMCP {
 		record.MCPStats = &analyticsproto.MCPStats{
-			JSONRPCErrorCode:         int64(rec.MCPStats.JSONRPCErrorCode),
+			JSONRPCErrorCode:         rec.MCPStats.JSONRPCErrorCode,
 			IsMCP:                    true,
 			JSONRPCMethod:            rec.MCPStats.JSONRPCMethod,
 			PrimitiveType:            rec.MCPStats.PrimitiveType,
@@ -230,12 +228,8 @@ func (pb *ProtobufSerializer) TransformSingleProtoToAnalyticsRecord(rec *analyti
 	}
 
 	if rec.MCPStats != nil {
-		code := rec.MCPStats.JSONRPCErrorCode
-		if code < int64(math.MinInt) || code > int64(math.MaxInt) {
-			return fmt.Errorf("MCP JSON-RPC error code %d cannot be represented as int", code)
-		}
 		tmpRecord.MCPStats = analytics.MCPStats{
-			JSONRPCErrorCode:         int(code),
+			JSONRPCErrorCode:         rec.MCPStats.JSONRPCErrorCode,
 			IsMCP:                    rec.MCPStats.IsMCP,
 			JSONRPCMethod:            rec.MCPStats.JSONRPCMethod,
 			PrimitiveType:            rec.MCPStats.PrimitiveType,
