@@ -72,13 +72,8 @@ func loadMCPSignedCodeCases(t *testing.T) []mcpContextCase {
 		data, err := os.ReadFile("../analytics/testdata/mcp_signed_codes/" + name + ".json")
 		require.NoError(t, err)
 		var record analytics.AnalyticsRecord
-		err = json.Unmarshal(data, &record)
-		if code < int64(math.MinInt) || code > int64(math.MaxInt) {
-			require.Error(t, err, "wide JSON must not silently narrow on a native32 target")
-			continue
-		}
-		require.NoError(t, err)
-		require.Equal(t, code, int64(record.MCPStats.JSONRPCErrorCode))
+		require.NoError(t, json.Unmarshal(data, &record))
+		require.Equal(t, code, record.MCPStats.JSONRPCErrorCode)
 		require.Empty(t, record.APIKey)
 		record.APIID = "mcp-signed-" + name
 		record.OrgID = "mcp-compatibility"

@@ -23,24 +23,9 @@ func TestSerializerMCPSignedCodeBoundaries(t *testing.T) {
 			data, err := os.ReadFile("../analytics/testdata/mcp_signed_codes/" + name + ".json")
 			require.NoError(t, err)
 			var input analytics.AnalyticsRecord
-			decodeErr := json.Unmarshal(data, &input)
+			require.NoError(t, json.Unmarshal(data, &input))
 			pb := &ProtobufSerializer{}
-			if code < int64(math.MinInt) || code > int64(math.MaxInt) {
-				require.Error(t, decodeErr)
-				wireRecord := pb.TransformSingleRecordToProto(analytics.AnalyticsRecord{MCPStats: analytics.MCPStats{IsMCP: true}})
-				wireRecord.MCPStats.JSONRPCErrorCode = code
-				sentinel := analytics.AnalyticsRecord{APIID: "unchanged", MCPStats: analytics.MCPStats{IsMCP: true, JSONRPCErrorCode: -33002}}
-				destination := sentinel
-				require.ErrorContains(t, pb.TransformSingleProtoToAnalyticsRecord(wireRecord, &destination), "cannot be represented as int")
-				assert.Equal(t, sentinel, destination)
-				wire, marshalErr := proto.Marshal(wireRecord)
-				require.NoError(t, marshalErr)
-				require.ErrorContains(t, pb.Decode(wire, &destination), "cannot be represented as int")
-				assert.Equal(t, sentinel, destination)
-				return
-			}
-			require.NoError(t, decodeErr)
-			require.Equal(t, code, int64(input.MCPStats.JSONRPCErrorCode))
+			require.Equal(t, code, input.MCPStats.JSONRPCErrorCode)
 			require.Empty(t, input.APIKey)
 			transformed := pb.TransformSingleRecordToProto(input)
 			assert.Equal(t, code, transformed.MCPStats.JSONRPCErrorCode)
@@ -55,7 +40,7 @@ func TestSerializerMCPSignedCodeBoundaries(t *testing.T) {
 					require.NoError(t, encodeErr)
 					var result analytics.AnalyticsRecord
 					require.NoError(t, codec.Decode(encoded, &result))
-					assert.Equal(t, code, int64(result.MCPStats.JSONRPCErrorCode))
+					assert.Equal(t, code, result.MCPStats.JSONRPCErrorCode)
 					assert.Equal(t, input.MCPStats, result.MCPStats)
 					assert.Equal(t, input.APIID, result.APIID)
 					assert.Equal(t, input.OrgID, result.OrgID)
@@ -121,7 +106,7 @@ func TestSerializerMCPOldInt32WireCompatibility(t *testing.T) {
 			assert.Equal(t, input.APIID, decoded.APIID)
 			assert.Equal(t, input.OrgID, decoded.OrgID)
 			assert.Equal(t, input.UserAgent, decoded.UserAgent)
-			assert.Equal(t, code, int64(decoded.MCPStats.JSONRPCErrorCode))
+			assert.Equal(t, code, decoded.MCPStats.JSONRPCErrorCode)
 			assert.Equal(t, current.JSONRPCMethod, decoded.MCPStats.JSONRPCMethod)
 			assert.Equal(t, current.PrimitiveType, decoded.MCPStats.PrimitiveType)
 			assert.Equal(t, current.PrimitiveName, decoded.MCPStats.PrimitiveName)
