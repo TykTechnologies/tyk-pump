@@ -15,6 +15,16 @@ import (
 )
 
 const (
+	// defaultDogstatsdObfuscateAPIKeys keeps the api_key tag masked unless an operator turns it
+	// off deliberately, so a credential cannot reach the metrics pipeline through oversight.
+	defaultDogstatsdObfuscateAPIKeys = true
+	// defaultDogstatsdObfuscateAPIKeysLength reveals enough of the key to tell two keys apart in
+	// a dashboard without disclosing a usable secret, and is the same number of characters the
+	// Gateway keeps when it masks a key in its own output. Masking everything would collapse every
+	// key onto one tag value and make the tag pointless, which only pushes operators to disable
+	// obfuscation altogether.
+	defaultDogstatsdObfuscateAPIKeysLength = 4
+
 	defaultDogstatsdNamespace              = "default"
 	defaultDogstatsdSampleRate             = 1
 	defaultDogstatsdBufferedMaxMessages    = 16
@@ -120,9 +130,10 @@ type DogStatsdConf struct {
 	// Each metric is sampled independently, so with a `sample_rate` below 1 a given request may
 	// appear in one metric and not another.
 	//
-	// The API key is the raw authentication token. Where that token is large, such as a JWT, the
-	// resulting tag can push the metric past the DogStatsD datagram limit and the metric is then
-	// dropped. Enabling `obfuscate_api_keys` bounds the emitted value and removes that risk.
+	// The `api_key` tag is obfuscated by default, emitting `****` and the last four characters.
+	// Turning that off emits the raw authentication token as a tag value. Because the token can be
+	// large, such as a JWT, an unobfuscated tag can also push the metric past the DogStatsD
+	// datagram limit, and the metric is then dropped.
 	//
 	// Raw request and response bodies are not available as tags. DogStatsD tag values are neither
 	// escaped nor length-bounded: a body large enough to exceed the datagram size causes the whole
@@ -178,11 +189,20 @@ type DogStatsdConf struct {
 	//
 	// Defaults to `["request_time"]`, so leaving this unset emits exactly one metric per record.
 	Fields []string `json:"fields" mapstructure:"fields"`
-	// Controls whether the pump client should hide the API key. In case you still need substring
-	// of the value, check the next option. Default value is `false`.
+	// Controls whether the pump client should hide the API key used in the `api_key` tag.
+	//
+	// Defaults to `true`, matching how the Gateway masks keys in its own output: `****` plus the
+	// last few characters unless key logging is deliberately enabled. The Splunk and Prometheus
+	// pumps default the same option to `false`, so this differs from them — but the `api_key` tag
+	// is new here, so no existing configuration changes behaviour, and a credential should not
+	// reach a metrics pipeline because someone did not know to opt in.
+	// Setting this to `false` emits the raw authentication token as a tag value.
 	ObfuscateAPIKeys bool `json:"obfuscate_api_keys" mapstructure:"obfuscate_api_keys"`
-	// Define the number of the characters from the end of the API key. The `obfuscate_api_keys`
-	// should be set to `true`. Default value is `0`, which hides the key entirely.
+	// Define the number of characters from the end of the API key to keep when
+	// `obfuscate_api_keys` is enabled. Defaults to `4`.
+	//
+	// Setting this to `0` masks the key completely, which also collapses every key onto the same
+	// tag value and makes the tag useless as a dimension.
 	ObfuscateAPIKeysLength int `json:"obfuscate_api_keys_length" mapstructure:"obfuscate_api_keys_length"`
 }
 
@@ -202,6 +222,13 @@ func (s *DogStatsdPump) GetEnvPrefix() string {
 func (s *DogStatsdPump) Init(conf interface{}) error {
 
 	s.log = log.WithField("prefix", dogstatPrefix)
+
+	// Seed the defaults that are not the zero value before decoding. mapstructure and envconfig
+	// both only write the keys they are given, so anything left unset keeps the value below.
+	s.conf = &DogStatsdConf{
+		ObfuscateAPIKeys:       defaultDogstatsdObfuscateAPIKeys,
+		ObfuscateAPIKeysLength: defaultDogstatsdObfuscateAPIKeysLength,
+	}
 
 	if err := mapstructure.Decode(conf, &s.conf); err != nil {
 		return errors.Wrap(err, "unable to decode dogstatsd configuration")

@@ -412,7 +412,8 @@ func TestDogStatsdAPIKeyEdgeCases(t *testing.T) {
 		record.APIKey = "eyJhbGciOiJIUzI1NiJ9." + strings.Repeat("a", 2000) + ".sig"
 
 		dropped, err := writeToDogStatsd(t, map[string]interface{}{
-			"tags": []string{"api_id", "api_key"},
+			"tags":               []string{"api_id", "api_key"},
+			"obfuscate_api_keys": false,
 		}, record)
 		assert.NoError(t, err)
 		assert.Empty(t, dropped, "an oversized tag should cost the metric")
@@ -431,12 +432,67 @@ func TestDogStatsdAPIKeyEdgeCases(t *testing.T) {
 		record := testRecord()
 		record.APIKey = "aaa,bbb|ccc#ddd"
 
+		raw, err := writeToDogStatsd(t, map[string]interface{}{
+			"tags":               []string{"api_id", "api_key"},
+			"obfuscate_api_keys": false,
+		}, record)
+		assert.NoError(t, err)
+		assert.Len(t, raw, 1)
+		assert.Equal(t, "pump.request_time:42|h|#tyk-pump,api_id:api-1,api_key:aaa_bbb_ccc_ddd", raw[0])
+
+		// Sanitising runs after masking, so a separator inside the revealed suffix is caught too.
+		masked, err := writeToDogStatsd(t, map[string]interface{}{
+			"tags": []string{"api_id", "api_key"},
+		}, record)
+		assert.NoError(t, err)
+		assert.Len(t, masked, 1)
+		assert.Equal(t, "pump.request_time:42|h|#tyk-pump,api_id:api-1,api_key:****_ddd", masked[0])
+	})
+}
+
+func TestDogStatsdObfuscationDefaults(t *testing.T) {
+	t.Run("the api_key tag is masked without any obfuscation config", func(t *testing.T) {
+		record := testRecord()
+
 		packets, err := writeToDogStatsd(t, map[string]interface{}{
 			"tags": []string{"api_id", "api_key"},
 		}, record)
 		assert.NoError(t, err)
 		assert.Len(t, packets, 1)
-		assert.Equal(t, "pump.request_time:42|h|#tyk-pump,api_id:api-1,api_key:aaa_bbb_ccc_ddd", packets[0])
+		assert.Contains(t, packets[0], "api_key:****mnop")
+		assert.NotContains(t, packets[0], record.APIKey)
+	})
+
+	t.Run("the raw key is emitted only when obfuscation is turned off deliberately", func(t *testing.T) {
+		record := testRecord()
+
+		packets, err := writeToDogStatsd(t, map[string]interface{}{
+			"tags":               []string{"api_id", "api_key"},
+			"obfuscate_api_keys": false,
+		}, record)
+		assert.NoError(t, err)
+		assert.Len(t, packets, 1)
+		assert.Contains(t, packets[0], "api_key:"+record.APIKey)
+	})
+
+	t.Run("an explicit zero length masks the key completely", func(t *testing.T) {
+		packets, err := writeToDogStatsd(t, map[string]interface{}{
+			"tags":                      []string{"api_id", "api_key"},
+			"obfuscate_api_keys_length": 0,
+		}, testRecord())
+		assert.NoError(t, err)
+		assert.Len(t, packets, 1)
+		// An explicit 0 must survive the seeded default of 4.
+		assert.Equal(t, "pump.request_time:42|h|#tyk-pump,api_id:api-1,api_key:****", packets[0])
+	})
+
+	t.Run("the default is unchanged by environment variables that set other options", func(t *testing.T) {
+		t.Setenv("TYK_PMP_PUMPS_DOGSTATSD_META_TAGS", "api_id,api_key")
+
+		packets, err := writeToDogStatsd(t, nil, testRecord())
+		assert.NoError(t, err)
+		assert.Len(t, packets, 1)
+		assert.Contains(t, packets[0], "api_key:****mnop")
 	})
 }
 

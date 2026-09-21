@@ -735,8 +735,8 @@ TYK_PMP_PUMPS_PROMETHEUS_META_DISABLEDMETRICS=[]
 - `sample_rate`: default 1 which equates to 100% of requests. To sample at 50%, set to 0.5
 - `tags`: List of tags to be added to the metric. The possible options are listed in the below example
 - `fields`: List of analytics fields to emit as their own metric. Supported values are `request_time`, `latency_total`, `latency_upstream` and `latency_gateway`. Defaults to `["request_time"]`
-- `obfuscate_api_keys`: Controls whether the pump should hide the API key when the `api_key` tag is used. Default `false`
-- `obfuscate_api_keys_length`: Number of trailing characters of the API key to keep when `obfuscate_api_keys` is `true`. Default `0`, which hides the key entirely
+- `obfuscate_api_keys`: Controls whether the pump should hide the API key when the `api_key` tag is used. Default `true`
+- `obfuscate_api_keys_length`: Number of trailing characters of the API key to keep when `obfuscate_api_keys` is `true`. Default `4`
 
 If no tag is specified the fallback behavior is to use the below tags:
 
@@ -777,10 +777,26 @@ between two metrics will not line up.
 
 ### Using the `api_key` tag safely
 
-`decoded.APIKey` holds the raw authentication token. Where that token is large — a JWT, for
-instance — the resulting tag can push the metric past the DogStatsD datagram limit, in which case
-**the metric is dropped** and only a log line records it. Enabling `obfuscate_api_keys` bounds the
-emitted value to a few characters and removes this risk, which is another reason to keep it on.
+The `api_key` tag is **obfuscated by default**: the pump emits `****` followed by the last four
+characters of the key, which is enough to tell two keys apart on a dashboard without publishing a
+usable credential. Setting `obfuscate_api_keys: false` emits the raw authentication token as a tag
+value, and should be a deliberate decision.
+
+> This matches how the Gateway already exposes keys in its own output: it masks them as `****` plus
+> the last four characters unless `enable_key_logging` is deliberately turned on. The `splunk` and
+> `prometheus` pumps default the same option to `false`, so this pump differs from them — but the
+> `api_key` tag is new here, no existing configuration changes behaviour, and a credential should
+> not reach a metrics pipeline because an operator did not know to opt in. The pump logs the value
+> it resolved at startup, so you can confirm what is running.
+
+Setting `obfuscate_api_keys_length: 0` masks the key completely. That also collapses every key onto
+the same tag value, which makes the tag useless as a dimension — if you do not want per-key
+breakdown, leave the tag out instead.
+
+Obfuscation guards a second problem. `APIKey` holds the raw authentication token, so where that
+token is large — a JWT, for instance — an unobfuscated tag can push the metric past the DogStatsD
+datagram limit, in which case **the metric is dropped** and only a log line records it. The
+obfuscated value is always short, so this cannot happen while the default is in place.
 
 Raw request and response bodies are **not** available as tags. DogStatsD tag values are neither escaped nor length-bounded: a body large enough to exceed the datagram size causes the whole metric to be dropped, and a body containing `,`, `|` or `#` corrupts the metric line. Use a logging pump such as `splunk`, `elasticsearch` or `stdout` for payload capture instead.
 
