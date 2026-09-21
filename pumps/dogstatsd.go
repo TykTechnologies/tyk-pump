@@ -18,10 +18,37 @@ const (
 	defaultDogstatsdSampleRate             = 1
 	defaultDogstatsdBufferedMaxMessages    = 16
 	defaultDogstatsdUDSWriteTimeoutSeconds = 1
+	defaultDogstatsdField                  = "request_time"
 )
 
 var dogstatPrefix = "dogstatsd"
 var dogstatDefaultENV = PUMPS_ENV_PREFIX + "_DOGSTATSD" + PUMPS_ENV_META_PREFIX
+
+// DogStatsD separates tags with "," and protocol fields with "|", and "#" opens the tag list.
+// None of them are escaped by the client, so a value containing one corrupts the metric line.
+var dogstatsdTagValueSanitiser = strings.NewReplacer(",", "_", "|", "_", "#", "_")
+
+// dogstatsdSupportedFields is the list reported back to the user when a configured field name is
+// not recognised. It must stay in step with dogstatsdFieldValue below.
+var dogstatsdSupportedFields = []string{"request_time", "latency_total", "latency_upstream", "latency_gateway"}
+
+// dogstatsdFieldValue resolves a configured field name to the value it emits, reporting whether
+// the name is supported. It is the single source of truth for the supported field names: Init
+// validates against it and WriteData reads through it.
+func dogstatsdFieldValue(field string, decoded *analytics.AnalyticsRecord) (int64, bool) {
+	switch field {
+	case "request_time":
+		return decoded.RequestTime, true
+	case "latency_total":
+		return decoded.Latency.Total, true
+	case "latency_upstream":
+		return decoded.Latency.Upstream, true
+	case "latency_gateway":
+		return decoded.Latency.Gateway, true
+	}
+
+	return 0, false
+}
 
 type DogStatsdPump struct {
 	conf   *DogStatsdConf
@@ -61,8 +88,35 @@ type DogStatsdConf struct {
 	// - `tracked`
 	// - `oauth_id`
 	//
+	// The `api_key` tag is also supported, but is never part of the fallback list above — it is
+	// only sent when you add it to `tags` explicitly.
+	//
 	// Note that this configuration can generate significant charges due to the unbound nature of
-	// the `path` tag.
+	// the `path` tag. The `api_key` tag is similarly unbounded, and additionally puts
+	// credential-derived data into your metrics pipeline, so enable `obfuscate_api_keys`
+	// whenever you use it.
+	//
+	// `fields` replaces the default rather than adding to it: setting it without `request_time`
+	// stops that metric being emitted, which will break dashboards referencing it by name.
+	//
+	// `latency_total` carries the same value as `request_time` — the gateway populates both from
+	// one timing — so listing both emits two identical timeseries. To get the upstream breakdown
+	// while keeping the existing metric name, use `["request_time", "latency_upstream"]`.
+	//
+	// An unsupported or duplicated field name is ignored with a warning rather than stopping the
+	// pump, falling back to `request_time` if nothing supported is left.
+	//
+	// Each metric is sampled independently, so with a `sample_rate` below 1 a given request may
+	// appear in one metric and not another.
+	//
+	// The API key is the raw authentication token. Where that token is large, such as a JWT, the
+	// resulting tag can push the metric past the DogStatsD datagram limit and the metric is then
+	// dropped. Enabling `obfuscate_api_keys` bounds the emitted value and removes that risk.
+	//
+	// Raw request and response bodies are not available as tags. DogStatsD tag values are neither
+	// escaped nor length-bounded: a body large enough to exceed the datagram size causes the whole
+	// metric to be dropped, and a body containing `,`, `|` or `#` corrupts the metric line. Use a
+	// logging pump such as `splunk`, `elasticsearch` or `stdout` for payload capture instead.
 	//
 	// ```{.json}
 	// "dogstatsd": {
@@ -84,8 +138,16 @@ type DogStatsdConf struct {
 	//       "org_id",
 	//       "tracked",
 	//       "path",
-	//       "oauth_id"
-	//     ]
+	//       "oauth_id",
+	//       "api_key"
+	//     ],
+	//     "fields": [
+	//       "request_time",
+	//       "latency_total",
+	//       "latency_upstream"
+	//     ],
+	//     "obfuscate_api_keys": true,
+	//     "obfuscate_api_keys_length": 4
 	//   }
 	// },
 	// ```
@@ -97,8 +159,20 @@ type DogStatsdConf struct {
 	// [May 10 15:23:44]  INFO dogstatsd: sample_rate: 50%
 	// [May 10 15:23:44]  INFO dogstatsd: buffered: true, max_messages: 32
 	// [May 10 15:23:44]  INFO dogstatsd: async_uds: true, write_timeout: 2s
+	// [May 10 15:23:44]  INFO dogstatsd: fields: [request_time latency_total latency_upstream], obfuscate_api_keys: true
 	// ```
 	Tags []string `json:"tags" mapstructure:"tags"`
+	// Define which Analytics fields should be sent as their own metric. The supported values are
+	// `request_time`, `latency_total`, `latency_upstream` and `latency_gateway`.
+	//
+	// Defaults to `["request_time"]`, so leaving this unset emits exactly one metric per record.
+	Fields []string `json:"fields" mapstructure:"fields"`
+	// Controls whether the pump client should hide the API key. In case you still need substring
+	// of the value, check the next option. Default value is `false`.
+	ObfuscateAPIKeys bool `json:"obfuscate_api_keys" mapstructure:"obfuscate_api_keys"`
+	// Define the number of the characters from the end of the API key. The `obfuscate_api_keys`
+	// should be set to `true`. Default value is `0`, which hides the key entirely.
+	ObfuscateAPIKeysLength int `json:"obfuscate_api_keys_length" mapstructure:"obfuscate_api_keys_length"`
 }
 
 func (s *DogStatsdPump) New() Pump {
@@ -145,6 +219,14 @@ func (s *DogStatsdPump) Init(conf interface{}) error {
 	}
 	s.log.Infof("async_uds: %t, write_timeout: %ds", s.conf.AsyncUDS, s.conf.AsyncUDSWriteTimeout)
 
+	s.conf.Fields = s.resolveFields()
+
+	if s.conf.ObfuscateAPIKeysLength < 0 {
+		s.log.Warn("obfuscate_api_keys_length is negative, treating it as 0")
+		s.conf.ObfuscateAPIKeysLength = 0
+	}
+	s.log.Infof("fields: %v, obfuscate_api_keys: %t", s.conf.Fields, s.conf.ObfuscateAPIKeys)
+
 	var opts []statsd.Option
 	if s.conf.Buffered {
 		opts = append(opts, statsd.WithMaxMessagesPerPayload(s.conf.BufferedMaxMessages))
@@ -178,6 +260,71 @@ func (s *DogStatsdPump) connect(options []statsd.Option) error {
 	s.client = c
 
 	return nil
+}
+
+// resolveFields normalises the configured field names: trimming them, dropping duplicates and
+// discarding any that are not supported. An unusable name is logged and skipped rather than
+// failing the pump, so one typo costs a single metric instead of every metric this pump reports.
+func (s *DogStatsdPump) resolveFields() []string {
+	fields := make([]string, 0, len(s.conf.Fields))
+	seen := make(map[string]bool, len(s.conf.Fields))
+
+	for _, field := range s.conf.Fields {
+		// Comma-separated environment variables commonly carry a space after the separator.
+		field = strings.TrimSpace(field)
+		if field == "" {
+			continue
+		}
+
+		if _, ok := dogstatsdFieldValue(field, &analytics.AnalyticsRecord{}); !ok {
+			s.log.Warnf("ignoring unsupported field '%s'; supported fields are %v",
+				field, dogstatsdSupportedFields)
+
+			continue
+		}
+
+		if seen[field] {
+			s.log.Warnf("field '%s' is configured more than once, ignoring the duplicate", field)
+
+			continue
+		}
+
+		seen[field] = true
+		fields = append(fields, field)
+	}
+
+	if len(fields) == 0 {
+		if len(s.conf.Fields) > 0 {
+			s.log.Warnf("no supported field was configured, falling back to '%s'", defaultDogstatsdField)
+		}
+
+		return []string{defaultDogstatsdField}
+	}
+
+	return fields
+}
+
+// obfuscateAPIKey masks the API key when obfuscation is enabled, keeping only the configured
+// number of trailing characters. Keys no longer than that length carry no safely revealable
+// portion, so they are replaced wholesale rather than emitted in the clear.
+func (s *DogStatsdPump) obfuscateAPIKey(apiKey string) string {
+	if !s.conf.ObfuscateAPIKeys {
+		return apiKey
+	}
+
+	keep := s.conf.ObfuscateAPIKeysLength
+	if keep < 0 {
+		keep = 0
+	}
+
+	// Count characters rather than bytes: slicing a multi-byte key by byte offset would emit
+	// half a rune.
+	runes := []rune(apiKey)
+	if len(runes) > keep {
+		return "****" + string(runes[len(runes)-keep:])
+	}
+
+	return "--"
 }
 
 func (s *DogStatsdPump) WriteData(ctx context.Context, data []interface{}) error {
@@ -239,6 +386,11 @@ func (s *DogStatsdPump) WriteData(ctx context.Context, data []interface{}) error
 						continue
 					}
 					value = "oauth_id:" + decoded.OauthID
+				case "api_key":
+					if decoded.APIKey == "" {
+						continue
+					}
+					value = "api_key:" + dogstatsdTagValueSanitiser.Replace(s.obfuscateAPIKey(decoded.APIKey))
 				default:
 					return fmt.Errorf("undefined tag '%s'", tag)
 				}
@@ -246,8 +398,20 @@ func (s *DogStatsdPump) WriteData(ctx context.Context, data []interface{}) error
 			}
 		}
 
-		if err := s.client.Histogram("request_time", float64(decoded.RequestTime), tags, s.conf.SampleRate); err != nil {
-			s.log.WithError(err).Error("unable to record Histogram, dropping analytics record")
+		// One metric per configured field. The client shards metrics across independent buffers
+		// by name, so the order they reach the agent does not necessarily match the order below.
+		for _, field := range s.conf.Fields {
+			value, ok := dogstatsdFieldValue(field, &decoded)
+			if !ok {
+				// Init rejects unknown names, so this is unreachable in practice. Skipping rather
+				// than returning keeps one bad name from costing the whole batch, which the caller
+				// discards without retrying.
+				continue
+			}
+
+			if err := s.client.Histogram(field, float64(value), tags, s.conf.SampleRate); err != nil {
+				s.log.WithError(err).Error("unable to record Histogram, dropping analytics record")
+			}
 		}
 	}
 	s.log.Info("Purged ", len(data), " records...")
