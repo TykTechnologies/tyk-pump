@@ -405,6 +405,28 @@ func TestDogStatsdAPIKeyEdgeCases(t *testing.T) {
 		assert.Contains(t, packets[0], "api_key:****\u8a9e\u30c6\u30b9\u30c8")
 	})
 
+	t.Run("obfuscation keeps an oversized token inside the datagram", func(t *testing.T) {
+		// The API key is the raw auth token, so it can be a multi-kilobyte JWT. Unobfuscated that
+		// exceeds the datagram limit and the metric is dropped; obfuscation bounds it.
+		record := testRecord()
+		record.APIKey = "eyJhbGciOiJIUzI1NiJ9." + strings.Repeat("a", 2000) + ".sig"
+
+		dropped, err := writeToDogStatsd(t, map[string]interface{}{
+			"tags": []string{"api_id", "api_key"},
+		}, record)
+		assert.NoError(t, err)
+		assert.Empty(t, dropped, "an oversized tag should cost the metric")
+
+		packets, err := writeToDogStatsd(t, map[string]interface{}{
+			"tags":                      []string{"api_id", "api_key"},
+			"obfuscate_api_keys":        true,
+			"obfuscate_api_keys_length": 4,
+		}, record)
+		assert.NoError(t, err)
+		assert.Len(t, packets, 1)
+		assert.Equal(t, "pump.request_time:42|h|#tyk-pump,api_id:api-1,api_key:****.sig", packets[0])
+	})
+
 	t.Run("separators in a key cannot corrupt the metric line", func(t *testing.T) {
 		record := testRecord()
 		record.APIKey = "aaa,bbb|ccc#ddd"

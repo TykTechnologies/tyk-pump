@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/DataDog/datadog-go/statsd"
 	"github.com/mitchellh/mapstructure"
@@ -28,13 +29,23 @@ var dogstatDefaultENV = PUMPS_ENV_PREFIX + "_DOGSTATSD" + PUMPS_ENV_META_PREFIX
 // None of them are escaped by the client, so a value containing one corrupts the metric line.
 var dogstatsdTagValueSanitiser = strings.NewReplacer(",", "_", "|", "_", "#", "_")
 
-// dogstatsdSupportedFields is the list reported back to the user when a configured field name is
-// not recognised. It must stay in step with dogstatsdFieldValue below.
+// dogstatsdSupportedFields are the field names a user may configure. It must stay in step with
+// dogstatsdFieldValue; a test asserts that every name here resolves.
 var dogstatsdSupportedFields = []string{"request_time", "latency_total", "latency_upstream", "latency_gateway"}
 
-// dogstatsdFieldValue resolves a configured field name to the value it emits, reporting whether
-// the name is supported. It is the single source of truth for the supported field names: Init
-// validates against it and WriteData reads through it.
+// isDogstatsdFieldSupported reports whether a configured field name is one the pump can emit.
+func isDogstatsdFieldSupported(field string) bool {
+	for _, supported := range dogstatsdSupportedFields {
+		if field == supported {
+			return true
+		}
+	}
+
+	return false
+}
+
+// dogstatsdFieldValue resolves a supported field name to the value it emits. The boolean guards
+// the caller against a name that never passed validation.
 func dogstatsdFieldValue(field string, decoded *analytics.AnalyticsRecord) (int64, bool) {
 	switch field {
 	case "request_time":
@@ -276,7 +287,7 @@ func (s *DogStatsdPump) resolveFields() []string {
 			continue
 		}
 
-		if _, ok := dogstatsdFieldValue(field, &analytics.AnalyticsRecord{}); !ok {
+		if !isDogstatsdFieldSupported(field) {
 			s.log.Warnf("ignoring unsupported field '%s'; supported fields are %v",
 				field, dogstatsdSupportedFields)
 
@@ -317,11 +328,18 @@ func (s *DogStatsdPump) obfuscateAPIKey(apiKey string) string {
 		keep = 0
 	}
 
-	// Count characters rather than bytes: slicing a multi-byte key by byte offset would emit
-	// half a rune.
-	runes := []rune(apiKey)
-	if len(runes) > keep {
-		return "****" + string(runes[len(runes)-keep:])
+	// Walk back the requested number of characters from the end. Counting characters rather than
+	// bytes stops a multi-byte key being split mid-character, and walking avoids allocating a
+	// rune slice for a token that may be several kilobytes long.
+	end := len(apiKey)
+	for taken := 0; taken < keep && end > 0; taken++ {
+		_, size := utf8.DecodeLastRuneInString(apiKey[:end])
+		end -= size
+	}
+
+	// Anything left before the kept suffix means the key is longer than the part being revealed.
+	if end > 0 {
+		return "****" + apiKey[end:]
 	}
 
 	return "--"
