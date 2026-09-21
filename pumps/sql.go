@@ -27,6 +27,46 @@ import (
 type PostgresConfig struct {
 	// Disables implicit prepared statement usage.
 	PreferSimpleProtocol bool `json:"prefer_simple_protocol" mapstructure:"prefer_simple_protocol"`
+	// Maximum number of open connections in this pump's PostgreSQL connection pool.
+	// `0` (default) means unlimited.
+	//
+	// The limit is applied per connection pool, and every SQL pump owns its own pool,
+	// so this is not a process-wide cap. A Tyk Pump running the `sql` and
+	// `sql_aggregate` pumps against the same database opens two pools and may open up
+	// to twice this value. Tyk MDCB initialises six SQL pumps alongside its own
+	// database connection, so an MDCB node may open up to seven times this value.
+	// Size the value against the PostgreSQL `max_connections` setting. Negative
+	// values are rejected.
+	//
+	// Ignored unless `type` is `postgres`.
+	MaxOpenConnections int `json:"max_open_connections" mapstructure:"max_open_connections"`
+	// Maximum number of idle connections kept in this pump's PostgreSQL connection
+	// pool. `0` (default) leaves Go's default of 2 idle connections per pool in place.
+	//
+	// Set this alongside `max_open_connections`: raising only the open limit leaves
+	// the idle pool at 2, so a burst of traffic dials the extra connections and then
+	// discards all but two of them as it subsides. Negative values are rejected.
+	//
+	// Applied per connection pool, as with `max_open_connections`. Values greater than
+	// `max_open_connections` are silently reduced by Go; a warning is logged when this
+	// is detected.
+	//
+	// Ignored unless `type` is `postgres`.
+	MaxIdleConnections int `json:"max_idle_connections" mapstructure:"max_idle_connections"`
+	// Maximum length of time that a connection may be reused, as a Go duration string
+	// (e.g. `30m`). Empty (default) means connections are reused forever. Applied to
+	// every connection in this pump's pool. An invalid or negative duration fails pump
+	// initialisation.
+	//
+	// Ignored unless `type` is `postgres`.
+	ConnectionMaxLifetime string `json:"connection_max_lifetime" mapstructure:"connection_max_lifetime"`
+	// Maximum length of time a connection may sit idle before being closed, as a Go
+	// duration string (e.g. `5m`). Empty (default) means idle connections are never
+	// closed for being idle. Applied to every connection in this pump's pool. An
+	// invalid or negative duration fails pump initialisation.
+	//
+	// Ignored unless `type` is `postgres`.
+	ConnectionMaxIdleTime string `json:"connection_max_idle_time" mapstructure:"connection_max_idle_time"`
 }
 
 type MysqlConfig struct {
@@ -106,6 +146,9 @@ func (p *monthEncodePlan) Encode(value any, buf []byte) ([]byte, error) {
 	return p.next.Encode(int(value.(time.Month)), buf)
 }
 
+// Dialect builds the gorm dialector for cfg. It does not apply the PostgreSQL
+// connection-pool settings held in cfg.Postgres — OpenGormDB applies those once the
+// *gorm.DB exists, so any caller that opens gorm itself must apply them too.
 func Dialect(cfg *SQLConf) (gorm.Dialector, error) {
 	switch cfg.Type {
 	case "postgres":

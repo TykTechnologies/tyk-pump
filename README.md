@@ -242,6 +242,8 @@ You can also use different types of SQL Uptime pumps, like `postgres` or `mysql`
 
 > **Note**: From v1.12.0 onwards, SQLite is no longer supported as a SQL Pump type.
 
+The PostgreSQL connection pool options documented under [SQL Pump](#sql-pump) apply here too, via a `postgres` block. The uptime pump maintains its own connection pool, so its limits are separate from those of every other SQL pump. Its environment variables use the `TYK_PMP_UPTIMEPUMPCONFIG_POSTGRES_` prefix, for example `TYK_PMP_UPTIMEPUMPCONFIG_POSTGRES_MAXOPENCONNECTIONS`.
+
 ###### JSON / Conf file Example
 
 ```
@@ -1113,6 +1115,17 @@ _Supported in Tyk Pump v1.5.0+_
 If `table_sharding` is `false`, all the records are going to be stored in `tyk_analytics` table. Instead, if it's `true`, all the records of the day are going to be stored in `tyk_analytics_YYYYMMDD` table, where `YYYYMMDD` is going to change depending on the date.
 `batch_size` - Specifies the amount of records that are going to be written each batch. Type int. By default, it writes 1000 records max per batch.
 
+###### PostgreSQL connection pool
+
+These options are PostgreSQL only and are ignored for other `type` values. They are applied **per connection pool**, and every SQL pump instance maintains its own pool — a Tyk Pump running the `sql` and `sql_aggregate` pumps against the same database opens two pools, and the uptime pump (instantiated automatically unless `dont_purge_uptime_data` is `true`) opens another. Tyk MDCB embeds six SQL pumps alongside its own database connection, so an MDCB node may open up to seven times `max_open_connections`. Size these values against the PostgreSQL `max_connections` setting.
+
+`postgres.max_open_connections` - Maximum number of open connections in this pump's pool. `0` (default) means unlimited.
+`postgres.max_idle_connections` - Maximum number of idle connections kept in this pump's pool. `0` (default) leaves Go's default of 2 in place. Set this alongside `max_open_connections`: raising only the open limit leaves the idle pool at 2, so a burst dials the extra connections and then discards all but two as it subsides. A value greater than `max_open_connections` is capped by Go, and a warning is logged.
+`postgres.connection_max_lifetime` - Maximum length of time a connection may be reused, as a Go duration string (e.g. `30m`). Empty (default) means connections are reused forever.
+`postgres.connection_max_idle_time` - Maximum length of time a connection may sit idle before being closed, as a Go duration string (e.g. `5m`). Empty (default) means idle connections are never closed for being idle.
+
+An invalid duration string, or a negative value in any of these four options, fails pump initialisation. If the uptime pump fails to initialise, uptime data is not written and the failure is logged.
+
 ###### JSON / Conf File
 
 ```
@@ -1121,7 +1134,13 @@ If `table_sharding` is `false`, all the records are going to be stored in `tyk_a
         "meta": {
             "type": "postgres",
             "connection_string": "host=localhost port=5432 user=admin dbname=postgres_test password=test",
-            "table_sharding": false
+            "table_sharding": false,
+            "postgres": {
+                "max_open_connections": 20,
+                "max_idle_connections": 5,
+                "connection_max_lifetime": "30m",
+                "connection_max_idle_time": "5m"
+            }
         }
     }
 ```
@@ -1133,6 +1152,10 @@ TYK_PMP_PUMPS_SQL_NAME=sql
 TYK_PMP_PUMPS_SQL_META_TYPE=postgres
 TYK_PMP_PUMPS_SQL_META_CONNECTIONSTRING="host=sql_host port=sql_port user=sql_usr dbname=dbname password=sql_pw"
 TYK_PMP_PUMPS_SQL_META_TABLESHARDING=false
+TYK_PMP_PUMPS_SQL_META_POSTGRES_MAXOPENCONNECTIONS=20
+TYK_PMP_PUMPS_SQL_META_POSTGRES_MAXIDLECONNECTIONS=5
+TYK_PMP_PUMPS_SQL_META_POSTGRES_CONNECTIONMAXLIFETIME=30m
+TYK_PMP_PUMPS_SQL_META_POSTGRES_CONNECTIONMAXIDLETIME=5m
 ```
 
 ## SQL Aggregate Pump
@@ -1148,6 +1171,17 @@ _Supported in Tyk Pump v1.5.0+_
 If `table_sharding` is `false`, all the records are going to be stored in `tyk_aggregated` table. Instead, if it's `true`, all the records of the day are going to be stored in `tyk_aggregated_YYYYMMDD` table, where `YYYYMMDD` is going to change depending on the date.
 `batch_size` - Specifies the amount of records that are going to be written each batch. Type int. By default, it writes 1000 records max per batch.
 
+###### PostgreSQL connection pool
+
+These options are PostgreSQL only and are ignored for other `type` values. They are applied **per connection pool**, and every SQL pump instance maintains its own pool — a Tyk Pump running the `sql` and `sql_aggregate` pumps against the same database opens two pools, and the uptime pump (instantiated automatically unless `dont_purge_uptime_data` is `true`) opens another. Tyk MDCB embeds six SQL pumps alongside its own database connection, so an MDCB node may open up to seven times `max_open_connections`. Size these values against the PostgreSQL `max_connections` setting.
+
+`postgres.max_open_connections` - Maximum number of open connections in this pump's pool. `0` (default) means unlimited.
+`postgres.max_idle_connections` - Maximum number of idle connections kept in this pump's pool. `0` (default) leaves Go's default of 2 in place. Set this alongside `max_open_connections`: raising only the open limit leaves the idle pool at 2, so a burst dials the extra connections and then discards all but two as it subsides. A value greater than `max_open_connections` is capped by Go, and a warning is logged.
+`postgres.connection_max_lifetime` - Maximum length of time a connection may be reused, as a Go duration string (e.g. `30m`). Empty (default) means connections are reused forever.
+`postgres.connection_max_idle_time` - Maximum length of time a connection may sit idle before being closed, as a Go duration string (e.g. `5m`). Empty (default) means idle connections are never closed for being idle.
+
+An invalid duration string, or a negative value in any of these four options, fails pump initialisation. If the uptime pump fails to initialise, uptime data is not written and the failure is logged.
+
 ###### JSON / Conf File
 
 ```
@@ -1156,7 +1190,13 @@ If `table_sharding` is `false`, all the records are going to be stored in `tyk_a
         "meta": {
             "type": "postgres",
             "connection_string": "host=localhost port=5432 user=admin dbname=postgres_test password=test",
-            "table_sharding": false
+            "table_sharding": false,
+            "postgres": {
+                "max_open_connections": 20,
+                "max_idle_connections": 5,
+                "connection_max_lifetime": "30m",
+                "connection_max_idle_time": "5m"
+            }
         }
     }
 ```
@@ -1168,6 +1208,10 @@ TYK_PMP_PUMPS_SQLAGGREGATE_TYPE=sql_aggregate
 TYK_PMP_PUMPS_SQLAGGREGATE_META_TYPE=postgres
 TYK_PMP_PUMPS_SQLAGGREGATE_META_CONNECTIONSTRING=host=sql_host port=sql_port user=sql_usr dbname=dbname password=sql_pw
 TYK_PMP_PUMPS_SQLAGGREGATE_META_TABLESHARDING=true
+TYK_PMP_PUMPS_SQLAGGREGATE_META_POSTGRES_MAXOPENCONNECTIONS=20
+TYK_PMP_PUMPS_SQLAGGREGATE_META_POSTGRES_MAXIDLECONNECTIONS=5
+TYK_PMP_PUMPS_SQLAGGREGATE_META_POSTGRES_CONNECTIONMAXLIFETIME=30m
+TYK_PMP_PUMPS_SQLAGGREGATE_META_POSTGRES_CONNECTIONMAXIDLETIME=5m
 ```
 
 ## Timestream Config

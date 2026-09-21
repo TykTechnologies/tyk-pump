@@ -3,6 +3,7 @@ package pumps
 import (
 	"crypto/tls"
 	"crypto/x509"
+	"database/sql"
 	"errors"
 	"fmt"
 	"os"
@@ -187,7 +188,9 @@ func MigrateAllShardedTables(db *gorm.DB, tablePrefix, logPrefix string, model i
 
 // OpenGormDB resolves the GORM log level, builds the dialect, and opens
 // a *gorm.DB connection. It centralises the boilerplate shared by every SQL
-// pump's Init method.
+// pump's Init method. It also applies the PostgreSQL connection-pool settings held
+// in conf.Postgres, and rejects an invalid setting rather than opening a pool that
+// ignores it.
 func OpenGormDB(conf *SQLConf, log *logrus.Entry) (*gorm.DB, error) {
 	logLevel := gorm_logger.Silent
 	switch conf.LogLevel {
@@ -197,6 +200,16 @@ func OpenGormDB(conf *SQLConf, log *logrus.Entry) (*gorm.DB, error) {
 		logLevel = gorm_logger.Warn
 	case "warning":
 		logLevel = gorm_logger.Error
+	}
+
+	// Validate before connecting. gorm.Open pings the database, so an unparseable
+	// duration would otherwise be masked by a connection error and only surface once
+	// the database happened to be reachable.
+	if conf.Type == "postgres" {
+		if err := conf.Postgres.Validate(); err != nil {
+			log.WithError(err).Error("invalid SQL connection pool configuration")
+			return nil, err
+		}
 	}
 
 	dialect, err := Dialect(conf)
@@ -215,7 +228,141 @@ func OpenGormDB(conf *SQLConf, log *logrus.Entry) (*gorm.DB, error) {
 		return nil, err
 	}
 
+	if err := applyPoolSettings(db, conf, log); err != nil {
+		log.WithError(err).Error("error applying SQL connection pool settings")
+		// Close the pool we just opened: a caller that retries initialisation would
+		// otherwise orphan one connection pool per attempt, against the very
+		// PostgreSQL limit this feature exists to respect.
+		closeGormDB(db, log)
+		return nil, err
+	}
+
 	return db, nil
+}
+
+// closeGormDB releases the underlying *sql.DB behind db. It is best effort: there is
+// nothing useful a caller can do if closing an already-broken pool fails.
+func closeGormDB(db *gorm.DB, log *logrus.Entry) {
+	sqlDB, err := db.DB()
+	if err != nil {
+		log.WithError(err).Debug("could not resolve *sql.DB while discarding connection")
+		return
+	}
+	if err := sqlDB.Close(); err != nil {
+		log.WithError(err).Debug("error closing discarded SQL connection")
+	}
+}
+
+// sqlDBProvider exposes the underlying *sql.DB behind a gorm connection. *gorm.DB
+// satisfies it; a fake implementation lets the pool wiring be unit tested without
+// opening a real database connection.
+type sqlDBProvider interface {
+	DB() (*sql.DB, error)
+}
+
+// Validate checks that the PostgreSQL connection-pool duration options parse. It
+// opens no connection, so a misconfiguration can be reported before a connection is
+// attempted, and a consumer that derives several pumps from one configuration — Tyk
+// MDCB derives six — can surface a typo once, at config load, instead of having every
+// SQL pump fail to initialise.
+func (cfg PostgresConfig) Validate() error {
+	// Negative values are accepted by database/sql but mean the opposite of what
+	// these options promise: SetMaxOpenConns(-1) is unlimited, and a negative
+	// lifetime means "never expire". Silently uncapping a pool the operator
+	// believes they bounded is the failure this feature exists to prevent.
+	if cfg.MaxOpenConnections < 0 {
+		return fmt.Errorf("invalid max_open_connections %d: must not be negative", cfg.MaxOpenConnections)
+	}
+
+	if cfg.MaxIdleConnections < 0 {
+		return fmt.Errorf("invalid max_idle_connections %d: must not be negative", cfg.MaxIdleConnections)
+	}
+
+	if cfg.ConnectionMaxLifetime != "" {
+		d, err := parsePoolDuration("connection_max_lifetime", cfg.ConnectionMaxLifetime)
+		if err != nil {
+			return err
+		}
+		if d < 0 {
+			return fmt.Errorf("invalid connection_max_lifetime %q: must not be negative", cfg.ConnectionMaxLifetime)
+		}
+	}
+
+	if cfg.ConnectionMaxIdleTime != "" {
+		d, err := parsePoolDuration("connection_max_idle_time", cfg.ConnectionMaxIdleTime)
+		if err != nil {
+			return err
+		}
+		if d < 0 {
+			return fmt.Errorf("invalid connection_max_idle_time %q: must not be negative", cfg.ConnectionMaxIdleTime)
+		}
+	}
+
+	return nil
+}
+
+// applyPoolSettings applies the configured PostgreSQL connection-pool settings to the
+// *sql.DB behind db. It is a no-op for any storage type other than `postgres`, because
+// the settings live under the `postgres` block of the pump configuration.
+func applyPoolSettings(db sqlDBProvider, conf *SQLConf, log *logrus.Entry) error {
+	if conf.Type != "postgres" {
+		return nil
+	}
+
+	sqlDB, err := db.DB()
+	if err != nil {
+		return err
+	}
+
+	return applyConnectionPoolSettings(sqlDB, conf.Postgres, log)
+}
+
+// applyConnectionPoolSettings applies the configured connection-pool options to sqlDB.
+// Zero and empty values are no-ops, so the database/sql defaults are preserved. An
+// invalid duration string is returned as an error and should be treated by the caller
+// as an initialisation failure.
+func applyConnectionPoolSettings(sqlDB *sql.DB, cfg PostgresConfig, log *logrus.Entry) error {
+	if cfg.MaxOpenConnections != 0 {
+		sqlDB.SetMaxOpenConns(cfg.MaxOpenConnections)
+	}
+
+	if cfg.MaxIdleConnections != 0 {
+		// database/sql silently caps the idle pool at the open limit, so the
+		// configured value would not be honoured as written.
+		if log != nil && cfg.MaxOpenConnections > 0 && cfg.MaxIdleConnections > cfg.MaxOpenConnections {
+			log.Warnf("max_idle_connections (%d) is greater than max_open_connections (%d); it will be capped at %d",
+				cfg.MaxIdleConnections, cfg.MaxOpenConnections, cfg.MaxOpenConnections)
+		}
+		sqlDB.SetMaxIdleConns(cfg.MaxIdleConnections)
+	}
+
+	if cfg.ConnectionMaxLifetime != "" {
+		d, err := parsePoolDuration("connection_max_lifetime", cfg.ConnectionMaxLifetime)
+		if err != nil {
+			return err
+		}
+		sqlDB.SetConnMaxLifetime(d)
+	}
+
+	if cfg.ConnectionMaxIdleTime != "" {
+		d, err := parsePoolDuration("connection_max_idle_time", cfg.ConnectionMaxIdleTime)
+		if err != nil {
+			return err
+		}
+		sqlDB.SetConnMaxIdleTime(d)
+	}
+
+	return nil
+}
+
+// parsePoolDuration parses a Go duration string, naming the config field in the error
+// so a misconfiguration is easy to diagnose.
+func parsePoolDuration(field, value string) (time.Duration, error) {
+	d, err := time.ParseDuration(value)
+	if err != nil {
+		return 0, fmt.Errorf("invalid %s value %q: %w", field, value, err)
+	}
+	return d, nil
 }
 
 type TLSConfig struct {
