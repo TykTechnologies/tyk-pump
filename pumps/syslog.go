@@ -287,35 +287,34 @@ func appendEscapedTag(dst []byte, s string) []byte {
 // Returns the input slice unchanged when nothing needs escaping, so the common path
 // allocates nothing.
 func escapeTags(tags []string) []string {
-	needsEscaping := false
+	// Single pass, allocating only once a tag actually needs escaping: clean tags
+	// seen before that point are copied across, and everything after is written
+	// straight into the new slice. A slice with nothing to escape never allocates
+	// and is returned as-is.
+	var escaped []string
 
-	for _, tag := range tags {
-		if hasControlChars(tag) {
-			needsEscaping = true
-
-			break
-		}
-	}
-
-	if !needsEscaping {
-		return tags
-	}
-
-	escaped := make([]string, len(tags))
 	buf := make([]byte, 0, 64)
 
 	for i, tag := range tags {
-		// Deliberately re-scanned: the loop above stops at the first dirty tag, so
-		// this is the only thing keeping clean tags in a dirty slice from being
-		// copied. Not a leftover from the scan above.
 		if !hasControlChars(tag) {
-			escaped[i] = tag
+			if escaped != nil {
+				escaped[i] = tag
+			}
 
 			continue
 		}
 
+		if escaped == nil {
+			escaped = make([]string, len(tags))
+			copy(escaped, tags[:i])
+		}
+
 		buf = appendEscapedTag(buf[:0], tag)
 		escaped[i] = string(buf)
+	}
+
+	if escaped == nil {
+		return tags
 	}
 
 	return escaped

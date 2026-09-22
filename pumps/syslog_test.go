@@ -27,12 +27,20 @@ func mockSyslogServer(t *testing.T) (string, chan string) {
 
 	go func() {
 		defer conn.Close()
-		buffer := make([]byte, 1024)
+
+		// Deliberately larger than RFC 3164's 1024-byte message limit. This buffer
+		// is the test harness reading a datagram, not the protocol enforcing a cap:
+		// sizing it at 1024 would silently truncate any message that grew past it
+		// and surface as a confusing assertion failure rather than an obvious one.
+		buffer := make([]byte, 8192)
 		for {
 			n, _, err := conn.ReadFromUDP(buffer)
 			if err != nil {
 				return
 			}
+
+			require.Less(t, n, len(buffer), "message filled the read buffer; it may be truncated")
+
 			messages <- string(buffer[:n])
 		}
 	}()
@@ -455,6 +463,15 @@ func TestSyslogPump_WriteData_Tags(t *testing.T) {
 			wantContain: `tags:[bad\ntag ok]`,
 		},
 		{
+			// Clean tags appearing *before* the first one needing escaping have to
+			// survive. escapeTags allocates lazily, so those are copied across
+			// rather than written by the loop -- the one line in it that no other
+			// case here exercises.
+			name:        "clean tags before a dirty one are preserved",
+			tags:        []string{"key-abc123", "org-5e9d", "bad\ntag", "api-42"},
+			wantContain: `tags:[key-abc123 org-5e9d bad\ntag api-42]`,
+		},
+		{
 			name:        "tab and CRLF are escaped, not emitted raw",
 			tags:        []string{"a\tb", "c\r\nd"},
 			wantContain: `tags:[a\tb c\r\nd]`,
@@ -842,4 +859,25 @@ func TestSyslogPump_InitConfigs_WarnsOnUDPWithTags(t *testing.T) {
 				"transport=%q include_tags=%v", tt.transport, tt.includeTags)
 		})
 	}
+}
+
+// TestSyslogPump_EscapeTags_Allocations pins the allocation contract that the
+// acceptance criteria claim and only a benchmark currently evidences.
+//
+// Benchmarks are never run in CI, so without this a regression is invisible: the
+// scratch buffer escaping to the heap would add an allocation to every record on
+// the hot path, and every other test would still pass. That is not hypothetical —
+// hoisting the buffer out of the loop is exactly what keeps it stack-allocated,
+// and moving it back inside costs an allocation while looking tidier.
+func TestSyslogPump_EscapeTags_Allocations(t *testing.T) {
+	clean := syslogTestTagsBench(5)
+
+	dirty := append([]string(nil), clean...)
+	dirty[2] = "bad\ntag"
+
+	require.Zero(t, testing.AllocsPerRun(200, func() { _ = escapeTags(clean) }),
+		"tags needing no escaping must not allocate")
+
+	require.Equal(t, 2.0, testing.AllocsPerRun(200, func() { _ = escapeTags(dirty) }),
+		"escaping should cost one slice plus one string, not one per tag")
 }
