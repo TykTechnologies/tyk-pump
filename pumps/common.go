@@ -228,26 +228,38 @@ func OpenGormDB(conf *SQLConf, log *logrus.Entry) (*gorm.DB, error) {
 		return nil, err
 	}
 
-	if err := applyPoolSettings(db, conf, log); err != nil {
-		log.WithError(err).Error("error applying SQL connection pool settings")
-		// Close the pool we just opened: a caller that retries initialisation would
-		// otherwise orphan one connection pool per attempt, against the very
-		// PostgreSQL limit this feature exists to respect.
-		closeGormDB(db, log)
+	if err := applyPoolSettingsOrClose(db, conf, log); err != nil {
 		return nil, err
 	}
 
 	return db, nil
 }
 
-// closeGormDB releases the underlying *sql.DB behind db. It is best effort: there is
-// nothing useful a caller can do if closing an already-broken pool fails.
-func closeGormDB(db *gorm.DB, log *logrus.Entry) {
+// applyPoolSettingsOrClose applies the connection-pool settings and, if that fails,
+// discards the pool before returning. A caller that retries initialisation would
+// otherwise orphan one connection pool per attempt, against the very PostgreSQL limit
+// this feature exists to respect.
+func applyPoolSettingsOrClose(db sqlDBProvider, conf *SQLConf, log *logrus.Entry) error {
+	err := applyPoolSettings(db, conf, log)
+	if err == nil {
+		return nil
+	}
+
+	log.WithError(err).Error("error applying SQL connection pool settings")
+	closeSQLPool(db, log)
+
+	return err
+}
+
+// closeSQLPool releases the *sql.DB behind db. It is best effort: there is nothing
+// useful a caller can do if closing an already-broken pool fails.
+func closeSQLPool(db sqlDBProvider, log *logrus.Entry) {
 	sqlDB, err := db.DB()
 	if err != nil {
 		log.WithError(err).Debug("could not resolve *sql.DB while discarding connection")
 		return
 	}
+
 	if err := sqlDB.Close(); err != nil {
 		log.WithError(err).Debug("error closing discarded SQL connection")
 	}

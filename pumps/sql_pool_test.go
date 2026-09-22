@@ -49,7 +49,26 @@ func newPoolTestDB(t *testing.T) *sql.DB {
 
 func newPoolTestLogger() (*logrus.Entry, *logrus_test.Hook) {
 	logger, hook := logrus_test.NewNullLogger()
+	logger.SetLevel(logrus.DebugLevel)
 	return logrus.NewEntry(logger), hook
+}
+
+// assertPoolClosed asserts db has been closed. A *sql.DB reports "database is closed"
+// once Close has been called, which is distinct from the per-connection dial failure
+// the fake driver returns while the pool is still open.
+func assertPoolClosed(t *testing.T, db *sql.DB) {
+	t.Helper()
+	assert.ErrorContains(t, db.Ping(), "database is closed")
+}
+
+// assertPoolOpen asserts db has not been closed. The fake driver never dials, so Ping
+// fails either way; only the "database is closed" error means the pool itself is gone.
+func assertPoolOpen(t *testing.T, db *sql.DB) {
+	t.Helper()
+	err := db.Ping()
+	if err != nil {
+		assert.NotContains(t, err.Error(), "database is closed")
+	}
 }
 
 func TestApplyConnectionPoolSettings(t *testing.T) {
@@ -433,4 +452,76 @@ func TestConnectionPoolCapUnderLoad_Postgres(t *testing.T) {
 	var count int64
 	pmp.db.Table(analytics.SQLTable).Where("orgid = ?", "pool-cap-test").Count(&count)
 	assert.Equal(t, int64(workers*recordsPerWorker), count, "all records should still be persisted")
+}
+
+func TestCloseSQLPool(t *testing.T) {
+	t.Run("closes the underlying pool", func(t *testing.T) {
+		db := sql.OpenDB(fakeConnector{})
+		entry, _ := newPoolTestLogger()
+
+		closeSQLPool(fakeDBProvider{db: db}, entry)
+
+		assertPoolClosed(t, db)
+	})
+
+	t.Run("a DB() error is tolerated", func(t *testing.T) {
+		entry, hook := newPoolTestLogger()
+
+		assert.NotPanics(t, func() {
+			closeSQLPool(fakeDBProvider{err: errors.New("no pool")}, entry)
+		})
+		require.Len(t, hook.Entries, 1)
+		assert.Equal(t, logrus.DebugLevel, hook.Entries[0].Level)
+	})
+
+	t.Run("closing an already closed pool is safe", func(t *testing.T) {
+		db := sql.OpenDB(fakeConnector{})
+		require.NoError(t, db.Close())
+		entry, _ := newPoolTestLogger()
+
+		// sql.DB.Close is idempotent, so this returns no error; the point is that a
+		// second discard of the same pool cannot panic or block.
+		assert.NotPanics(t, func() {
+			closeSQLPool(fakeDBProvider{db: db}, entry)
+		})
+		assertPoolClosed(t, db)
+	})
+}
+
+func TestApplyPoolSettingsOrClose(t *testing.T) {
+	t.Run("success leaves the pool open", func(t *testing.T) {
+		db := newPoolTestDB(t)
+		entry, _ := newPoolTestLogger()
+		conf := &SQLConf{Type: "postgres", Postgres: PostgresConfig{MaxOpenConnections: 4}}
+
+		err := applyPoolSettingsOrClose(fakeDBProvider{db: db}, conf, entry)
+
+		require.NoError(t, err)
+		assert.Equal(t, 4, db.Stats().MaxOpenConnections)
+		assertPoolOpen(t, db)
+	})
+
+	t.Run("failure discards the pool", func(t *testing.T) {
+		db := sql.OpenDB(fakeConnector{})
+		entry, _ := newPoolTestLogger()
+		// Reaches applyConnectionPoolSettings and fails there, after the pool exists —
+		// the case OpenGormDB must not leak.
+		conf := &SQLConf{Type: "postgres", Postgres: PostgresConfig{ConnectionMaxLifetime: "nonsense"}}
+
+		err := applyPoolSettingsOrClose(fakeDBProvider{db: db}, conf, entry)
+
+		require.Error(t, err)
+		assert.Contains(t, err.Error(), "connection_max_lifetime")
+		assertPoolClosed(t, db)
+	})
+
+	t.Run("a DB() failure is reported", func(t *testing.T) {
+		entry, _ := newPoolTestLogger()
+		wantErr := errors.New("no underlying pool")
+		conf := &SQLConf{Type: "postgres", Postgres: PostgresConfig{MaxOpenConnections: 4}}
+
+		err := applyPoolSettingsOrClose(fakeDBProvider{err: wantErr}, conf, entry)
+
+		assert.ErrorIs(t, err, wantErr)
+	})
 }
