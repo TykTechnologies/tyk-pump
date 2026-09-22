@@ -450,6 +450,23 @@ func TestDogStatsdAPIKeyEdgeCases(t *testing.T) {
 	})
 }
 
+func TestDogStatsdObfuscateAPIKeyDirectly(t *testing.T) {
+	// Exercises the helper without going through Init, which clamps a negative length. The
+	// masking must hold on its own, so that moving or changing that clamp cannot quietly start
+	// leaking keys.
+	for _, keep := range []int{-1000, -1, 0} {
+		pump := &DogStatsdPump{conf: &DogStatsdConf{
+			ObfuscateAPIKeys:       true,
+			ObfuscateAPIKeysLength: keep,
+		}}
+
+		assert.NotPanicsf(t, func() {
+			assert.Equalf(t, "****", pump.obfuscateAPIKey("abcdefghijklmnop"),
+				"length %d must reveal nothing", keep)
+		}, "length %d must not panic", keep)
+	}
+}
+
 func TestDogStatsdObfuscationDefaults(t *testing.T) {
 	t.Run("the api_key tag is masked without any obfuscation config", func(t *testing.T) {
 		record := testRecord()

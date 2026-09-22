@@ -350,16 +350,14 @@ func (s *DogStatsdPump) obfuscateAPIKey(apiKey string) string {
 		return apiKey
 	}
 
-	keep := s.conf.ObfuscateAPIKeysLength
-	if keep < 0 {
-		keep = 0
-	}
-
 	// Walk back the requested number of characters from the end. Counting characters rather than
 	// bytes stops a multi-byte key being split mid-character, and walking avoids allocating a
 	// rune slice for a token that may be several kilobytes long.
+	//
+	// A non-positive count needs no special case: the loop stops immediately, nothing is revealed
+	// and the key is masked in full.
 	end := len(apiKey)
-	for taken := 0; taken < keep && end > 0; taken++ {
+	for taken := 0; taken < s.conf.ObfuscateAPIKeysLength && end > 0; taken++ {
 		_, size := utf8.DecodeLastRuneInString(apiKey[:end])
 		end -= size
 	}
