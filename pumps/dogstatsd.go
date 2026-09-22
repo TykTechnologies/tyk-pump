@@ -37,6 +37,11 @@ var dogstatDefaultENV = PUMPS_ENV_PREFIX + "_DOGSTATSD" + PUMPS_ENV_META_PREFIX
 
 // DogStatsD separates tags with "," and protocol fields with "|", and "#" opens the tag list.
 // None of them are escaped by the client, so a value containing one corrupts the metric line.
+//
+// Only the api_key value is sanitised. The other tag values carry the same risk, but they have
+// always been emitted unsanitised: a path of "/users/1,2,3" already reaches the agent as the tags
+// "path:/users/1", "2" and "3". Sanitising them would rewrite the tag values existing dashboards
+// and monitors are built on, so it is handled as its own change rather than made silently here.
 var dogstatsdTagValueSanitiser = strings.NewReplacer(",", "_", "|", "_", "#", "_")
 
 // dogstatsdSupportedFields are the field names a user may configure. It must stay in step with
