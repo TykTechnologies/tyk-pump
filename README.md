@@ -735,6 +735,9 @@ TYK_PMP_PUMPS_PROMETHEUS_META_DISABLEDMETRICS=[]
 - `buffered_max_messages`: Max messages in single datagram if `buffered: true`. Default 16
 - `sample_rate`: default 1 which equates to 100% of requests. To sample at 50%, set to 0.5
 - `tags`: List of tags to be added to the metric. The possible options are listed in the below example
+- `fields`: List of analytics fields to emit as their own metric. Supported values are `request_time`, `latency_total`, `latency_upstream` and `latency_gateway`. Defaults to `["request_time"]`
+- `obfuscate_api_keys`: Controls whether the pump should hide the API key when the `api_key` tag is used. Default `true`
+- `obfuscate_api_keys_length`: Number of trailing characters of the API key to keep when `obfuscate_api_keys` is `true`. Default `4`
 
 If no tag is specified the fallback behavior is to use the below tags:
 
@@ -748,7 +751,55 @@ If no tag is specified the fallback behavior is to use the below tags:
 - `tracked`
 - `oauth_id`
 
-Note that this configuration can generate significant charges due to the unbound nature of the `path` tag.
+The `api_key` tag is also supported, but is never part of the fallback list — it is only sent when you add it to `tags` explicitly.
+
+Note that this configuration can generate significant charges due to the unbound nature of the `path` tag. The `api_key` tag is similarly unbounded, and additionally puts credential-derived data into your metrics pipeline, so enable `obfuscate_api_keys` whenever you use it.
+
+### Choosing `fields`
+
+`fields` **replaces** the default rather than adding to it. Setting it without `request_time` stops
+that metric being emitted, which will break dashboards that reference it by name.
+
+`latency_total` carries the same value as `request_time` — the gateway populates both from one
+timing — so listing both emits two identical timeseries and Datadog bills for both. To get the
+upstream/gateway breakdown while keeping the existing metric name, use:
+
+```
+"fields": ["request_time", "latency_upstream"]
+```
+
+An unsupported or duplicated field name is ignored with a warning rather than stopping the pump, so
+a typo costs that one metric and not the rest. If nothing supported is left, the pump falls back to
+`request_time`. Check the startup log to confirm what was actually loaded.
+
+Each metric is sampled independently, so with a `sample_rate` below 1 a given request may appear in
+one metric and not another. This does not affect aggregates, but a record-by-record comparison
+between two metrics will not line up.
+
+### Using the `api_key` tag safely
+
+The `api_key` tag is **obfuscated by default**: the pump emits `****` followed by the last four
+characters of the key, which is enough to tell two keys apart on a dashboard without publishing a
+usable credential. Setting `obfuscate_api_keys: false` emits the raw authentication token as a tag
+value, and should be a deliberate decision.
+
+> This matches how the Gateway already exposes keys in its own output: it masks them as `****` plus
+> the last four characters unless `enable_key_logging` is deliberately turned on. The `splunk` and
+> `prometheus` pumps default the same option to `false`, so this pump differs from them — but the
+> `api_key` tag is new here, no existing configuration changes behaviour, and a credential should
+> not reach a metrics pipeline because an operator did not know to opt in. The pump logs the value
+> it resolved at startup, so you can confirm what is running.
+
+Setting `obfuscate_api_keys_length: 0` masks the key completely. That also collapses every key onto
+the same tag value, which makes the tag useless as a dimension — if you do not want per-key
+breakdown, leave the tag out instead.
+
+Obfuscation guards a second problem. `APIKey` holds the raw authentication token, so where that
+token is large — a JWT, for instance — an unobfuscated tag can push the metric past the DogStatsD
+datagram limit, in which case **the metric is dropped** and only a log line records it. The
+obfuscated value is always short, so this cannot happen while the default is in place.
+
+Raw request and response bodies are **not** available as tags. DogStatsD tag values are neither escaped nor length-bounded: a body large enough to exceed the datagram size causes the whole metric to be dropped, and a body containing `,`, `|` or `#` corrupts the metric line. Use a logging pump such as `splunk`, `elasticsearch` or `stdout` for payload capture instead.
 
 ```.json
 "dogstatsd": {
@@ -770,8 +821,16 @@ Note that this configuration can generate significant charges due to the unbound
       "org_id",
       "tracked",
       "path",
-      "oauth_id"
-    ]
+      "oauth_id",
+      "api_key"
+    ],
+    "fields": [
+      "request_time",
+      "latency_total",
+      "latency_upstream"
+    ],
+    "obfuscate_api_keys": true,
+    "obfuscate_api_keys_length": 4
   }
 },
 ```
@@ -784,6 +843,7 @@ On startup, you should see the loaded configs when initializing the dogstatsd pu
 [May 10 15:23:44]  INFO dogstatsd: sample_rate: 50%
 [May 10 15:23:44]  INFO dogstatsd: buffered: true, max_messages: 32
 [May 10 15:23:44]  INFO dogstatsd: async_uds: true, write_timeout: 2s
+[May 10 15:23:44]  INFO dogstatsd: fields: [request_time latency_total latency_upstream], obfuscate_api_keys: true
 ```
 
 ###### Env Variables
@@ -796,7 +856,10 @@ TYK_PMP_PUMPS_DOGSTATSD_META_ASYNCUDS=true
 TYK_PMP_PUMPS_DOGSTATSD_META_ASYNCUDSWRITETIMEOUT=2
 TYK_PMP_PUMPS_DOGSTATSD_META_BUFFERED=true
 TYK_PMP_PUMPS_DOGSTATSD_META_BUFFEREDMAXMESSAGES=32
-TYK_PMP_PUMPS_DOGSTATSD_META_TAGS=method,response_code,api_version,api_name,api_id,org_id,tracked,path,oauth_id
+TYK_PMP_PUMPS_DOGSTATSD_META_TAGS=method,response_code,api_version,api_name,api_id,org_id,tracked,path,oauth_id,api_key
+TYK_PMP_PUMPS_DOGSTATSD_META_FIELDS=request_time,latency_total,latency_upstream
+TYK_PMP_PUMPS_DOGSTATSD_META_OBFUSCATEAPIKEYS=true
+TYK_PMP_PUMPS_DOGSTATSD_META_OBFUSCATEAPIKEYSLENGTH=4
 ```
 
 ## Splunk
