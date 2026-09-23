@@ -1117,7 +1117,7 @@ If `table_sharding` is `false`, all the records are going to be stored in `tyk_a
 
 ###### PostgreSQL connection pool
 
-These options are PostgreSQL only and are ignored for other `type` values. They are applied **per connection pool**, and every SQL pump instance maintains its own pool — a Tyk Pump running the `sql` and `sql_aggregate` pumps against the same database opens two pools, and the uptime pump (instantiated automatically unless `dont_purge_uptime_data` is `true`) opens another. Tyk MDCB embeds six SQL pumps alongside its own database connection, so an MDCB node may open up to seven times `max_open_connections`. Size these values against the PostgreSQL `max_connections` setting.
+These options are PostgreSQL only and are ignored for other `type` values. They are applied **per connection pool**, and Tyk Pump maintains one connection pool for each configured pump — so if both the `sql` and `sql_aggregate` pumps are configured there will be two connection pools, each limited to `max_open_connections` connections. The uptime pump, instantiated automatically unless `dont_purge_uptime_data` is `true`, maintains another. Size these values against the PostgreSQL `max_connections` setting.
 
 `postgres.max_open_connections` - Maximum number of open connections in this pump's pool. `0` (default) means unlimited.
 `postgres.max_idle_connections` - Maximum number of idle connections kept in this pump's pool. `0` (default) leaves Go's default of 2 in place. Set this alongside `max_open_connections`: raising only the open limit leaves the idle pool at 2, so a burst dials the extra connections and then discards all but two as it subsides. A value greater than `max_open_connections` is capped by Go, and a warning is logged.
@@ -1173,7 +1173,7 @@ If `table_sharding` is `false`, all the records are going to be stored in `tyk_a
 
 ###### PostgreSQL connection pool
 
-These options are PostgreSQL only and are ignored for other `type` values. They are applied **per connection pool**, and every SQL pump instance maintains its own pool — a Tyk Pump running the `sql` and `sql_aggregate` pumps against the same database opens two pools, and the uptime pump (instantiated automatically unless `dont_purge_uptime_data` is `true`) opens another. Tyk MDCB embeds six SQL pumps alongside its own database connection, so an MDCB node may open up to seven times `max_open_connections`. Size these values against the PostgreSQL `max_connections` setting.
+These options are PostgreSQL only and are ignored for other `type` values. They are applied **per connection pool**, and Tyk Pump maintains one connection pool for each configured pump — so if both the `sql` and `sql_aggregate` pumps are configured there will be two connection pools, each limited to `max_open_connections` connections. The uptime pump, instantiated automatically unless `dont_purge_uptime_data` is `true`, maintains another. Size these values against the PostgreSQL `max_connections` setting.
 
 `postgres.max_open_connections` - Maximum number of open connections in this pump's pool. `0` (default) means unlimited.
 `postgres.max_idle_connections` - Maximum number of idle connections kept in this pump's pool. `0` (default) leaves Go's default of 2 in place. Set this alongside `max_open_connections`: raising only the open limit leaves the idle pool at 2, so a burst dials the extra connections and then discards all but two as it subsides. A value greater than `max_open_connections` is capped by Go, and a warning is logged.
