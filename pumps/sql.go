@@ -27,6 +27,26 @@ import (
 type PostgresConfig struct {
 	// Disables implicit prepared statement usage.
 	PreferSimpleProtocol bool `json:"prefer_simple_protocol" mapstructure:"prefer_simple_protocol"`
+	// Maximum number of open connections to the database per connection pool.
+	// `0` (default) means unlimited.
+	//
+	// Tyk Pump maintains one connection pool for each configured pump,
+	// so if both `sql` and `sql_aggregate` pumps are configured
+	// there will be two connection pools each limited to `max_open_connections` connections.
+	// Negative values are rejected.
+	MaxOpenConnections int `json:"max_open_connections" mapstructure:"max_open_connections"`
+	// Maximum number of idle connections that will be kept in each connection pool.
+	// Tyk Pump maintains one connection pool for each configured pump.
+	// `0` (default) uses the Go default which is currently 2.
+	// Negative values are rejected.
+	MaxIdleConnections int `json:"max_idle_connections" mapstructure:"max_idle_connections"`
+	// Maximum length of time that a connection may be reused, as a Go duration string
+	// (e.g. `30m`). Empty (default) means connections are reused forever.
+	ConnectionMaxLifetime string `json:"connection_max_lifetime" mapstructure:"connection_max_lifetime"`
+	// Maximum length of time a connection may sit idle before being closed, as a Go
+	// duration string (e.g. `5m`). Empty (default) means idle connections are never
+	// closed for being idle.
+	ConnectionMaxIdleTime string `json:"connection_max_idle_time" mapstructure:"connection_max_idle_time"`
 }
 
 type MysqlConfig struct {
@@ -106,6 +126,9 @@ func (p *monthEncodePlan) Encode(value any, buf []byte) ([]byte, error) {
 	return p.next.Encode(int(value.(time.Month)), buf)
 }
 
+// Dialect builds the gorm dialector for cfg. It does not apply the PostgreSQL
+// connection-pool settings held in cfg.Postgres — OpenGormDB applies those once the
+// *gorm.DB exists, so any caller that opens gorm itself must apply them too.
 func Dialect(cfg *SQLConf) (gorm.Dialector, error) {
 	switch cfg.Type {
 	case "postgres":

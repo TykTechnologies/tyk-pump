@@ -247,14 +247,28 @@ func initialiseUptimePump() {
 		"prefix": mainPrefix,
 	}).Info("'dont_purge_uptime_data' set to false, attempting to start Uptime pump! ")
 
+	var err error
+
 	switch SystemConfig.UptimePumpConfig.UptimeType {
 	case "sql":
 		UptimePump = &pumps.SQLPump{IsUptime: true}
-		UptimePump.Init(SystemConfig.UptimePumpConfig.SQLConf)
+		err = UptimePump.Init(SystemConfig.UptimePumpConfig.SQLConf)
 
 	default:
 		UptimePump = &pumps.MongoPump{IsUptime: true}
-		UptimePump.Init(SystemConfig.UptimePumpConfig.MongoConf)
+		err = UptimePump.Init(SystemConfig.UptimePumpConfig.MongoConf)
+	}
+
+	// A pump that failed to initialise is only half-constructed: writing to it
+	// panics on the nil DB handle. Drop it and carry on without uptime data, the
+	// same way a failed analytics pump is skipped.
+	if err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+			"type":   SystemConfig.UptimePumpConfig.UptimeType,
+		}).WithError(err).Error("Uptime pump init error (skipping)")
+		UptimePump = nil
+		return
 	}
 
 	log.WithFields(logrus.Fields{
@@ -295,7 +309,7 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 
 		job.Timing("purge_time_all", time.Since(startTime).Nanoseconds())
 
-		if !SystemConfig.DontPurgeUptimeData {
+		if !SystemConfig.DontPurgeUptimeData && UptimePump != nil {
 			UptimeValues, err := UptimeStorage.GetAndDeleteSet(storage.UptimeAnalytics_KEYNAME, chunkSize, expire)
 			if err != nil {
 				log.WithFields(logrus.Fields{
