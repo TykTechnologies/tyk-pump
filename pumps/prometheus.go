@@ -79,6 +79,9 @@ type PrometheusMetric struct {
 	// "org_id", "oauth_id","request_time", "ip_address", "alias",
 	// "mcp_method", "mcp_primitive_type", "mcp_primitive_name"]`.
 	// MCP labels are only populated for MCP records; non-MCP records produce empty strings.
+	// A label of the form `tag_<name>` resolves to the value of the first entry in the record's
+	// `Tags` with prefix `<name>-`, or an empty string if none matches. `<name>` cannot be one of
+	// the reserved names (`key`, `org`, `api`, `pol`, `dev`, `trace_id`, `trace`).
 	Labels []string `json:"labels" mapstructure:"labels"`
 
 	// MCPOnly marks a metric as MCP-specific: it is only processed for records where IsMCPRecord() is true.
@@ -113,11 +116,30 @@ const (
 
 	// metricTykLatency is the name of the built-in latency histogram for REST/GraphQL.
 	metricTykLatency = "tyk_latency"
+
+	// tagLabelPrefix marks a custom metric label as resolved from analytics.AnalyticsRecord.Tags
+	// rather than from the static GetLabelsValues mapping.
+	tagLabelPrefix = "tag_"
 )
 
 var (
 	prometheusPrefix     = "prometheus-pump"
 	prometheusDefaultENV = PUMPS_ENV_PREFIX + "_PROMETHEUS" + PUMPS_ENV_META_PREFIX
+
+	// reservedTagNames can carry a form of the API key or other Tyk-internal bookkeeping data
+	// and must never be exposed as a tag_<name> Prometheus label. Must stay in sync with the
+	// tag-prefix conventions in gateway/analytics.go and gateway/handler_success.go — a
+	// reserved name here is only effective if it matches the real "<prefix>-" tag prefix those
+	// files write (e.g. handler_success.go's traceTagPrefix is "trace-id-", not "trace_id-").
+	reservedTagNames = map[string]struct{}{
+		"key":      {},
+		"org":      {},
+		"api":      {},
+		"pol":      {},
+		"dev":      {},
+		"trace_id": {},
+		"trace":    {},
+	}
 )
 
 var buckets = []float64{1, 2, 5, 7, 10, 15, 20, 25, 30, 40, 50, 60, 70, 80, 90, 100, 200, 300, 400, 500, 1000, 2000, 5000, 10000, 30000, 60000}
@@ -363,6 +385,16 @@ func (p *PrometheusPump) WriteData(ctx context.Context, data []interface{}) erro
 // InitVec inits the prometheus metric based on the metric_type. It only can create counter and histogram,
 // if the metric_type is anything else it returns an error
 func (pm *PrometheusMetric) InitVec() error {
+	for _, label := range pm.Labels {
+		name, isTagLabel := strings.CutPrefix(label, tagLabelPrefix)
+		if !isTagLabel {
+			continue
+		}
+		if _, reserved := reservedTagNames[name]; reserved {
+			return errors.New("reserved tag name:" + name)
+		}
+	}
+
 	switch pm.MetricType {
 	case counterType:
 		pm.counterVec = prometheus.NewCounterVec(
@@ -454,9 +486,24 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 	for _, label := range pm.Labels {
 		if val, ok := mapping[label]; ok {
 			values = append(values, fmt.Sprint(val))
+			continue
+		}
+		if name, isTagLabel := strings.CutPrefix(label, tagLabelPrefix); isTagLabel {
+			values = append(values, tagValue(decoded.Tags, name))
 		}
 	}
 	return values
+}
+
+// tagValue returns the suffix of the first entry in tags with prefix "<name>-", or "" if none matches.
+func tagValue(tags []string, name string) string {
+	prefix := name + "-"
+	for _, tag := range tags {
+		if suffix, ok := strings.CutPrefix(tag, prefix); ok {
+			return suffix
+		}
+	}
+	return ""
 }
 
 func (pm *PrometheusMetric) obfuscateAPIKey(apiKey string) string {

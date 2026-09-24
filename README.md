@@ -698,6 +698,14 @@ If you are using `histogram`, its always going to use the `request_time` to obse
 The `labels` configuration determines the label name and value extracted from the analytic record.
 The available values are: `["host","method", "path", "response_code", "api_key", "time_stamp", "api_version", "api_name", "api_id", "org_id", "oauth_id", "request_time", "ip_address", "alias"]`
 
+You can also add a label of the form `tag_<name>` to resolve its value from the request's own tags: it takes the
+first tag matching the prefix `<name>-` and uses the part after the dash as the label value, or an empty string if
+no tag matches. The names `key`, `org`, `api`, `pol`, `dev`, `trace_id`, and `trace` are reserved for Tyk's internal
+bookkeeping tags and can never be used with `tag_<name>` — a custom metric configured with a reserved tag name
+will fail to register at pump startup. Since each distinct tag value becomes its own Prometheus label value, an
+unbounded or high-cardinality tag can cause runaway memory and CPU growth in Prometheus; choose tag names whose
+values are drawn from a small, well-controlled set.
+
 ###### JSON / Conf File
 
 ```.json
