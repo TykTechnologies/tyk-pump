@@ -136,6 +136,16 @@ func TestPrometheusInitVec(t *testing.T) {
 			expectedErr: errors.New("reserved tag name:trace"),
 			isEnabled:   false,
 		},
+		{
+			testName: "Reserved tag name with surrounding whitespace is trimmed before the check",
+			customMetric: PrometheusMetric{
+				Name:       "testReservedTagMetric",
+				MetricType: counterType,
+				Labels:     []string{"tag_ key "},
+			},
+			expectedErr: errors.New("reserved tag name:key"),
+			isEnabled:   false,
+		},
 	}
 
 	for _, tc := range tcs {
@@ -1042,8 +1052,9 @@ func TestPrometheusGetLabelsValues_MCPLabels(t *testing.T) {
 }
 
 // TestPrometheusGetLabelsValues_TagLabels verifies that tag_<name> labels resolve to the
-// value of the first matching "<name>-" prefixed entry in the record's Tags, and that no
-// tag_ label can ever resolve to the record's API key.
+// value of the first matching "<name>-" prefixed entry in the record's Tags, that a tag_<name>
+// label can never alias Tyk's own reserved bookkeeping tags, and that it CAN resolve against
+// any other tag on the record, including one an operator derived from a request header.
 func TestPrometheusGetLabelsValues_TagLabels(t *testing.T) {
 	t.Run("happy path", func(t *testing.T) {
 		metric := PrometheusMetric{
@@ -1090,7 +1101,10 @@ func TestPrometheusGetLabelsValues_TagLabels(t *testing.T) {
 	})
 
 	for _, obfuscate := range []bool{false, true} {
-		t.Run(fmt.Sprintf("credential safety: tag_ resolution never touches decoded.APIKey (ObfuscateAPIKeys=%v)", obfuscate), func(t *testing.T) {
+		t.Run(fmt.Sprintf("reserved-name protection: tag_ never aliases decoded.APIKey via the 7 reserved names (ObfuscateAPIKeys=%v)", obfuscate), func(t *testing.T) {
+			// This proves only that reservedTagNames' 7 fixed entries keep tag_ resolution away
+			// from decoded.APIKey. It does not prove tag_<name> is safe against every sensitive
+			// value: see "resolves against an operator-configured header-derived tag" below.
 			metric := PrometheusMetric{
 				Name:             "test_tag_labels_credential_safety",
 				MetricType:       counterType,
@@ -1117,6 +1131,22 @@ func TestPrometheusGetLabelsValues_TagLabels(t *testing.T) {
 			}
 		})
 	}
+
+	t.Run("resolves against an operator-configured header-derived tag, including a sensitive one", func(t *testing.T) {
+		// reservedTagNames only knows about Tyk's own 7 internal bookkeeping prefixes. If an
+		// operator configures the Gateway to tag a request header (e.g. "authorization-<value>")
+		// and then adds a matching tag_<name> label, the label exposes that header's raw value
+		// verbatim — by design, and unrelated to the reserved-name check. Operators must not
+		// tag a sensitive header and also expose it via a matching tag_<name> label.
+		metric := PrometheusMetric{
+			Name:       "test_tag_labels_header_derived",
+			MetricType: counterType,
+			Labels:     []string{"tag_authorization"},
+		}
+		record := analytics.AnalyticsRecord{Tags: []string{"authorization-Bearer super-secret-token"}}
+		got := metric.GetLabelsValues(record)
+		assert.Equal(t, []string{"Bearer super-secret-token"}, got)
+	})
 }
 
 // TestPrometheusCreateBasicMetrics_IncludesMCPMetrics verifies that CreateBasicMetrics
@@ -1366,8 +1396,17 @@ func TestProcessMetric_HistogramType_LatencyMetric(t *testing.T) {
 // otherwise-identical counter metric with vs. without a tag_<name> label, to confirm the
 // extra Tags lookup doesn't introduce a meaningful regression.
 func BenchmarkPrometheusPump_WriteData_TagLabel(b *testing.B) {
+	// The matching "customer-" tag is deliberately last, after several internal/reserved-shaped
+	// tags, so the scan runs to worst case: tagValue is a linear scan over Tags.
 	newRecord := func() analytics.AnalyticsRecord {
-		return analytics.AnalyticsRecord{APIID: "api1", ResponseCode: 200, Tags: []string{"customer-value"}}
+		return analytics.AnalyticsRecord{
+			APIID:        "api1",
+			ResponseCode: 200,
+			Tags: []string{
+				"key-abc", "org-abc", "api-abc", "pol-abc", "dev-abc", "trace-abc", "trace_id-abc",
+				"customer-value",
+			},
+		}
 	}
 	newBenchPump := func() PrometheusPump {
 		loggerInstance := logrus.New()
@@ -1420,7 +1459,8 @@ func BenchmarkPrometheusPump_WriteData_TagLabel(b *testing.B) {
 // TestPrometheusTagLabel_CardinalityGrowsWithDistinctValues demonstrates the cardinality
 // mechanism behind a tag_<name> label: each distinct tag value becomes its own Prometheus
 // time series. The unbounded-cardinality risk itself is documented in README.md, not guarded
-// against (per the coaching-session decision recorded in plan.md §2).
+// against: the feature is opt-in and doesn't affect anyone who doesn't configure it, so a
+// hard cardinality cap was judged unnecessary.
 func TestPrometheusTagLabel_CardinalityGrowsWithDistinctValues(t *testing.T) {
 	metric := &PrometheusMetric{
 		Name:       "test_tag_label_cardinality",

@@ -390,6 +390,7 @@ func (pm *PrometheusMetric) InitVec() error {
 		if !isTagLabel {
 			continue
 		}
+		name = strings.TrimSpace(name)
 		if _, reserved := reservedTagNames[name]; reserved {
 			return errors.New("reserved tag name:" + name)
 		}
@@ -489,7 +490,7 @@ func (pm *PrometheusMetric) GetLabelsValues(decoded analytics.AnalyticsRecord) [
 			continue
 		}
 		if name, isTagLabel := strings.CutPrefix(label, tagLabelPrefix); isTagLabel {
-			values = append(values, tagValue(decoded.Tags, name))
+			values = append(values, tagValue(decoded.Tags, strings.TrimSpace(name)))
 		}
 	}
 	return values

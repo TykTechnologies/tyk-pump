@@ -706,6 +706,12 @@ will fail to register at pump startup. Since each distinct tag value becomes its
 unbounded or high-cardinality tag can cause runaway memory and CPU growth in Prometheus; choose tag names whose
 values are drawn from a small, well-controlled set.
 
+The reserved-name check only protects Tyk's own internal bookkeeping tags. `tag_<name>` resolves against **any**
+tag on the request, including one your Gateway derives from a request header. If you tag a sensitive header (for
+example `Authorization`) and then configure a `tag_<name>` label matching that tag's prefix, the label will expose
+that header's raw value verbatim. Never configure a `tag_<name>` label whose prefix matches a header-derived tag
+that carries sensitive data.
+
 ###### JSON / Conf File
 
 ```.json
