@@ -193,6 +193,79 @@ This returns a HTTP 200 OK response if the Pump is running.
 {"status": "ok"}
 ```
 
+### OpenTelemetry Metrics
+
+The Pump can export metrics about itself (not the analytics records it moves) over OTLP to an OpenTelemetry collector. It uses the same `opentelemetry.metrics` block as Tyk Gateway, MDCB and Tyk Dashboard. Metrics are disabled unless `opentelemetry.metrics.enabled` is explicitly set to `true`.
+
+```json
+"opentelemetry": {
+  "metrics": {
+    "enabled": true,
+    "exporter": "grpc",
+    "endpoint": "otel-collector:4317",
+    "deployment_environment": "production"
+  }
+}
+```
+
+- `enabled` - Enables metrics export. Defaults to `false`.
+- `exporter` - `grpc` or `http`. Defaults to `grpc`.
+- `endpoint` - The collector's OTLP endpoint. Defaults to `localhost:4317`.
+- `headers` - Headers sent with every export, for example an authentication token.
+- `connection_timeout` - Seconds to wait when connecting to the collector. Defaults to `1`.
+- `resource_name` - The `service.name` resource attribute. Defaults to `tyk-pump`.
+- `deployment_environment` - The `deployment.environment` resource attribute. Defaults to `unknown`.
+- `export_interval` - Seconds between exports. Defaults to `60`.
+- `temporality` - `cumulative` or `delta`. Defaults to `cumulative`.
+- `shutdown_timeout` - Seconds the Pump waits to flush pending metrics when it stops. Defaults to `30`.
+- `tls` - TLS settings for the collector connection (`enable`, `insecure_skip_verify`, `ca_file`, `cert_file`, `key_file`, `min_version`, `max_version`).
+- `retry` - Retry settings for failed exports (`enabled`, `initial_interval`, `max_interval`, `max_elapsed_time`, in milliseconds).
+- `cardinality_limit` - Maximum number of attribute combinations per metric. Defaults to `2000`.
+
+Every setting can also be set through an environment variable. The Pump's variable is the Gateway's with the `TYK_GW_` prefix replaced by `TYK_PMP_`, and environment variables override the config file:
+
+```
+TYK_PMP_OPENTELEMETRY_METRICS_ENABLED=true
+TYK_PMP_OPENTELEMETRY_METRICS_EXPORTER=grpc
+TYK_PMP_OPENTELEMETRY_METRICS_ENDPOINT=otel-collector:4317
+TYK_PMP_OPENTELEMETRY_METRICS_HEADERS=authorization:Bearer <token>
+TYK_PMP_OPENTELEMETRY_METRICS_RESOURCENAME=tyk-pump
+TYK_PMP_OPENTELEMETRY_METRICS_DEPLOYMENTENVIRONMENT=production
+TYK_PMP_OPENTELEMETRY_METRICS_EXPORTINTERVAL=60
+TYK_PMP_OPENTELEMETRY_METRICS_SHUTDOWNTIMEOUT=30
+TYK_PMP_OPENTELEMETRY_METRICS_TLS_ENABLE=false
+```
+
+Every export carries these resource attributes:
+
+| Attribute | Value |
+| --- | --- |
+| `service.name` | `resource_name`, `tyk-pump` by default |
+| `service.instance.id` | A UUID generated at startup, printed in the `OpenTelemetry metrics enabled` startup log line |
+| `service.version` | The Pump version, as printed by `tyk-pump --version` |
+| `deployment.environment` | `deployment_environment`, `unknown` by default |
+| host, container and process attributes | Detected automatically |
+
+The Pump exports these metrics:
+
+| Metric | Type | Unit | Prometheus name | Description |
+| --- | --- | --- | --- | --- |
+| `process.uptime` | gauge | `s` | `process_uptime_seconds` | Time the Pump process has been running |
+
+For example, to alert when a Pump stops reporting, through a collector that exports to Prometheus with `resource_to_telemetry_conversion` enabled:
+
+```
+absent_over_time(process_uptime_seconds{service_name="tyk-pump"}[5m])
+```
+
+and to list the running Pump instances:
+
+```
+count by (service_instance_id, deployment_environment) (process_uptime_seconds{service_name="tyk-pump"})
+```
+
+A misconfigured exporter never stops the Pump: it boots and pumps normally, logs one warning naming the problem, and exports no metrics. The StatsD instrumentation enabled by `TYK_INSTRUMENTATION=1` is independent and keeps working alongside OpenTelemetry.
+
 # Pump Configurations
 
 ## Uptime Data

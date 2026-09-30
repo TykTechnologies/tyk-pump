@@ -1,0 +1,80 @@
+---
+# End-to-end OpenTelemetry metrics tests for the Pump.
+#
+#   task                                    # unit tests + every profile
+#   task run-profile PUMP_PROFILE=default   # setup, test and teardown one profile
+#   task unit                               # promtest package only, no docker
+#   make test-metrics-e2e                   # from the repo root: same as `task`
+#
+# PUMP_IMAGE selects the image under test (default: internal/tyk-pump). Build
+# it locally from the repo root with `docker build -t internal/tyk-pump .`; the
+# Dockerfile builds GOARCH=amd64, so Apple-silicon runs are emulated. CI
+# passes the ECR image built by the release pipeline.
+version: "3"
+
+vars:
+  PROFILES: default disabled misconfigured
+
+env:
+  PUMP_IMAGE: '{{.PUMP_IMAGE | default "internal/tyk-pump"}}'
+
+tasks:
+  default:
+    desc: "run the promtest unit tests, then the e2e suite for every profile sequentially"
+    cmds:
+      - task: unit
+      - for:
+          var: PROFILES
+        cmd: task run-profile PUMP_PROFILE={{.ITEM}}
+
+  unit:
+    desc: "run the promtest util package tests (no docker needed)"
+    cmds:
+      - go test -count=1 ./promtest/...
+
+  run-profile:
+    desc: "setup, test and teardown a single profile"
+    requires:
+      vars: [PUMP_PROFILE]
+    cmds:
+      - defer:
+          task: teardown
+          vars:
+            PUMP_PROFILE: "{{.PUMP_PROFILE}}"
+      - task: setup
+        vars:
+          PUMP_PROFILE: "{{.PUMP_PROFILE}}"
+      - task: test
+        vars:
+          PUMP_PROFILE: "{{.PUMP_PROFILE}}"
+
+  setup:
+    desc: "bring up pump + redis + collector + prometheus for a profile"
+    requires:
+      vars: [PUMP_PROFILE]
+    cmds:
+      - echo "=== Setting up profile {{.PUMP_PROFILE}} (image $PUMP_IMAGE) ==="
+      - PUMP_PROFILE={{.PUMP_PROFILE}} docker compose -p pump-metrics-{{.PUMP_PROFILE}} up -d --wait --wait-timeout 180
+
+  test:
+    desc: "run the e2e assertions against a running profile"
+    requires:
+      vars: [PUMP_PROFILE]
+    cmds:
+      - PUMP_PROFILE={{.PUMP_PROFILE}} PUMP_COMPOSE_PROJECT=pump-metrics-{{.PUMP_PROFILE}} E2E_METRICS=1 go test -v -count=1 -timeout 300s .
+
+  teardown:
+    desc: "tear the profile's stack down"
+    requires:
+      vars: [PUMP_PROFILE]
+    cmds:
+      # Keep the Pump's log in the job output: it is what a failure is debugged from.
+      - PUMP_PROFILE={{.PUMP_PROFILE}} docker compose -p pump-metrics-{{.PUMP_PROFILE}} logs --no-color tyk-pump || true
+      - PUMP_PROFILE={{.PUMP_PROFILE}} docker compose -p pump-metrics-{{.PUMP_PROFILE}} down --remove-orphans --volumes
+
+  logs:
+    desc: "show the pump logs of a running profile"
+    requires:
+      vars: [PUMP_PROFILE]
+    cmds:
+      - PUMP_PROFILE={{.PUMP_PROFILE}} docker compose -p pump-metrics-{{.PUMP_PROFILE}} logs tyk-pump

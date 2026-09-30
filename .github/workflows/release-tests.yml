@@ -45,3 +45,57 @@ jobs:
                   cd -
               fi
           done
+
+  metrics-e2e:
+    name: OpenTelemetry Metrics e2e
+    runs-on: ${{ vars.DEFAULT_RUNNER }}
+
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+        with:
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Setup Go
+        uses: actions/setup-go@40f1582b2485089dde7abd97c1529aa768e1baff # v5
+        with:
+          go-version-file: ci/tests/metrics/go.mod
+          cache: false
+
+      - name: Install Task
+        uses: arduino/setup-task@e26d8975574116b0097a1161e0fe16ba75d84c1c # v1
+        with:
+          version: 3
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: aws-actions/configure-aws-credentials@7474bc4690e29a8392af63c5b98e7449536d5c3a # v4
+        with:
+          role-to-assume: arn:aws:iam::754489498669:role/ecr_rw_tyk
+          role-session-name: cipush
+          aws-region: eu-central-1
+
+      - id: ecr
+        uses: aws-actions/amazon-ecr-login@183a1442edf41672e66566b7fc560e297a290896 # v2
+        with:
+          mask-password: 'true'
+
+      - name: Run e2e metrics tests
+        working-directory: ci/tests/metrics
+        env:
+          PUMP_IMAGE: ${{ steps.ecr.outputs.registry }}/tyk-pump:sha-${{ github.sha }}
+        run: task
+
+  report_logs:
+    runs-on: ${{ vars.DEFAULT_RUNNER }}
+    needs: [smoke-tests, metrics-e2e]
+    if: ${{ always() }}
+    name: Report GH Logs on Failure
+    permissions:
+      actions: read
+      contents: read
+    steps:
+      - name: Upload failed job logs
+        uses: TykTechnologies/github-actions/.github/actions/gh-logs-analyser@d3fa20888fa2878e877e22bb7702141217290e7c # main
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          gh_logs_analyser_token: ${{ secrets.GH_LOGS_ANALYSER }}

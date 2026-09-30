@@ -1,0 +1,30 @@
+receivers:
+  otlp:
+    protocols:
+      grpc:
+        endpoint: 0.0.0.0:4317
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  batch:
+    timeout: 100ms
+
+exporters:
+  prometheus:
+    endpoint: "0.0.0.0:8889"
+    # Drop series the Pump stops exporting quickly (default 5m) so staleness
+    # is observable.
+    metric_expiration: 10s
+    # Promote resource attributes (service.name, service.instance.id,
+    # deployment.environment, ...) to labels on every series so the suite can
+    # assert identity per metric, not only via target_info.
+    resource_to_telemetry_conversion:
+      enabled: true
+
+service:
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [batch]
+      exporters: [prometheus]

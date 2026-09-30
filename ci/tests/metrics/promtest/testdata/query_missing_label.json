@@ -1,0 +1,19 @@
+{
+  "status": "success",
+  "data": {
+    "resultType": "vector",
+    "result": [
+      {
+        "metric": {
+          "__name__": "process_uptime_seconds",
+          "instance": "8d1d7a1e-0c4a-4a0e-9a5b-6c2e3f4a5b6c",
+          "job": "tyk-pump",
+          "service_instance_id": "8d1d7a1e-0c4a-4a0e-9a5b-6c2e3f4a5b6c",
+          "service_name": "tyk-pump",
+          "service_version": ""
+        },
+        "value": [1789030000.123, "7"]
+      }
+    ]
+  }
+}
