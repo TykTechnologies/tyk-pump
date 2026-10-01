@@ -44,9 +44,9 @@ if [[ -z $2 ]]; then
     gwtag=$DEFAULT_GW_TAG
 fi
 
-compose='docker-compose'
-# use the compose client plugin if v2
-[[ $(docker version --format='{{ .Client.Version }}') =~ 20.10 ]] && compose='docker compose'
+# The compose v2 client plugin; the standalone docker-compose v1 binary is no
+# longer installed on the CI runners.
+compose='docker compose'
 
 #create the tmp directory to hold pump data.
 TMPDIR=$(mktemp -d)
@@ -56,6 +56,15 @@ else
     mkdir "$TMPDIR"
 fi
 
+cleanup() {
+    $compose down
+    warn "Cleaning up temporary dir $TMPDIR"
+    rm -f "$TMPDIR/*.csv"
+    rmdir "$TMPDIR"
+}
+
+# Registered only once cleanup exists, so an early failure still tears the
+# stack down.
 trap cleanup EXIT
 
 $compose up -d
@@ -64,13 +73,6 @@ GWBASE="http://localhost:8080"
 
 curlf() {
     curl --header 'content-type:application/json' -s --show-error "$@"
-}
-
-cleanup() {
-    $compose down
-    warn "Cleaning up temporary dir $TMPDIR"
-    rm -f "$TMPDIR/*.csv"
-    rmdir "$TMPDIR"
 }
 
 # Add the test API - keyless APIs are not getting exported when pump is run.

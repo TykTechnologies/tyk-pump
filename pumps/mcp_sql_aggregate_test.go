@@ -28,9 +28,7 @@ func TestMCPSQLAggregatePump_Init(t *testing.T) {
 			},
 		}
 		require.NoError(t, pump.Init(conf))
-		t.Cleanup(func() {
-			pump.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %q", tableName))
-		})
+		t.Cleanup(func() { dropMCPAggregateTable(t, pump, tableName) })
 		assert.True(t, pump.db.Migrator().HasTable(tableName))
 	})
 
@@ -203,9 +201,7 @@ func TestMCPSQLAggregatePump_WriteData(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			pump := MCPSQLAggregatePump{}
 			require.NoError(t, pump.Init(conf))
-			t.Cleanup(func() {
-				pump.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %q", tableName))
-			})
+			t.Cleanup(func() { dropMCPAggregateTable(t, &pump, tableName) })
 
 			records := tc.recordGenerator()
 			require.NoError(t, pump.WriteData(context.Background(), records))
@@ -296,6 +292,41 @@ func TestMCPSQLAggregatePump_WriteData_EmptyData_NoInit(t *testing.T) {
 // enabled, matching the production gorm config used by OpenGormDB. This is
 // critical for embedded structs (Counter, Code) whose columns are prefixed by
 // their JSON tag (counter_, code_) when UseJSONTags is true.
+// dropMCPAggregateTable drops the aggregate table once the index Init builds
+// with CREATE INDEX CONCURRENTLY on Postgres has finished. Dropping it while
+// the build runs fails with "deadlock detected" or "tuple concurrently
+// updated", which leaks the table and its rows into the next test. Init only
+// starts the build when the index is missing, so an index that is already
+// valid means there is nothing to wait for.
+func dropMCPAggregateTable(t *testing.T, pump *MCPSQLAggregatePump, table string) {
+	t.Helper()
+	if pump.backgroundIndexCreated != nil {
+		indexName := fmt.Sprintf("%s_%s", table, newAggregatedIndexName)
+		ticker := time.NewTicker(50 * time.Millisecond)
+		defer ticker.Stop()
+		timeout := time.After(30 * time.Second)
+	wait:
+		for {
+			select {
+			case <-pump.backgroundIndexCreated:
+				break wait
+			case <-ticker.C:
+				var valid bool
+				pump.db.Raw("SELECT i.indisvalid FROM pg_index i JOIN pg_class c ON c.oid = i.indexrelid WHERE c.relname = ?", indexName).Scan(&valid)
+				if valid {
+					break wait
+				}
+			case <-timeout:
+				t.Errorf("background index creation for %s did not finish", table)
+				break wait
+			}
+		}
+	}
+	if err := pump.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %q", table)).Error; err != nil {
+		t.Errorf("dropping %s: %v", table, err)
+	}
+}
+
 func setupTestDBWithJSONTags(t *testing.T) *gorm.DB {
 	t.Helper()
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{
@@ -378,9 +409,7 @@ func TestMCPSQLAggregatePump_WriteData_Upsert(t *testing.T) {
 			ConnectionString: getTestPostgresConnectionString(),
 		},
 	}))
-	t.Cleanup(func() {
-		pump.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %q", tableName))
-	})
+	t.Cleanup(func() { dropMCPAggregateTable(t, &pump, tableName) })
 
 	rec := analytics.AnalyticsRecord{
 		TimeStamp: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -414,9 +443,7 @@ func TestMCPSQLAggregatePump_WriteData_SmallBatchSize(t *testing.T) {
 			BatchSize:        1, // force 1-record batches to exercise batch loop
 		},
 	}))
-	t.Cleanup(func() {
-		pump.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %q", tableName))
-	})
+	t.Cleanup(func() { dropMCPAggregateTable(t, &pump, tableName) })
 
 	rec := analytics.AnalyticsRecord{
 		TimeStamp: time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC),
@@ -617,9 +644,7 @@ func TestMCPSQLAggregatePump_WriteData_MultipleAPIs(t *testing.T) {
 			ConnectionString: getTestPostgresConnectionString(),
 		},
 	}))
-	t.Cleanup(func() {
-		pump.db.Exec(fmt.Sprintf("DROP TABLE IF EXISTS %q", tableName))
-	})
+	t.Cleanup(func() { dropMCPAggregateTable(t, &pump, tableName) })
 
 	ts := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
 	records := []interface{}{
