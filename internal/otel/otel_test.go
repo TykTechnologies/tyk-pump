@@ -71,7 +71,7 @@ func TestOpenTelemetry_SetDefaults(t *testing.T) {
 	assert.Equal(t, 30, neg.Metrics.ShutdownTimeout, "negative shutdown_timeout must fall back to the default")
 	assert.Equal(t, 60, neg.Metrics.ExportInterval, "negative export_interval must fall back to the default")
 	assert.Equal(t, c.Metrics.ConnectionTimeout, neg.Metrics.ConnectionTimeout)
-	assert.Equal(t, 2000, neg.Metrics.CardinalityLimit)
+	assert.Equal(t, -1, neg.Metrics.CardinalityLimit, "cardinality_limit must reach the library unchanged")
 }
 
 func TestShutdownTimeout(t *testing.T) {

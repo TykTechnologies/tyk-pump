@@ -51,7 +51,7 @@ compose='docker compose'
 #create the tmp directory to hold pump data.
 TMPDIR=$(mktemp -d)
 if [[ -e $TMPDIR ]]; then
-    rm -f "$TMPDIR/*.csv"
+    rm -f "$TMPDIR"/*.csv
 else
     mkdir "$TMPDIR"
 fi
@@ -59,7 +59,8 @@ fi
 cleanup() {
     $compose down
     warn "Cleaning up temporary dir $TMPDIR"
-    rm -f "$TMPDIR/*.csv"
+    rm -rf /tmp/pump-data
+    rm -f "$TMPDIR"/*.csv
     rmdir "$TMPDIR"
 }
 
@@ -68,10 +69,13 @@ cleanup() {
 trap cleanup EXIT
 
 # The pump image runs as a non-root user. Create the CSV output directory
-# ourselves and make it writable, otherwise docker creates the bind mount
-# source as root and the pump cannot write its CSV files.
-mkdir -p /tmp/pump-data
-chmod 777 /tmp/pump-data
+# ourselves and run the pump as the current user, otherwise docker creates the
+# bind mount source as root and the pump cannot write its CSV files. Start
+# empty so CSVs left by an earlier run cannot make this one pass.
+rm -rf /tmp/pump-data
+mkdir /tmp/pump-data
+PUMP_USER="$(id -u):$(id -g)"
+export PUMP_USER
 
 $compose up -d
 

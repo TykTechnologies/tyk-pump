@@ -25,6 +25,9 @@ services:
 
   pump:
     image: ${pump_image}
+    # test.sh runs the pump as the invoking user so it can write to the
+    # /tmp/pump-data bind mount; defaults to the image's non-root user.
+    user: "${PUMP_USER:-65532:65532}"
     volumes:
       - ./confs/tyk-pump.conf:/conf/tyk-pump.conf
       - /tmp/pump-data:/pump-data

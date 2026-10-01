@@ -288,10 +288,6 @@ func TestMCPSQLAggregatePump_WriteData_EmptyData_NoInit(t *testing.T) {
 	assert.NoError(t, err)
 }
 
-// setupTestDBWithJSONTags creates an in-memory SQLite database with UseJSONTags
-// enabled, matching the production gorm config used by OpenGormDB. This is
-// critical for embedded structs (Counter, Code) whose columns are prefixed by
-// their JSON tag (counter_, code_) when UseJSONTags is true.
 // dropMCPAggregateTable drops the aggregate table once the index Init builds
 // with CREATE INDEX CONCURRENTLY on Postgres has finished. Dropping it while
 // the build runs fails with "deadlock detected" or "tuple concurrently
@@ -327,6 +323,10 @@ func dropMCPAggregateTable(t *testing.T, pump *MCPSQLAggregatePump, table string
 	}
 }
 
+// setupTestDBWithJSONTags creates an in-memory SQLite database with UseJSONTags
+// enabled, matching the production gorm config used by OpenGormDB. This is
+// critical for embedded structs (Counter, Code) whose columns are prefixed by
+// their JSON tag (counter_, code_) when UseJSONTags is true.
 func setupTestDBWithJSONTags(t *testing.T) *gorm.DB {
 	t.Helper()
 	db, err := gorm.Open(sqlite.Open(":memory:"), &gorm.Config{

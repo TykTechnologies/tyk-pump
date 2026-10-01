@@ -79,8 +79,10 @@ type OpenTelemetry struct {
 
 // SetDefaults fills zero-valued fields with Pump defaults. It never enables
 // metrics: `enabled` has no default and stays off unless explicitly true.
-// Negative durations and limits are treated as unset so the library defaults
-// apply instead of producing an already-expired context or a zero export rate.
+// Negative durations are treated as unset so the library defaults apply
+// instead of producing an already-expired context or a zero export rate.
+// `cardinality_limit` is passed through untouched for the library to
+// interpret; 0 takes its default of 2000.
 func (c *OpenTelemetry) SetDefaults() {
 	if c.Metrics.DeploymentEnvironment == "" {
 		c.Metrics.DeploymentEnvironment = DefaultDeploymentEnvironment
@@ -94,7 +96,6 @@ func (c *OpenTelemetry) SetDefaults() {
 		&c.Metrics.ConnectionTimeout,
 		&c.Metrics.ExportInterval,
 		&c.Metrics.ShutdownTimeout,
-		&c.Metrics.CardinalityLimit,
 	} {
 		if *v < 0 {
 			*v = 0
