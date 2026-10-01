@@ -67,6 +67,12 @@ cleanup() {
 # stack down.
 trap cleanup EXIT
 
+# The pump image runs as a non-root user. Create the CSV output directory
+# ourselves and make it writable, otherwise docker creates the bind mount
+# source as root and the pump cannot write its CSV files.
+mkdir -p /tmp/pump-data
+chmod 777 /tmp/pump-data
+
 $compose up -d
 
 GWBASE="http://localhost:8080"
