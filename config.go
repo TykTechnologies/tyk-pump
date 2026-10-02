@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/TykTechnologies/storage/kv"
+	"github.com/TykTechnologies/tyk-pump/internal/otel"
 	"github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/kelseyhightower/envconfig"
@@ -266,6 +267,30 @@ type TykPumpConfiguration struct {
 	// TYK_PMP_KV_STORES environment variable; the environment overrides and adds
 	// stores by name, leaving file-defined stores it does not name untouched.
 	KV kv.Config `json:"kv"`
+
+	// OpenTelemetry configures OTLP metrics export for the Pump itself
+	// (not the analytics records it moves). Metrics are disabled unless
+	// `opentelemetry.metrics.enabled` is explicitly set to `true`.
+	//
+	// The block is the same one the Gateway, MDCB and the Dashboard use, and
+	// every environment variable is the Gateway's with the `TYK_GW_` prefix
+	// replaced by `TYK_PMP_`, for example `TYK_PMP_OPENTELEMETRY_METRICS_ENABLED`.
+	// Example:
+	// ```{.json}
+	// "opentelemetry": {
+	//   "metrics": {
+	//     "enabled": true,
+	//     "exporter": "grpc",
+	//     "endpoint": "otel-collector:4317",
+	//     "deployment_environment": "production"
+	//   }
+	// }
+	// ```
+	// Every export carries the `service.name` (`resource_name`, default
+	// `tyk-pump`), `service.instance.id` (a UUID generated at startup and
+	// printed in the startup log), `service.version` and
+	// `deployment.environment` (default `unknown`) resource attributes.
+	OpenTelemetry otel.OpenTelemetry `json:"opentelemetry"`
 }
 
 // LoadConfig populates configStruct from the config file and the environment, then

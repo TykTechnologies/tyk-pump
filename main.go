@@ -13,6 +13,7 @@ import (
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/analytics/demo"
+	"github.com/TykTechnologies/tyk-pump/internal/otel"
 	logger "github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/TykTechnologies/tyk-pump/serializer"
@@ -494,8 +495,57 @@ func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, pu
 	}
 }
 
+// setupMetrics initialises OTLP metrics export for the Pump process and
+// installs it as the process-wide instruments. It never fails boot: a disabled
+// or invalid config leaves a no-op container in place.
+func setupMetrics() {
+	m := otel.InitMetrics(context.Background(), log, SystemConfig.OpenTelemetry, otel.Identity{
+		InstanceID: otel.InstanceID(),
+		Version:    pumps.Version,
+	})
+	otel.SetActive(m)
+
+	if m.Enabled() {
+		cfg := SystemConfig.OpenTelemetry
+		cfg.SetDefaults()
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).Infof("OpenTelemetry metrics enabled: exporter=%s endpoint=%s instance_id=%s",
+			cfg.Metrics.Exporter, cfg.Metrics.Endpoint, otel.InstanceID())
+	}
+}
+
+// shutdownMetrics flushes pending metrics and stops the provider, bounded by
+// opentelemetry.metrics.shutdown_timeout. It is a no-op when metrics were never
+// enabled.
+func shutdownMetrics() {
+	m := otel.Metrics()
+	if !m.Enabled() {
+		return
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), otel.ShutdownTimeout(SystemConfig.OpenTelemetry))
+	defer cancel()
+	if err := m.Shutdown(ctx); err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).WithError(err).Warning("Failed to flush OpenTelemetry metrics on shutdown")
+	}
+}
+
+// stopPurgeLoop cancels the purge loop, waits for it to shut every pump down,
+// then flushes the Pump's own metrics so the last export covers the shutdown.
+func stopPurgeLoop(cancel context.CancelFunc, wg *sync.WaitGroup) {
+	cancel()  // cancel the context
+	wg.Wait() // wait till all the pumps finish
+	shutdownMetrics()
+}
+
 func main() {
 	kvStores := Init()
+	// Before the store and the pumps, so later instrumentation can register
+	// against a live provider.
+	setupMetrics()
 	SetupInstrumentation()
 	go server.ServeHealthCheck(SystemConfig.HealthCheckEndpointName, SystemConfig.HealthCheckEndpointPort, SystemConfig.HTTPProfile)
 
@@ -517,6 +567,7 @@ func main() {
 		log.Warning("Starting from date: ", time.Now().AddDate(0, 0, -30))
 		demo.DemoInit(*demoMode, *demoApiMode, *demoApiVersionMode)
 		demo.GenerateDemoData(*demoDays, *demoRecordsPerHour, *demoMode, *demoFutureData, *demoTrackPath, writeToPumps)
+		shutdownMetrics()
 		return
 	}
 
@@ -541,8 +592,7 @@ func main() {
 	termChan := make(chan os.Signal, 1)
 	signal.Notify(termChan, os.Interrupt, syscall.SIGINT, syscall.SIGTERM)
 	<-termChan // Blocks here until either SIGINT or SIGTERM is received.
-	cancel()   // cancel the context
-	wg.Wait()  // wait till all the pumps finish
+	stopPurgeLoop(cancel, &wg)
 	log.WithFields(logrus.Fields{
 		"prefix": mainPrefix,
 	}).Info("Tyk-pump stopped.")

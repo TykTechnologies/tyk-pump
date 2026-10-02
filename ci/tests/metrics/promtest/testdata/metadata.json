@@ -1,0 +1,11 @@
+{
+  "status": "success",
+  "data": {
+    "process_uptime_seconds": [
+      {"type": "gauge", "help": "Time the process has been running", "unit": ""}
+    ],
+    "target_info": [
+      {"type": "gauge", "help": "Target metadata", "unit": ""}
+    ]
+  }
+}

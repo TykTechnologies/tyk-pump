@@ -1,0 +1,67 @@
+# yamllint disable rule:line-length
+---
+# End-to-end OpenTelemetry metrics stack for the Pump:
+#
+#   tyk-pump --OTLP/gRPC--> otel-collector --/metrics--> prometheus <-- go test
+#
+# The Pump is configured only through environment variables (configs/pump.env
+# plus the per-profile env file), so the same TYK_PMP_OPENTELEMETRY_METRICS_*
+# surface operators use is what gets exercised. Select a profile with
+# PUMP_PROFILE (default: default).
+services:
+  redis:
+    image: redis:6-alpine
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 1s
+      timeout: 3s
+      retries: 60
+
+  tyk-pump:
+    image: ${PUMP_IMAGE:-internal/tyk-pump}
+    ports:
+      - "${PUMP_HEALTH_PORT:-8083}:8083"
+    env_file:
+      - ./configs/pump.env
+      - ./profiles/${PUMP_PROFILE:-default}/pump.env
+    depends_on:
+      redis:
+        condition: service_healthy
+      otel-collector:
+        condition: service_started
+
+  # The Pump image has no curl; healthcheck it from a sidecar so
+  # `docker compose up --wait` blocks until /health answers.
+  pump-checker:
+    image: badouralix/curl-jq
+    command: tail -f /dev/null
+    depends_on:
+      - tyk-pump
+    healthcheck:
+      test: curl -s --fail http://tyk-pump:8083/health | jq --exit-status '.status=="ok"' > /dev/null || exit 1
+      interval: 2s
+      timeout: 10s
+      retries: 45
+      start_period: 5s
+
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.127.0
+    command:
+      - --config
+      - /etc/otelcol/config.yml
+    volumes:
+      - ./configs/otelcollector/collector.config.yml:/etc/otelcol/config.yml:ro
+
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    ports:
+      - "${PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./configs/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - otel-collector
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:9090/-/healthy"]
+      interval: 2s
+      timeout: 3s
+      retries: 30

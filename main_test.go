@@ -5,16 +5,20 @@ import (
 	"context"
 	"os"
 	"os/signal"
+	"strings"
 	"sync"
 	"syscall"
 	"testing"
 	"time"
 
+	tykmetric "github.com/TykTechnologies/opentelemetry/metric"
 	"github.com/TykTechnologies/storage/kv/resolver"
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/TykTechnologies/tyk-pump/internal/otel"
 	"github.com/TykTechnologies/tyk-pump/pumps"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 type MockedPump struct {
@@ -592,4 +596,121 @@ func TestInitialisePumps_NilKVStoresInstallsNoResolver(t *testing.T) {
 	assert.True(t, rec.called, "the pump must have initialised")
 	assert.Nil(t, rec.resolverAtInit, "a nil kvStores installs no resolver")
 	assert.Len(t, Pumps, 1)
+}
+
+// flushRecorder is an enabled metrics provider that records the shutdown
+// sequence instead of exporting anything.
+type flushRecorder struct {
+	tykmetric.Provider
+	// onFlush runs inside ForceFlush, so a test can observe the state at the
+	// moment of the flush.
+	onFlush  func()
+	enabled  bool
+	flushed  bool
+	shutdown bool
+}
+
+func (p *flushRecorder) Enabled() bool { return p.enabled }
+
+func (p *flushRecorder) ForceFlush(context.Context) error {
+	p.flushed = true
+	if p.onFlush != nil {
+		p.onFlush()
+	}
+	return nil
+}
+
+func (p *flushRecorder) Shutdown(context.Context) error {
+	p.shutdown = true
+	return nil
+}
+
+func newFlushRecorder(t *testing.T, enabled bool) *flushRecorder {
+	t.Helper()
+	noop, err := tykmetric.NewProvider()
+	require.NoError(t, err)
+	p := &flushRecorder{Provider: noop, enabled: enabled}
+	otel.SetActive(otel.NewMetricInstruments(p, log, otel.OpenTelemetry{}))
+	t.Cleanup(func() { otel.SetActive(nil) })
+	return p
+}
+
+func TestStopPurgeLoop_FlushesMetricsAfterPumpsShutDown(t *testing.T) {
+	originalPumps := Pumps
+	t.Cleanup(func() { Pumps = originalPumps })
+
+	mockedPump := &MockedPump{}
+	Pumps = []pumps.Pump{mockedPump}
+	provider := newFlushRecorder(t, true)
+	var pumpsStoppedAtFlush bool
+	provider.onFlush = func() { pumpsStoppedAtFlush = mockedPump.TurnedOff }
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	ctx, cancel := context.WithCancel(context.Background())
+	go func() {
+		for !checkShutdown(ctx, &wg) {
+			time.Sleep(time.Millisecond)
+		}
+	}()
+
+	stopPurgeLoop(cancel, &wg)
+
+	assert.True(t, mockedPump.TurnedOff, "the pumps must be shut down")
+	assert.True(t, provider.flushed, "metrics must be flushed on shutdown")
+	assert.True(t, provider.shutdown, "the metrics provider must be stopped on shutdown")
+	assert.True(t, pumpsStoppedAtFlush, "metrics must only be flushed after the purge loop stopped the pumps")
+}
+
+func TestShutdownMetrics_NoopWhenNeverEnabled(t *testing.T) {
+	t.Run("nothing installed", func(t *testing.T) {
+		otel.SetActive(nil)
+		assert.NotPanics(t, shutdownMetrics)
+	})
+
+	t.Run("disabled provider", func(t *testing.T) {
+		provider := newFlushRecorder(t, false)
+
+		shutdownMetrics()
+
+		assert.False(t, provider.flushed, "a disabled provider must not be flushed")
+		assert.False(t, provider.shutdown)
+	})
+}
+
+func TestSetupMetrics(t *testing.T) {
+	originalConfig, originalOutput, originalLevel := SystemConfig, log.Out, log.Level
+	t.Cleanup(func() {
+		SystemConfig, log.Out, log.Level = originalConfig, originalOutput, originalLevel
+		otel.SetActive(nil)
+	})
+	var buf bytes.Buffer
+	log.Out = &buf
+	log.Level = logrus.InfoLevel
+
+	t.Run("disabled by default", func(t *testing.T) {
+		buf.Reset()
+		SystemConfig = TykPumpConfiguration{}
+
+		setupMetrics()
+
+		assert.False(t, otel.Metrics().Enabled())
+		assert.NotContains(t, buf.String(), "OpenTelemetry", "a Pump without the block logs nothing about OTel at info")
+	})
+
+	t.Run("enabled logs the instance id once", func(t *testing.T) {
+		buf.Reset()
+		enabled := true
+		SystemConfig = TykPumpConfiguration{}
+		SystemConfig.OpenTelemetry.Metrics.Enabled = &enabled
+		SystemConfig.OpenTelemetry.Metrics.Endpoint = "127.0.0.1:1" // never reached: shut down before the first export
+
+		setupMetrics()
+		t.Cleanup(shutdownMetrics)
+
+		require.True(t, otel.Metrics().Enabled())
+		out := buf.String()
+		assert.Contains(t, out, "OpenTelemetry metrics enabled: exporter=grpc endpoint=127.0.0.1:1 instance_id="+otel.InstanceID())
+		assert.Equal(t, 1, strings.Count(out, otel.InstanceID()), "the instance id is logged exactly once")
+	})
 }
