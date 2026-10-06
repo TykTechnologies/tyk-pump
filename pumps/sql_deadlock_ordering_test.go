@@ -23,6 +23,7 @@ package pumps
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"sort"
 	"strings"
 	"sync"
@@ -30,8 +31,10 @@ import (
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"gopkg.in/vmihailenco/msgpack.v2"
+	"gorm.io/gorm"
 )
 
 const (
@@ -65,7 +68,7 @@ const (
 // fully characterised beyond the points above.
 //
 // So if you change a cardinality, the number of dimension maps, or the batch
-// size here, re-verify by reverting the sort.Slice calls in the four pumps and
+// size here, re-verify by removing the sortByID calls from the four pumps and
 // checking these tests still fail. Otherwise you may quietly be shipping a
 // guard that no longer guards anything.
 
@@ -80,8 +83,8 @@ const (
 // tt9424Collector accumulates errors from concurrent replicas and counts how
 // many were PostgreSQL deadlocks.
 type tt9424Collector struct {
-	mu        sync.Mutex
 	errs      []error
+	mu        sync.Mutex
 	deadlocks int
 }
 
@@ -124,7 +127,7 @@ func (c *tt9424Collector) assertNoDeadlocks(t *testing.T) {
 
 // tt9424RunReplicas runs write once per iteration on each replica, all replicas
 // concurrently, and returns the collected errors.
-func tt9424RunReplicas(replicas int, iterations int, write func(replica, iteration int) error) *tt9424Collector {
+func tt9424RunReplicas(replicas, iterations int, write func(replica, iteration int) error) *tt9424Collector {
 	collector := &tt9424Collector{}
 
 	var wg sync.WaitGroup
@@ -198,7 +201,7 @@ func TestTT9424DeadlockRepro(t *testing.T) {
 			if sharded {
 				table = analytics.AggregateSQLTable + "_" + ts.Format("20060102")
 			}
-			t.Cleanup(func() { pumps[0].db.Migrator().DropTable(table) })
+			t.Cleanup(func() { assert.NoError(t, pumps[0].db.Migrator().DropTable(table)) })
 
 			// All replicas process records for the SAME org and hour bucket.
 			// AggregateData stores dimensions in maps, so each replica emits the
@@ -261,7 +264,7 @@ func TestTT9424GraphAggregateNoDeadlock(t *testing.T) {
 		require.NoErrorf(t, pmp.Init(newSQLConfig(false)), "replica %d init failed", i)
 		pumps[i] = pmp
 	}
-	t.Cleanup(func() { pumps[0].db.Migrator().DropTable(analytics.AggregateGraphSQLTable) })
+	t.Cleanup(func() { assert.NoError(t, pumps[0].db.Migrator().DropTable(analytics.AggregateGraphSQLTable)) })
 
 	ts := time.Date(2099, 6, 1, 10, 0, 0, 0, time.UTC)
 
@@ -327,7 +330,7 @@ func TestTT9424MCPAggregateNoDeadlock(t *testing.T) {
 		tt9424AwaitIndex(pmp.backgroundIndexCreated)
 		pumps[i] = pmp
 	}
-	t.Cleanup(func() { pumps[0].db.Migrator().DropTable(analytics.AggregateMCPSQLTable) })
+	t.Cleanup(func() { assert.NoError(t, pumps[0].db.Migrator().DropTable(analytics.AggregateMCPSQLTable)) })
 
 	ts := time.Date(2099, 6, 1, 10, 0, 0, 0, time.UTC)
 
@@ -388,7 +391,7 @@ func TestTT9424UptimeNoDeadlock(t *testing.T) {
 		require.NoErrorf(t, pmp.Init(newSQLConfig(false)), "replica %d init failed", i)
 		pumps[i] = pmp
 	}
-	t.Cleanup(func() { pumps[0].db.Migrator().DropTable(analytics.UptimeSQLTable) })
+	t.Cleanup(func() { assert.NoError(t, pumps[0].db.Migrator().DropTable(analytics.UptimeSQLTable)) })
 
 	ts := time.Date(2099, 6, 1, 10, 0, 0, 0, time.UTC)
 
@@ -448,11 +451,15 @@ func TestTT9424UptimeNoDeadlock(t *testing.T) {
 // boundaries, no matter how Go happens to iterate the dimension maps this run.
 //
 // This is checked without a database. Dimensions() is called repeatedly on
-// equivalent aggregates and the resulting ID sequence - after the same sort the
-// pumps apply - must be byte-identical every time. Batch boundaries are derived
+// equivalent aggregates and the resulting ID sequence - after sortByID, the
+// helper every pump calls - must be byte-identical every time. Batch boundaries are derived
 // from that sequence and compared too: replica A's batch n and replica B's batch
 // n must cover the same ID set, which is what removes cross-batch contention on
 // top of the intra-statement lock ordering.
+//
+// It proves the ID scheme plus sortByID is deterministic; it does not prove each
+// pump calls sortByID. That is what assertUpsertedInIDOrder checks in the SQLite
+// write-path tests, which run in CI without PostgreSQL.
 func TestTT9424SortDeterminism(t *testing.T) {
 	const (
 		runs      = 32
@@ -474,15 +481,14 @@ func TestTT9424SortDeterminism(t *testing.T) {
 		return &ag
 	}
 
-	// idsFor mirrors what DoAggregatedWriting does: derive one ID per dimension,
-	// then sort. It deliberately does not reuse the pump method, so the test
-	// fails loudly if the sort is ever dropped from the pump but kept here.
+	// idsFor derives one ID per dimension the way DoAggregatedWriting does, then
+	// orders them with the same sortByID the pumps use.
 	idsFor := func(ag *analytics.MCPRecordAggregate, apiID string) []string {
 		var ids []string
 		for _, d := range ag.Dimensions() {
 			ids = append(ids, fmt.Sprintf("%v", ag.TimeStamp.Unix())+apiID+d.Name+d.Value)
 		}
-		sort.Slice(ids, func(i, j int) bool { return ids[i] < ids[j] })
+		sortByID(ids, func(id string) string { return id })
 		return ids
 	}
 
@@ -530,5 +536,29 @@ func TestTT9424SortDeterminism(t *testing.T) {
 		got := idsFor(makeAggregate(), "api-determinism")
 		require.Equalf(t, want, got, "run %d produced a different row order; lock ordering is not deterministic", run)
 		require.Equalf(t, wantBatches, batchesFor(got), "run %d produced different batch boundaries", run)
+	}
+}
+
+// assertUpsertedInIDOrder registers a gorm create callback on db that records the
+// primary key of every row in every batch insert, in statement order. The returned
+// function asserts that the rows reached the database sorted by ID across all
+// batches - so deleting the sortByID call from a pump's write path fails a test
+// that runs without PostgreSQL. Call it after the write under test.
+func assertUpsertedInIDOrder(t *testing.T, db *gorm.DB) func() {
+	t.Helper()
+	var ids []string
+	require.NoError(t, db.Callback().Create().Before("gorm:create").Register("tt9424:record_order", func(tx *gorm.DB) {
+		rv := reflect.Indirect(tx.Statement.ReflectValue)
+		if rv.Kind() != reflect.Slice {
+			return
+		}
+		for i := 0; i < rv.Len(); i++ {
+			ids = append(ids, reflect.Indirect(rv.Index(i)).FieldByName("ID").String())
+		}
+	}))
+	return func() {
+		t.Helper()
+		require.Greater(t, len(ids), 1, "need more than one upserted row for the order check to mean anything")
+		require.Truef(t, sort.StringsAreSorted(ids), "rows were upserted out of ID order (TT-9424): %v", ids)
 	}
 }

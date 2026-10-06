@@ -477,8 +477,10 @@ func TestMCPSQLAggregatePump_DoAggregatedWriting_SQLite(t *testing.T) {
 	analyticsPerAPI := analytics.AggregateMCPData(data, "", 60)
 	ag := analyticsPerAPI["api1"]
 
+	checkOrder := assertUpsertedInIDOrder(t, pump.db)
 	err := pump.DoAggregatedWriting(context.Background(), tableName, "org1", "api1", &ag)
 	require.NoError(t, err)
+	checkOrder()
 
 	var recs []analytics.MCPSQLAnalyticsRecordAggregate
 	pump.db.Table(tableName).Find(&recs)

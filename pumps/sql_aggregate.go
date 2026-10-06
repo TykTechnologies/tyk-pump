@@ -4,7 +4,6 @@ import (
 	"context"
 	"encoding/hex"
 	"fmt"
-	"sort"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 
@@ -295,11 +294,7 @@ func (c *SQLAggregatePump) DoAggregatedWriting(ctx context.Context, table, orgID
 		recs = append(recs, rec)
 	}
 
-	// Sort by ID so every replica requests row locks in the same order. Dimensions()
-	// ranges over maps, so without this the row order - and therefore PostgreSQL's
-	// lock acquisition order - differs per process, deadlocking concurrent upserts
-	// of overlapping IDs (TT-9424).
-	sort.Slice(recs, func(i, j int) bool { return recs[i].ID < recs[j].ID })
+	sortByID(recs, func(r analytics.SQLAnalyticsRecordAggregate) string { return r.ID })
 
 	for i := 0; i < len(recs); i += c.SQLConf.BatchSize {
 		ends := i + c.SQLConf.BatchSize

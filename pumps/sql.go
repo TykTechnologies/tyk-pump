@@ -1,12 +1,13 @@
 package pumps
 
 import (
+	"cmp"
 	"context"
 	"encoding/hex"
 	"errors"
 	"fmt"
 	"regexp"
-	"sort"
+	"slices"
 	"sync"
 	"time"
 
@@ -402,10 +403,9 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 				recs = append(recs, rec)
 			}
 
-			// Deterministic lock ordering - see the note in SQLAggregatePump.DoAggregatedWriting
-			// (TT-9424). recs is rebuilt per org and per day-shard, so this must stay in the
-			// innermost scope: hoisting it out would leave later orgs and shards unsorted.
-			sort.Slice(recs, func(i, j int) bool { return recs[i].ID < recs[j].ID })
+			// recs is rebuilt per org and per day-shard, so this must stay in the innermost
+			// scope: hoisting it out would leave later orgs and shards unsorted.
+			sortByID(recs, func(r analytics.UptimeReportAggregateSQL) string { return r.ID })
 
 			for i := 0; i < len(recs); i += c.SQLConf.BatchSize {
 				ends := i + c.SQLConf.BatchSize
@@ -426,6 +426,15 @@ func (c *SQLPump) WriteUptimeData(data []interface{}) {
 	}
 
 	c.log.Debug("Purged ", len(data), " records...")
+}
+
+// sortByID orders a batch of rows by primary key before it is upserted. PostgreSQL takes
+// row locks in statement order, and the rows are built by ranging over maps, so without a
+// fixed order every pump replica locks overlapping IDs in a different sequence and
+// concurrent upserts deadlock with SQLSTATE 40P01 (TT-9424). Every SQL write path that
+// upserts a batch must call this first.
+func sortByID[T any](recs []T, id func(T) string) {
+	slices.SortFunc(recs, func(a, b T) int { return cmp.Compare(id(a), id(b)) })
 }
 
 func (c *SQLPump) buildIndexName(indexBaseName, tableName string) string {

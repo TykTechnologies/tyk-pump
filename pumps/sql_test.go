@@ -555,7 +555,9 @@ func TestSQLWriteUptimeData_SQLite(t *testing.T) {
 		records = append(records, string(encoded))
 	}
 
+	checkOrder := assertUpsertedInIDOrder(t, db)
 	pmp.WriteUptimeData(records)
+	checkOrder()
 
 	var recs []analytics.UptimeReportAggregateSQL
 	require.NoError(t, pmp.db.Table(analytics.UptimeSQLTable).Find(&recs).Error)

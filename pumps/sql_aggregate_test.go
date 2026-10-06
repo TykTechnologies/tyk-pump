@@ -146,6 +146,41 @@ func TestSQLAggregateDoAggregatedWriting_UsesProvidedTable_SQLite(t *testing.T) 
 	assert.False(t, db.Migrator().HasTable(analytics.AggregateSQLTable))
 }
 
+// TestSQLAggregateDoAggregatedWriting_IDOrder_SQLite checks that SQLAggregatePump upserts
+// rows sorted by ID (TT-9424) without needing PostgreSQL. The input spreads hits over
+// 32 API IDs so the apiid dimension map has many keys. With one key per map,
+// Dimensions() emits rows in its fixed type order, which is already sorted, and the check
+// could not fail; with eight or fewer keys, map iteration is little more than a
+// random rotation and lands on sorted order about one run in eight.
+func TestSQLAggregateDoAggregatedWriting_IDOrder_SQLite(t *testing.T) {
+	db := setupTestDBWithJSONTags(t)
+	require.NoError(t, db.Table(analytics.AggregateSQLTable).AutoMigrate(&analytics.SQLAnalyticsRecordAggregate{}))
+
+	pmp := &SQLAggregatePump{
+		SQLConf: &SQLAggregatePumpConf{
+			SQLConf: SQLConf{BatchSize: 8},
+		},
+		db: db,
+	}
+	pmp.log = log.WithField("prefix", SQLAggregatePumpPrefix)
+
+	ts := time.Date(2026, 3, 5, 12, 0, 0, 0, time.UTC)
+	records := make([]interface{}, 0, 32)
+	for i := 0; i < 32; i++ {
+		records = append(records, analytics.AnalyticsRecord{
+			OrgID:        "org-id-order",
+			APIID:        fmt.Sprintf("api-%02d", i),
+			ResponseCode: http.StatusOK,
+			TimeStamp:    ts,
+		})
+	}
+	ag := analytics.AggregateData(records, false, nil, "", 60)["org-id-order"]
+
+	checkOrder := assertUpsertedInIDOrder(t, db)
+	require.NoError(t, pmp.DoAggregatedWriting(context.Background(), analytics.AggregateSQLTable, ag.OrgID, ag))
+	checkOrder()
+}
+
 func TestSQLAggregateDoAggregatedWriting_Sharded(t *testing.T) {
 	skipTestIfNoPostgres(t)
 

@@ -677,9 +677,8 @@ func TestGraphSQLAggregatePump_WriteData_Sharded(t *testing.T) {
 // Init() is deliberately not called: Dialect() has not supported sqlite since v1.12.0, so the
 // pump is built directly over the test database, mirroring newMCPSQLAggregatePumpWithSQLite.
 //
-// The deterministic batch ordering this path relies on (TT-9424) is asserted directly by
-// TestTT9424SortDeterminism and exercised under real contention by
-// TestTT9424GraphAggregateNoDeadlock; this test covers the write path itself.
+// It also asserts the rows reach the database sorted by ID (TT-9424). Contention itself is
+// exercised by TestTT9424GraphAggregateNoDeadlock, which needs PostgreSQL.
 func TestGraphSQLAggregatePump_DoAggregatedWriting_SQLite(t *testing.T) {
 	db := setupTestDBWithJSONTags(t)
 	tableName := analytics.AggregateGraphSQLTable
@@ -711,7 +710,9 @@ func TestGraphSQLAggregatePump_DoAggregatedWriting_SQLite(t *testing.T) {
 		ag.Fields["field"+suffix] = &analytics.Counter{Hits: 1, Success: 1}
 	}
 
+	checkOrder := assertUpsertedInIDOrder(t, db)
 	require.NoError(t, pump.DoAggregatedWriting(context.Background(), tableName, "org1", "api1", ag))
+	checkOrder()
 
 	var recs []analytics.GraphSQLAnalyticsRecordAggregate
 	require.NoError(t, pump.db.Table(tableName).Find(&recs).Error)
