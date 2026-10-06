@@ -46,6 +46,12 @@ type MetricInstruments struct {
 	// uptime is process.uptime: an observable gauge sampled by callback on
 	// every export cycle, so it costs nothing between exports.
 	uptime *tykmetric.ObservableGauge
+
+	// healthEnabled records whether the self-health family is on
+	// (opentelemetry.metrics.health_metrics not explicitly false). The gauge
+	// itself is registered by RegisterHealthObserver once the dependencies
+	// it probes exist.
+	healthEnabled bool
 }
 
 // NewMetricInstruments creates the Pump instruments from an initialized
@@ -54,9 +60,9 @@ type MetricInstruments struct {
 // are safe no-ops. Instrument creation errors are logged, never returned: the
 // affected instrument becomes a no-op and boot continues.
 //
-//nolint:gocritic // cfg mirrors InitMetrics; later stories read their family toggles from it.
-func NewMetricInstruments(provider MetricsProvider, logger logrus.FieldLogger, _ OpenTelemetry) *MetricInstruments {
-	m := &MetricInstruments{provider: provider, logger: logger}
+//nolint:gocritic // cfg mirrors InitMetrics, which takes it by value.
+func NewMetricInstruments(provider MetricsProvider, logger logrus.FieldLogger, cfg OpenTelemetry) *MetricInstruments {
+	m := &MetricInstruments{provider: provider, logger: logger, healthEnabled: cfg.HealthMetricsEnabled()}
 	if provider == nil {
 		return m
 	}

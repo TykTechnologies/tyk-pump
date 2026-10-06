@@ -7,6 +7,7 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
@@ -373,6 +374,19 @@ func (m *MongoPump) connect() {
 	}
 
 	m.store = store
+}
+
+// Ping checks the Mongo deployment is reachable.
+func (m *MongoPump) Ping(ctx context.Context) error {
+	if m.store == nil {
+		return errors.New("mongo pump is not connected")
+	}
+	return m.store.Ping(ctx)
+}
+
+// StoreName is `mongo` for both the mgo and mongo-go drivers.
+func (m *MongoPump) StoreName() string {
+	return "mongo"
 }
 
 func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {

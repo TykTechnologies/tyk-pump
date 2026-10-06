@@ -4,6 +4,10 @@
 #
 #   tyk-pump --OTLP/gRPC--> otel-collector --/metrics--> prometheus <-- go test
 #
+# redis is the temporal storage; mongo backs the default uptime pump and
+# postgres the SQL one (postgres profile). The health suite stops, pauses and
+# restarts them to drive tyk.pump.health.
+#
 # The Pump is configured only through environment variables (configs/pump.env
 # plus the per-profile env file), so the same TYK_PMP_OPENTELEMETRY_METRICS_*
 # surface operators use is what gets exercised. Select a profile with
@@ -17,6 +21,26 @@ services:
       timeout: 3s
       retries: 60
 
+  mongo:
+    image: mongo:7.0
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 2s
+      timeout: 5s
+      retries: 60
+
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: tyk
+      POSTGRES_PASSWORD: tyk
+      POSTGRES_DB: tyk_analytics
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "tyk", "-d", "tyk_analytics"]
+      interval: 1s
+      timeout: 3s
+      retries: 60
+
   tyk-pump:
     image: ${PUMP_IMAGE:-internal/tyk-pump}
     ports:
@@ -26,6 +50,10 @@ services:
       - ./profiles/${PUMP_PROFILE:-default}/pump.env
     depends_on:
       redis:
+        condition: service_healthy
+      mongo:
+        condition: service_healthy
+      postgres:
         condition: service_healthy
       otel-collector:
         condition: service_started

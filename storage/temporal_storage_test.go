@@ -294,3 +294,47 @@ func TestTemporalStorageHandler_Init(t *testing.T) {
 		})
 	}
 }
+
+func TestPing(t *testing.T) {
+	r, err := NewTemporalStorageHandler(map[string]interface{}{"host": "localhost", "port": 6379}, false)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := r.Init(); err != nil {
+		t.Fatal("unable to connect", err.Error())
+	}
+
+	t.Run("healthy", func(t *testing.T) {
+		assert.NoError(t, Ping(context.Background()))
+	})
+
+	t.Run("not connected", func(t *testing.T) {
+		saved := connectorSingleton
+		t.Cleanup(func() { connectorSingleton = saved })
+		connectorSingleton = nil
+
+		assert.Error(t, Ping(context.Background()))
+		assert.Nil(t, connectorSingleton, "a probe must never reconnect")
+	})
+
+	t.Run("unreachable answers within ctx, without backoff", func(t *testing.T) {
+		// Built directly, not through resetConnection, so the shared
+		// connector other tests use is left connected.
+		conn, _, _, err := createConnector(&TemporalStorageConfig{},
+			&model.RedisOptions{Host: "localhost", Port: 1, Timeout: 5}, &model.TLS{})
+		if err != nil {
+			t.Fatal(err)
+		}
+		t.Cleanup(func() { assert.NoError(t, conn.Disconnect(context.Background())) })
+
+		saved := connectorSingleton
+		t.Cleanup(func() { connectorSingleton = saved })
+		connectorSingleton = conn
+
+		ctx, cancel := context.WithTimeout(context.Background(), 2*time.Second)
+		defer cancel()
+		start := time.Now()
+		assert.Error(t, Ping(ctx))
+		assert.Less(t, time.Since(start), 2*time.Second+500*time.Millisecond, "the probe must not retry past its deadline")
+	})
+}

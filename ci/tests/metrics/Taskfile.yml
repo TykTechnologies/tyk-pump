@@ -13,7 +13,7 @@
 version: "3"
 
 vars:
-  PROFILES: default disabled misconfigured
+  PROFILES: default disabled misconfigured health-disabled uptime-disabled postgres
 
 env:
   PUMP_IMAGE: '{{.PUMP_IMAGE | default "internal/tyk-pump"}}'
@@ -49,7 +49,7 @@ tasks:
           PUMP_PROFILE: "{{.PUMP_PROFILE}}"
 
   setup:
-    desc: "bring up pump + redis + collector + prometheus for a profile"
+    desc: "bring up pump + redis + mongo + postgres + collector + prometheus for a profile"
     requires:
       vars: [PUMP_PROFILE]
     cmds:

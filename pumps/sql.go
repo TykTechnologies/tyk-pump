@@ -2,6 +2,7 @@ package pumps
 
 import (
 	"context"
+	"database/sql"
 	"encoding/hex"
 	"errors"
 	"fmt"
@@ -51,6 +52,9 @@ type SQLPump struct {
 	db      *gorm.DB
 	dbType  string
 	dialect gorm.Dialector
+	// sqlDB is the pool behind db, set by Init only once it succeeds, for
+	// Ping: WriteUptimeData reassigns db on the purge goroutine.
+	sqlDB *sql.DB
 
 	// this channel is used to signal that the background index creation has finished - this is used for testing
 	backgroundIndexCreated chan bool
@@ -226,6 +230,7 @@ func (c *SQLPump) Init(conf interface{}) error {
 		return err
 	}
 	c.db = db
+	c.dialect = db.Dialector
 
 	// Handle table migration based on configuration
 	if c.IsUptime {
@@ -252,8 +257,36 @@ func (c *SQLPump) Init(conf interface{}) error {
 		c.SQLConf.BatchSize = SQLDefaultQueryBatchSize
 	}
 
+	sqlDB, err := db.DB()
+	if err != nil {
+		return err
+	}
+	c.sqlDB = sqlDB
+
 	c.log.Debug("SQL Initialized")
 	return nil
+}
+
+// Ping checks the database is reachable. A pump whose Init failed, at connect
+// or at table migration, is never healthy.
+func (c *SQLPump) Ping(ctx context.Context) error {
+	if c.sqlDB == nil {
+		return errors.New("SQL pump is not connected")
+	}
+	return c.sqlDB.PingContext(ctx)
+}
+
+// StoreName is the live dialect (`postgres`, `mysql`) or, when Init never
+// connected, the configured `type`; `sql` when neither is known, so the label
+// is never empty.
+func (c *SQLPump) StoreName() string {
+	if c.dialect != nil {
+		return c.dialect.Name()
+	}
+	if c.SQLConf != nil && c.SQLConf.Type != "" {
+		return c.SQLConf.Type
+	}
+	return "sql"
 }
 
 func (c *SQLPump) WriteData(ctx context.Context, data []interface{}) error {

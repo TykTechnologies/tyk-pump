@@ -64,6 +64,16 @@ type MetricsConfig struct {
 	// `production` or `staging`), exported as the `deployment.environment`
 	// resource attribute on every metric. Defaults to `unknown`.
 	DeploymentEnvironment string `json:"deployment_environment"`
+
+	// HealthMetrics toggles the self-health metrics family: the
+	// `tyk.pump.health` gauge (1 healthy / 0 unhealthy) for the Redis temporal
+	// storage the Pump reads from and, unless `dont_purge_uptime_data` is set,
+	// the uptime pump's datastore, labelled `component` and `store`. Each value
+	// is a real ping, run at most once per 10 seconds with a 2 second timeout.
+	// It only has an effect while `opentelemetry.metrics.enabled` is `true`.
+	//
+	// The default value is `true`.
+	HealthMetrics *bool `json:"health_metrics"`
 }
 
 // OpenTelemetry is the Pump's `opentelemetry` configuration block. Like MDCB
@@ -116,9 +126,13 @@ func (c *OpenTelemetry) MetricsEnabled() bool {
 // "unset", which means on, unlike the top-level `enabled` which defaults to
 // off; and a global metrics-off always wins over a family `true`.
 //
-// process.uptime has no toggle: it is always on while metrics are on. The
-// first family toggle arrives with a later story; until then only the tests
-// call this.
+// process.uptime has no toggle: it is always on while metrics are on.
 func (c *OpenTelemetry) familyEnabled(toggle *bool) bool {
 	return c.MetricsEnabled() && (toggle == nil || *toggle)
+}
+
+// HealthMetricsEnabled reports whether the self-health metrics family is on:
+// the per-dependency probe gauge.
+func (c *OpenTelemetry) HealthMetricsEnabled() bool {
+	return c.familyEnabled(c.Metrics.HealthMetrics)
 }

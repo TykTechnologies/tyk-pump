@@ -1,5 +1,7 @@
 package promtest
 
+import "slices"
+
 // IdentityLabels are the resource attributes the Pump stamps on every export,
 // as Prometheus label keys after the collector's
 // resource_to_telemetry_conversion (dots become underscores). Every Pump
@@ -28,4 +30,15 @@ var Families = []Family{
 		Type:     "gauge",
 		Labels:   IdentityLabels,
 	},
+	HealthFamily,
+}
+
+// HealthFamily is the per-dependency self-health gauge (TT-18518): one series
+// per probed dependency, labelled with its role and engine. Registered without
+// a unit, so Prometheus adds no suffix.
+var HealthFamily = Family{
+	Name:     "tyk_pump_health",
+	OTelName: "tyk.pump.health",
+	Type:     "gauge",
+	Labels:   slices.Concat(IdentityLabels, []string{"component", "store"}),
 }
