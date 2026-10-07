@@ -11,6 +11,7 @@ import (
 	"fmt"
 	"regexp"
 	"strconv"
+	"sync"
 
 	"github.com/TykTechnologies/storage/persistent"
 	"github.com/TykTechnologies/storage/persistent/model"
@@ -34,6 +35,10 @@ type MongoPump struct {
 	store    persistent.PersistentStorage
 	dbConf   *MongoConf
 	CommonPumpConfig
+	// storeMu serialises Ping (health probe goroutine) with the uptime
+	// writes (purge goroutine): on a network error the storage driver
+	// reconnects in place, swapping the client the other one is using.
+	storeMu sync.Mutex
 }
 
 var (
@@ -381,6 +386,8 @@ func (m *MongoPump) Ping(ctx context.Context) error {
 	if m.store == nil {
 		return errors.New("mongo pump is not connected")
 	}
+	m.storeMu.Lock()
+	defer m.storeMu.Unlock()
 	return m.store.Ping(ctx)
 }
 
@@ -570,6 +577,8 @@ func (m *MongoPump) WriteUptimeData(data []interface{}) {
 
 	m.log.Debug("Writing data to ", m.dbConf.CollectionName)
 
+	m.storeMu.Lock()
+	defer m.storeMu.Unlock()
 	if err := m.store.Insert(context.Background(), keys...); err != nil {
 		m.log.Error("Problem inserting to mongo collection: ", err)
 	}

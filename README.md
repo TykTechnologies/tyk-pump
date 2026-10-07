@@ -276,7 +276,7 @@ count by (service_instance_id, deployment_environment) (process_uptime_seconds{s
 | `temporal_storage` | `redis` | The Redis connection the analytics and uptime purgers read from | always |
 | `uptime` | `mongo`, `postgres` or `mysql` | The uptime pump's datastore | `dont_purge_uptime_data` is `false` |
 
-Each value is a real ping, run at most once every 10 seconds with a 2 second timeout, whatever the export interval. A dependency that is down, hung, or never connected (for example an SQL uptime pump that failed to start) reads `0`. The series is absent until the first probe finishes, never a placeholder. The analytics sinks are not probed. Set `health_metrics` to `false` to turn the probes and the gauge off.
+Each value is a real ping, run at most once every 10 seconds with a 2 second timeout, whatever the export interval. A dependency that is down, hung, or never connected (for example an SQL uptime pump that could not connect at startup) reads `0`. The series is absent until the first probe finishes, never a placeholder. The analytics sinks are not probed. Set `health_metrics` to `false` to turn the probes and the gauge off.
 
 The `/health` endpoint is unchanged: it always answers `200 {"status": "ok"}` while the process is up, so a Redis outage does not restart the Pump.
 

@@ -114,7 +114,7 @@ func compose(t *testing.T, args ...string) string {
 	t.Helper()
 	project := envOr("PUMP_COMPOSE_PROJECT", "pump-metrics-"+profile())
 	cmd := exec.Command("docker", append([]string{"compose", "-p", project}, args...)...) //nolint:gosec // args come from the suite, not from input
-	cmd.Env = append(os.Environ(), "PUMP_PROFILE="+profile())
+	cmd.Env = append(os.Environ(), "PUMP_PROFILE="+profile(), "COMPOSE_PROFILES="+profile())
 	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("docker compose %s: %v\n%s", strings.Join(args, " "), err, out)

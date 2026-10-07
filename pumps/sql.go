@@ -52,7 +52,7 @@ type SQLPump struct {
 	db      *gorm.DB
 	dbType  string
 	dialect gorm.Dialector
-	// sqlDB is the pool behind db, set by Init only once it succeeds, for
+	// sqlDB is the pool behind db, captured by Init once connected, for
 	// Ping: WriteUptimeData reassigns db on the purge goroutine.
 	sqlDB *sql.DB
 
@@ -231,6 +231,12 @@ func (c *SQLPump) Init(conf interface{}) error {
 	}
 	c.db = db
 	c.dialect = db.Dialector
+	// Captured before the migration so Ping reflects reachability: a failed
+	// migration (ignored by main for the uptime pump) must not pin the gauge
+	// at 0 while writes keep succeeding.
+	if c.sqlDB, err = db.DB(); err != nil {
+		return err
+	}
 
 	// Handle table migration based on configuration
 	if c.IsUptime {
@@ -257,18 +263,12 @@ func (c *SQLPump) Init(conf interface{}) error {
 		c.SQLConf.BatchSize = SQLDefaultQueryBatchSize
 	}
 
-	sqlDB, err := db.DB()
-	if err != nil {
-		return err
-	}
-	c.sqlDB = sqlDB
-
 	c.log.Debug("SQL Initialized")
 	return nil
 }
 
-// Ping checks the database is reachable. A pump whose Init failed, at connect
-// or at table migration, is never healthy.
+// Ping checks the database is reachable. A pump that never connected is never
+// healthy.
 func (c *SQLPump) Ping(ctx context.Context) error {
 	if c.sqlDB == nil {
 		return errors.New("SQL pump is not connected")
