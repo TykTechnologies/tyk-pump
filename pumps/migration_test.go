@@ -8,6 +8,7 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	gorm_logger "gorm.io/gorm/logger"
@@ -415,6 +416,23 @@ func TestOpenGormDB(t *testing.T) {
 		} else {
 			assert.NotNil(t, db)
 		}
+	})
+
+	t.Run("invalid pool duration fails before connecting", func(t *testing.T) {
+		logger := setupTestLogger(t)
+		conf := &SQLConf{
+			Type: "postgres",
+			// Unreachable on purpose: validation must reject the duration before
+			// gorm.Open ever pings, so this test needs no database.
+			ConnectionString: "host=localhost port=9920 user=gorm password=gorm dbname=gorm sslmode=disable",
+			Postgres:         PostgresConfig{ConnectionMaxLifetime: "30 minutes"},
+		}
+
+		db, err := OpenGormDB(conf, logger)
+
+		require.Error(t, err)
+		assert.Nil(t, db)
+		assert.Contains(t, err.Error(), "connection_max_lifetime")
 	})
 
 	t.Run("log levels are mapped correctly", func(t *testing.T) {
