@@ -152,6 +152,8 @@ func (s *GraphSQLAggregatePump) DoAggregatedWriting(ctx context.Context, table, 
 		recs = append(recs, rec)
 	}
 
+	sortByID(recs, func(r analytics.GraphSQLAnalyticsRecordAggregate) string { return r.ID })
+
 	for i := 0; i < len(recs); i += s.SQLConf.BatchSize {
 		ends := i + s.SQLConf.BatchSize
 		if ends > len(recs) {

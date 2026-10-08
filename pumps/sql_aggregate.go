@@ -294,6 +294,8 @@ func (c *SQLAggregatePump) DoAggregatedWriting(ctx context.Context, table, orgID
 		recs = append(recs, rec)
 	}
 
+	sortByID(recs, func(r analytics.SQLAnalyticsRecordAggregate) string { return r.ID })
+
 	for i := 0; i < len(recs); i += c.SQLConf.BatchSize {
 		ends := i + c.SQLConf.BatchSize
 		if ends > len(recs) {

@@ -251,6 +251,8 @@ func (s *MCPSQLAggregatePump) DoAggregatedWriting(ctx context.Context, table, or
 		recs = append(recs, rec)
 	}
 
+	sortByID(recs, func(r analytics.MCPSQLAnalyticsRecordAggregate) string { return r.ID })
+
 	for i := 0; i < len(recs); i += s.SQLConf.BatchSize {
 		ends := i + s.SQLConf.BatchSize
 		if ends > len(recs) {
