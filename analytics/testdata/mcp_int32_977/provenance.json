@@ -1,0 +1,16 @@
+{
+  "source_revision": "977a5ddcda4a523337b4d8e8dd36a0df03c81aef",
+  "source_path": "analytics/analytics.proto",
+  "source_sha256": "eeb88559643d07cc817d87fb3c0e6149a4d663afb009e12f7e297bb34d650b62",
+  "descriptor_sha256": "db3ac3433b40d902e35d7c9c9cc1cf5ecbb8f7e58e4dad639aba47b42bb9f8df",
+  "protoc": "3.21.12",
+  "command": [
+    "/opt/homebrew/opt/protobuf@21/bin/protoc",
+    "--proto_path=.",
+    "--proto_path=/opt/homebrew/opt/protobuf@21/include",
+    "--include_imports",
+    "--descriptor_set_out=analytics.descriptor.bin",
+    "analytics.proto"
+  ],
+  "purpose": "Frozen old int32 field8 reader; independent of current generated descriptor"
+}

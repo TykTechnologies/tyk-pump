@@ -1,0 +1,182 @@
+[
+  {
+    "name": "modern",
+    "record": {
+      "api_id": "mcp-modern",
+      "org_id": "mcp-compatibility",
+      "mcp_stats": {
+        "is_mcp": true,
+        "jsonrpc_method": "tools/call",
+        "primitive_type": "tool",
+        "primitive_name": "get_weather",
+        "effective_protocol_version": "2026-07-28",
+        "declared_protocol_version": "2026-07-28",
+        "protocol_version_source": "header_body",
+        "jsonrpc_error_code": 0
+      },
+      "method": "POST",
+      "path": "/mcp",
+      "response_code": 200
+    }
+  },
+  {
+    "name": "legacy-header",
+    "record": {
+      "api_id": "mcp-legacy-header",
+      "org_id": "mcp-compatibility",
+      "mcp_stats": {
+        "is_mcp": true,
+        "jsonrpc_method": "tools/call",
+        "primitive_type": "tool",
+        "primitive_name": "get_weather",
+        "effective_protocol_version": "2025-03-26",
+        "declared_protocol_version": "2025-03-26",
+        "protocol_version_source": "header",
+        "jsonrpc_error_code": 0
+      },
+      "method": "POST",
+      "path": "/mcp",
+      "response_code": 200
+    }
+  },
+  {
+    "name": "legacy-fallback",
+    "record": {
+      "api_id": "mcp-legacy-fallback",
+      "org_id": "mcp-compatibility",
+      "mcp_stats": {
+        "is_mcp": true,
+        "jsonrpc_method": "tools/call",
+        "primitive_type": "tool",
+        "primitive_name": "get_weather",
+        "effective_protocol_version": "2025-03-26",
+        "declared_protocol_version": "",
+        "protocol_version_source": "legacy_fallback",
+        "jsonrpc_error_code": 0
+      },
+      "method": "POST",
+      "path": "/mcp",
+      "response_code": 200
+    }
+  },
+  {
+    "name": "unknown-raw",
+    "record": {
+      "api_id": "mcp-unknown-raw",
+      "org_id": "mcp-compatibility",
+      "mcp_stats": {
+        "is_mcp": true,
+        "jsonrpc_method": "tools/call",
+        "primitive_type": "tool",
+        "primitive_name": "get_weather",
+        "effective_protocol_version": "future.raw+v1",
+        "declared_protocol_version": "future.raw+v1",
+        "protocol_version_source": "header",
+        "jsonrpc_error_code": 0
+      },
+      "method": "POST",
+      "path": "/mcp",
+      "response_code": 200
+    }
+  },
+  {
+    "name": "mismatch",
+    "record": {
+      "api_id": "mcp-mismatch",
+      "org_id": "mcp-compatibility",
+      "mcp_stats": {
+        "is_mcp": true,
+        "jsonrpc_method": "initialize",
+        "primitive_type": "",
+        "primitive_name": "",
+        "effective_protocol_version": "",
+        "declared_protocol_version": "2026-07-28",
+        "protocol_version_source": "header_body",
+        "jsonrpc_error_code": 0
+      },
+      "method": "POST",
+      "path": "/mcp",
+      "response_code": 200
+    }
+  },
+  {
+    "name": "body-non-string",
+    "record": {
+      "api_id": "mcp-body-non-string",
+      "org_id": "mcp-compatibility",
+      "mcp_stats": {
+        "is_mcp": true,
+        "jsonrpc_method": "initialize",
+        "primitive_type": "",
+        "primitive_name": "",
+        "effective_protocol_version": "",
+        "declared_protocol_version": "42",
+        "protocol_version_source": "body",
+        "jsonrpc_error_code": -32600
+      },
+      "method": "POST",
+      "path": "/mcp",
+      "response_code": 403
+    }
+  },
+  {
+    "name": "discovery",
+    "record": {
+      "api_id": "mcp-discovery",
+      "org_id": "mcp-compatibility",
+      "mcp_stats": {
+        "is_mcp": true,
+        "jsonrpc_method": "server/discover",
+        "primitive_type": "discovery",
+        "primitive_name": "",
+        "effective_protocol_version": "2026-07-28",
+        "declared_protocol_version": "2026-07-28",
+        "protocol_version_source": "header",
+        "jsonrpc_error_code": 0
+      },
+      "method": "POST",
+      "path": "/mcp",
+      "response_code": 200
+    }
+  },
+  {
+    "name": "subscription",
+    "record": {
+      "api_id": "mcp-subscription",
+      "org_id": "mcp-compatibility",
+      "mcp_stats": {
+        "is_mcp": true,
+        "jsonrpc_method": "subscriptions/listen",
+        "primitive_type": "subscription",
+        "primitive_name": "",
+        "effective_protocol_version": "2026-07-28",
+        "declared_protocol_version": "2026-07-28",
+        "protocol_version_source": "header",
+        "jsonrpc_error_code": 0
+      },
+      "method": "POST",
+      "path": "/mcp",
+      "response_code": 200
+    }
+  },
+  {
+    "name": "negative-error",
+    "record": {
+      "api_id": "mcp-negative-error",
+      "org_id": "mcp-compatibility",
+      "mcp_stats": {
+        "is_mcp": true,
+        "jsonrpc_method": "tools/call",
+        "primitive_type": "tool",
+        "primitive_name": "get_weather",
+        "effective_protocol_version": "2025-03-26",
+        "declared_protocol_version": "2025-03-26",
+        "protocol_version_source": "header",
+        "jsonrpc_error_code": -33002
+      },
+      "method": "POST",
+      "path": "/mcp",
+      "response_code": 403
+    }
+  }
+]
