@@ -48,6 +48,18 @@ type Family struct {
 	// OTelName is the instrument name as registered in the Pump, kept
 	// for readable failure messages.
 	OTelName string
+	// Profile is the e2e profile whose stack exports the family, for
+	// families that need traffic or particular pumps to appear. Empty means
+	// the default profile, where TestFamilies checks it.
+	Profile string
+}
+
+// CheckedIn reports whether the family is checked under the given profile.
+func (f Family) CheckedIn(profile string) bool {
+	if f.Profile == "" {
+		return profile == "default"
+	}
+	return f.Profile == profile
 }
 
 // SeriesName is the metric name to use in series queries for the family. A

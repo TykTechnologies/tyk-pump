@@ -1,0 +1,26 @@
+{
+  "name": "pump-metrics-api-1",
+  "api_id": "pump-metrics-api-1",
+  "org_id": "default",
+  "use_keyless": true,
+  "active": true,
+  "do_not_track": false,
+  "definition": {
+    "location": "header",
+    "key": "x-api-version"
+  },
+  "version_data": {
+    "not_versioned": true,
+    "versions": {
+      "Default": {
+        "name": "Default",
+        "use_extended_paths": true
+      }
+    }
+  },
+  "proxy": {
+    "listen_path": "/api-1/",
+    "target_url": "http://localhost:8080/hello",
+    "strip_listen_path": true
+  }
+}

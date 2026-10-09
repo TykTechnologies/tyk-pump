@@ -290,6 +290,9 @@ type TykPumpConfiguration struct {
 	// `tyk-pump`), `service.instance.id` (a UUID generated at startup and
 	// printed in the startup log), `service.version` and
 	// `deployment.environment` (default `unknown`) resource attributes.
+	//
+	// `pump_metrics` (default on) exports the pump write metrics: per
+	// configured pump, whether it initialised and the outcome of every write.
 	OpenTelemetry otel.OpenTelemetry `json:"opentelemetry"`
 }
 

@@ -450,10 +450,11 @@ var gatewayOpenTelemetryMetricsEnv = []string{
 
 // pumpOnlyOpenTelemetryMetricsEnv are the Pump settings the Gateway does not
 // have. deployment_environment and health_metrics are shared with MDCB and the
-// Dashboard.
+// Dashboard; pump_metrics is the Pump's own family toggle.
 var pumpOnlyOpenTelemetryMetricsEnv = []string{
 	"TYK_PMP_OPENTELEMETRY_METRICS_DEPLOYMENTENVIRONMENT",
 	"TYK_PMP_OPENTELEMETRY_METRICS_HEALTHMETRICS",
+	"TYK_PMP_OPENTELEMETRY_METRICS_PUMPMETRICS",
 }
 
 // TestOpenTelemetryEnvVarParity is the guard for Gateway env-name parity. It
@@ -500,6 +501,7 @@ func TestOpenTelemetryEnvVarParity(t *testing.T) {
 		t.Setenv("TYK_PMP_OPENTELEMETRY_METRICS_CARDINALITYLIMIT", "50")
 		t.Setenv("TYK_PMP_OPENTELEMETRY_METRICS_DEPLOYMENTENVIRONMENT", "staging")
 		t.Setenv("TYK_PMP_OPENTELEMETRY_METRICS_HEALTHMETRICS", "false")
+		t.Setenv("TYK_PMP_OPENTELEMETRY_METRICS_PUMPMETRICS", "false")
 
 		cfg := &TykPumpConfiguration{}
 		require.NoError(t, envconfig.Process(ENV_PREVIX, cfg))
@@ -529,6 +531,9 @@ func TestOpenTelemetryEnvVarParity(t *testing.T) {
 		assert.Equal(t, 300, m.Retry.MaxElapsedTime)
 		assert.Equal(t, 50, m.CardinalityLimit)
 		assert.Equal(t, "staging", m.DeploymentEnvironment)
+		if assert.NotNil(t, m.PumpMetrics) {
+			assert.False(t, *m.PumpMetrics)
+		}
 		assert.False(t, cfg.OpenTelemetry.HealthMetricsEnabled())
 	})
 }
@@ -604,9 +609,43 @@ func TestOpenTelemetryEnv_DoesNotCreatePumps(t *testing.T) {
 	t.Setenv("TYK_PMP_OPENTELEMETRY_METRICS_EXPORTER", "grpc")
 	t.Setenv("TYK_PMP_OPENTELEMETRY_METRICS_ENDPOINT", "otel-collector:4317")
 	t.Setenv("TYK_PMP_OPENTELEMETRY_METRICS_DEPLOYMENTENVIRONMENT", "e2e")
+	t.Setenv("TYK_PMP_OPENTELEMETRY_METRICS_PUMPMETRICS", "true")
 
 	cfg := &TykPumpConfiguration{}
 	require.NoError(t, cfg.LoadPumpsByEnv())
 
 	assert.Empty(t, cfg.Pumps, "TYK_PMP_OPENTELEMETRY_* must not be read as pump definitions")
+}
+
+func TestOpenTelemetryConfig_PumpMetrics(t *testing.T) {
+	load := func(t *testing.T, json string) otel.OpenTelemetry {
+		t.Helper()
+		path := writeConfigFile(t, json)
+		cfg := &TykPumpConfiguration{}
+		LoadConfig(&path, cfg)
+		return cfg.OpenTelemetry
+	}
+
+	t.Run("omitted means on", func(t *testing.T) {
+		c := load(t, `{"opentelemetry": {"metrics": {"enabled": true}}}`)
+		assert.Nil(t, c.Metrics.PumpMetrics)
+		assert.True(t, c.PumpMetricsEnabled())
+	})
+
+	t.Run("false in the file turns the family off", func(t *testing.T) {
+		c := load(t, `{"opentelemetry": {"metrics": {"enabled": true, "pump_metrics": false}}}`)
+		assert.False(t, c.PumpMetricsEnabled())
+		assert.True(t, c.MetricsEnabled(), "only the family is off")
+	})
+
+	t.Run("env false overrides file true", func(t *testing.T) {
+		t.Setenv("TYK_PMP_OPENTELEMETRY_METRICS_PUMPMETRICS", "false")
+		c := load(t, `{"opentelemetry": {"metrics": {"enabled": true, "pump_metrics": true}}}`)
+		assert.False(t, c.PumpMetricsEnabled())
+	})
+
+	t.Run("metrics off wins", func(t *testing.T) {
+		c := load(t, `{"opentelemetry": {"metrics": {"enabled": false, "pump_metrics": true}}}`)
+		assert.False(t, c.PumpMetricsEnabled())
+	})
 }

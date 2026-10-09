@@ -222,6 +222,7 @@ The Pump can export metrics about itself (not the analytics records it moves) ov
 - `retry` - Retry settings for failed exports (`enabled`, `initial_interval`, `max_interval`, `max_elapsed_time`, in milliseconds).
 - `cardinality_limit` - Maximum number of attribute combinations per metric. Defaults to `2000`.
 - `health_metrics` - Exports the `tyk.pump.health` self-health gauge described below. Defaults to `true`; it only has an effect while `enabled` is `true`.
+- `pump_metrics` - Exports the [pump write metrics](#pump-write-metrics). Defaults to `true`; it only has an effect while `enabled` is `true`.
 
 Every setting can also be set through an environment variable. The Pump's variable is the Gateway's with the `TYK_GW_` prefix replaced by `TYK_PMP_`, and environment variables override the config file:
 
@@ -236,6 +237,7 @@ TYK_PMP_OPENTELEMETRY_METRICS_EXPORTINTERVAL=60
 TYK_PMP_OPENTELEMETRY_METRICS_SHUTDOWNTIMEOUT=30
 TYK_PMP_OPENTELEMETRY_METRICS_TLS_ENABLE=false
 TYK_PMP_OPENTELEMETRY_METRICS_HEALTHMETRICS=true
+TYK_PMP_OPENTELEMETRY_METRICS_PUMPMETRICS=true
 ```
 
 Every export carries these resource attributes:
@@ -254,6 +256,10 @@ The Pump exports these metrics:
 | --- | --- | --- | --- | --- |
 | `process.uptime` | gauge | `s` | `process_uptime_seconds` | Time the Pump process has been running |
 | `tyk.pump.health` | gauge | none | `tyk_pump_health` | `1` when the dependency's live health probe passes, `0` when it fails |
+| `tyk.pump.initialized` | gauge | none | `tyk_pump_initialized` | Whether each configured pump initialised |
+| `tyk.pump.writes` | counter | `{write}` | `tyk_pump_writes_total` | Pump write calls, by outcome |
+| `tyk.pump.write.records` | counter | `{record}` | `tyk_pump_write_records_total` | Records handed to each pump, by write outcome, plus the records its filters removed |
+| `tyk.pump.purge.records` | counter | `{record}` | `tyk_pump_purge_records_total` | Records the purge loop read from temporal storage, by decode result |
 
 For example, to alert when a Pump stops reporting, through a collector that exports to Prometheus with `resource_to_telemetry_conversion` enabled:
 
@@ -293,6 +299,61 @@ tyk_pump_health{component="temporal_storage"} == 0
 ```
 
 A misconfigured exporter never stops the Pump: it boots and pumps normally, logs one warning naming the problem, and exports no metrics. The StatsD instrumentation enabled by `TYK_INSTRUMENTATION=1` is independent and keeps working alongside OpenTelemetry.
+
+#### Pump write metrics
+
+The pump write metrics tell you when a pump is failing or timing out, which pump it is, and how many records it is dropping. They are recorded once per pump per purge, where every pump's write happens, and are controlled by `pump_metrics` (on by default).
+
+| Metric | Labels |
+| --- | --- |
+| `tyk_pump_initialized` | `pump`, `pump_type` |
+| `tyk_pump_writes_total` | `pump`, `pump_type`, `outcome` (`success`, `error`, `timeout`) |
+| `tyk_pump_write_records_total` | `pump`, `pump_type`, `outcome` (`success`, `error`, `timeout`, `filtered`) |
+| `tyk_pump_purge_records_total` | `result` (`decoded`, `decode_failed`) |
+
+Label values:
+
+- `pump` - The configured pump name, lower-cased: the key under `pumps` in the config file, or `<NAME>` in `TYK_PMP_PUMPS_<NAME>_*`. Two pumps of the same type under different names are distinct series. The value comes only from your config, never from record content.
+- `pump_type` - The pump type as registered in the Pump (`mongo`, `sql_aggregate`, `splunk`, `hybrid`, ...). A configured `type` the Pump does not know is reported as `unknown`.
+- `outcome` - `success` when the pump's write returned no error, `error` when it returned one, and `timeout` when the pump's `timeout` elapsed first. `filtered` applies only to `tyk_pump_write_records_total`: the records the pump's `filters` removed before the write.
+- `result` - `decoded` for records read from temporal storage that decoded, `decode_failed` for those that did not (for example a serializer mismatch or a corrupted payload).
+
+What the numbers mean:
+
+- `tyk_pump_initialized` has one series per configured pump. It is `1` for a pump that initialised and `0` for a pump whose `type` is not registered or whose initialisation returned an error; the Pump keeps running without that pump.
+- `tyk_pump_write_records_total` counts records handed to the pump, not rows or documents written. Aggregate pumps turn many records into a few aggregate documents, and graph and MCP pumps keep only their own record kinds; for them, `success` means "these records were processed".
+- For each pump, over any interval, `sum by (outcome)` of `tyk_pump_write_records_total` equals `sum(tyk_pump_purge_records_total)` across both results: every record the purge loop read is handed to, or filtered out by, every pump.
+- On `timeout` the purge loop moves on while the pump's write keeps running in the background, and its eventual result is dropped. Those records are counted once, as `timeout`, and never again.
+
+`outcome` is only as truthful as the error the pump's write returns. Some pumps log a backend failure and report success, so for them `success` means "the write returned", not "the backend accepted the records":
+
+| Behaviour | Pumps |
+| --- | --- |
+| Backend failures returned as an error | `mongo`, `mongo-pump-aggregate`, `mongo-graph`, `mongo-mcp`, `mongo-mcp-aggregate`, `sql_aggregate`, `sql-graph-aggregate`, `sql-mcp-aggregate`, `splunk`, `timestream`, `hybrid` |
+| Partially returned | `sql` (table setup errors returned, insert errors only logged), `csv` (file create/open errors only logged), `sqs` (API errors returned, per-entry failures ignored), `prometheus` (expose errors logged) |
+| Logged, success reported | `kafka`, `elasticsearch`, `influx`, `influx2`, `moesif`, `segment`, `logzio`, `graylog`, `statsd`, `dogstatsd`, `syslog`, `kinesis`, `sql-graph`, `sql-mcp`, `mongo-pump-selective`, `resurfaceio` |
+| No backend | `dummy`, `stdout` |
+
+The uptime pump is not covered: its writes have no result to record.
+
+The family adds `8P + 2` series for `P` configured pumps (26 for three pumps), whatever the traffic.
+
+Example queries:
+
+```
+# which pump is failing, as a ratio of its write calls
+sum by (pump) (rate(tyk_pump_writes_total{outcome!="success"}[5m]))
+  / sum by (pump) (rate(tyk_pump_writes_total[5m])) > 0.1
+
+# records lost per pump
+sum by (pump) (rate(tyk_pump_write_records_total{outcome=~"error|timeout"}[5m])) > 0
+
+# a configured pump that never started
+tyk_pump_initialized == 0
+
+# undecodable analytics in Redis (serializer mismatch, corrupted payloads)
+rate(tyk_pump_purge_records_total{result="decode_failed"}[5m]) > 0
+```
 
 # Pump Configurations
 
