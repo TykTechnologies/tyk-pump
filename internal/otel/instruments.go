@@ -52,6 +52,11 @@ type MetricInstruments struct {
 	// itself is registered by RegisterHealthObserver once the dependencies
 	// it probes exist.
 	healthEnabled bool
+
+	// pump holds the pump write metrics family (pump_metrics). It is nil when
+	// the family is off, so every pump method returns before building
+	// attributes.
+	pump *pumpInstruments
 }
 
 // NewMetricInstruments creates the Pump instruments from an initialized
@@ -77,6 +82,12 @@ func NewMetricInstruments(provider MetricsProvider, logger logrus.FieldLogger, c
 		logger.WithError(err).Errorf("Creating %s gauge; it will be a no-op", UptimeMetricName)
 	}
 	m.uptime = uptime
+
+	// A disabled provider (metrics off, or a config that failed to build)
+	// creates no family instruments at all.
+	if provider.Enabled() && cfg.PumpMetricsEnabled() {
+		m.pump = newPumpInstruments(provider, logger)
+	}
 
 	return m
 }

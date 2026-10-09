@@ -2,13 +2,19 @@
 ---
 # End-to-end OpenTelemetry metrics stack for the Pump:
 #
+#   go test --HTTP--> tyk-gateway --analytics--> redis --> tyk-pump --> mongo, ...
 #   tyk-pump --OTLP/gRPC--> otel-collector --/metrics--> prometheus <-- go test
 #
 # redis is the temporal storage; mongo backs the Mongo uptime pump (default
-# profile) and postgres the SQL one (postgres profile). Both are compose
-# profiles named after the PUMP_PROFILE that needs them, so the other profiles
-# never start or wait for them (the Taskfile sets COMPOSE_PROFILES). The
-# health suite stops, pauses and restarts them to drive tyk.pump.health.
+# profile) and the pumps profile's mongo pump, and postgres the SQL uptime pump
+# (postgres profile). The Gateway (OSS, two keyless APIs from
+# configs/gateway/apps) is the real traffic source for the pumps, decode and
+# pump-disabled profiles, so records reach Redis in the Gateway's own encoding.
+# Each is behind compose profiles named after the PUMP_PROFILE values that need
+# it, so the other profiles never start or wait for it (the Taskfile sets
+# COMPOSE_PROFILES). The health suite stops, pauses and restarts the datastores
+# to drive tyk.pump.health; the pumps suite pauses mongo to make its pump time
+# out.
 #
 # The Pump is configured only through environment variables (configs/pump.env
 # plus the per-profile env file), so the same TYK_PMP_OPENTELEMETRY_METRICS_*
@@ -25,7 +31,7 @@ services:
 
   mongo:
     image: mongo:7.0
-    profiles: ["default"]
+    profiles: ["default", "pumps"]
     healthcheck:
       test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
       interval: 2s
@@ -45,6 +51,22 @@ services:
       timeout: 3s
       retries: 60
 
+  tyk-gateway:
+    image: ${GATEWAY_IMAGE:-tykio/tyk-gateway:v5.14.0}
+    profiles: ["pumps", "decode", "pump-disabled"]
+    ports:
+      - "${GATEWAY_PORT:-8080}:8080"
+    environment:
+      # The image's tyk.conf already points at the "redis" service and loads
+      # API definitions from /opt/tyk-gateway/apps.
+      TYK_GW_ENABLEANALYTICS: "true"
+      TYK_GW_LOGLEVEL: "info"
+    volumes:
+      - ./configs/gateway/apps:/opt/tyk-gateway/apps:ro
+    depends_on:
+      redis:
+        condition: service_healthy
+
   tyk-pump:
     image: ${PUMP_IMAGE:-internal/tyk-pump}
     ports:
@@ -55,6 +77,8 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+      # The uptime pump and the pumps profile's mongo pump connect at Init and
+      # exit if they cannot.
       mongo:
         condition: service_healthy
         required: false

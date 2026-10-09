@@ -74,6 +74,17 @@ type MetricsConfig struct {
 	//
 	// The default value is `true`.
 	HealthMetrics *bool `json:"health_metrics"`
+
+	// PumpMetrics toggles the pump write metrics family: `tyk.pump.initialized`,
+	// `tyk.pump.writes`, `tyk.pump.write.records` and `tyk.pump.purge.records`.
+	// They report, per configured pump, whether it initialised, the outcome of
+	// every write (`success`, `error`, `timeout`) and how many records it was
+	// handed or filtered out, plus how many records the purge loop could not
+	// decode. It only has an effect while `opentelemetry.metrics.enabled` is
+	// `true`.
+	//
+	// The default value is `true`.
+	PumpMetrics *bool `json:"pump_metrics"`
 }
 
 // OpenTelemetry is the Pump's `opentelemetry` configuration block. Like MDCB
@@ -135,4 +146,9 @@ func (c *OpenTelemetry) familyEnabled(toggle *bool) bool {
 // the per-dependency probe gauge.
 func (c *OpenTelemetry) HealthMetricsEnabled() bool {
 	return c.familyEnabled(c.Metrics.HealthMetrics)
+}
+
+// PumpMetricsEnabled reports whether the pump write metrics family is on.
+func (c *OpenTelemetry) PumpMetricsEnabled() bool {
+	return c.familyEnabled(c.Metrics.PumpMetrics)
 }

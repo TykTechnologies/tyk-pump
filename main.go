@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"syscall"
 	"time"
 
@@ -32,6 +33,10 @@ var (
 	Pumps                []pumps.Pump
 	UptimePump           pumps.UptimePump
 	AnalyticsSerializers []serializer.AnalyticsSerializer
+
+	// pumpIdentities maps each pump initialisePumps built (pointer types, keyed
+	// by instance) to its configured name and type, for the pump metrics.
+	pumpIdentities map[pumps.Pump]otel.PumpIdentity
 )
 
 var log = logger.GetLogger()
@@ -200,6 +205,8 @@ func initialisePumps(kvStores *kvStores) {
 	defer pumps.SetKVResolver(nil)
 
 	Pumps = []pumps.Pump{}
+	pumpIdentities = map[pumps.Pump]otel.PumpIdentity{}
+	initStates := make([]otel.PumpInitState, 0, len(SystemConfig.Pumps))
 
 	for key, pmp := range SystemConfig.Pumps {
 		pumpTypeName := pmp.Type
@@ -207,12 +214,18 @@ func initialisePumps(kvStores *kvStores) {
 			pumpTypeName = key
 		}
 
+		// The configured name is the key under `pumps`; the type is the
+		// registry key GetPumpByName resolves, or "unknown".
+		id := otel.PumpIdentity{Name: strings.ToLower(key), Type: otel.UnknownPump}
+		initialized := false
+
 		pmpType, err := pumps.GetPumpByName(pumpTypeName)
 		if err != nil {
 			log.WithFields(logrus.Fields{
 				"prefix": mainPrefix,
 			}).Error("Pump load error (skipping): ", err)
 		} else {
+			id.Type = strings.ToLower(pumpTypeName)
 			thisPmp := pmpType.New()
 			thisPmp.SetFilters(pmp.Filters)
 			thisPmp.SetTimeout(pmp.Timeout)
@@ -229,8 +242,17 @@ func initialisePumps(kvStores *kvStores) {
 					"prefix": mainPrefix,
 				}).Info("Init Pump: ", key)
 				Pumps = append(Pumps, thisPmp)
+				pumpIdentities[thisPmp] = id
+				initialized = true
 			}
 		}
+		initStates = append(initStates, otel.PumpInitState{PumpIdentity: id, Initialized: initialized})
+	}
+
+	if err := otel.Metrics().RegisterPumpInitObserver(initStates); err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).WithError(err).Warning("Failed to register the pump initialised metric")
 	}
 
 	if len(Pumps) == 0 {
@@ -315,6 +337,7 @@ func StartPurgeLoop(wg *sync.WaitGroup, ctx context.Context, secInterval int, ch
 
 func PreprocessAnalyticsValues(AnalyticsValues []interface{}, serializerMethod serializer.AnalyticsSerializer, analyticsKeyName string, omitDetails bool, job *health.Job, startTime time.Time, secInterval int) {
 	keys := make([]interface{}, len(AnalyticsValues))
+	failedCount := 0
 
 	for i, v := range AnalyticsValues {
 		decoded := analytics.AnalyticsRecord{}
@@ -328,11 +351,13 @@ func PreprocessAnalyticsValues(AnalyticsValues []interface{}, serializerMethod s
 				"prefix":       mainPrefix,
 				"analytic_key": analyticsKeyName,
 			}).Error("Couldn't unmarshal analytics data:", err)
+			failedCount++
 			continue
 		}
 		keys[i] = interface{}(decoded)
 		job.Event("record")
 	}
+	otel.Metrics().RecordPurgeRecords(context.Background(), len(AnalyticsValues)-failedCount, failedCount)
 	// Send to pumps
 	writeToPumps(keys, job, startTime, int(secInterval))
 }
@@ -453,7 +478,13 @@ func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, pu
 		"prefix": mainPrefix,
 	}).Debug("Writing to: ", pmp.GetName())
 
+	// The buffered channel absorbs the late result of a timed-out write
+	// without blocking, and nothing is recorded for it.
 	ch := make(chan error, 1)
+	// handed is the number of records filterData left for the pump. Until
+	// filterData returns (a timeout can fire first) it is the whole batch.
+	var handed atomic.Int64
+	handed.Store(int64(len(*keys)))
 	// Load pump timeout
 	timeout := pmp.GetTimeout()
 	var ctx context.Context
@@ -469,12 +500,15 @@ func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, pu
 
 	go func(ch chan error, ctx context.Context, pmp pumps.Pump, keys *[]interface{}) {
 		filteredKeys := filterData(pmp, *keys)
+		handed.Store(int64(len(filteredKeys)))
 		ch <- pmp.WriteData(ctx, filteredKeys)
 	}(ch, ctx, pmp, keys)
 
+	outcome := otel.OutcomeSuccess
 	select {
 	case err := <-ch:
 		if err != nil {
+			outcome = otel.OutcomeError
 			log.WithFields(logrus.Fields{
 				"prefix": mainPrefix,
 			}).Warning("Error Writing to: ", pmp.GetName(), " - Error:", err)
@@ -482,15 +516,19 @@ func execPumpWriting(wg *sync.WaitGroup, pmp pumps.Pump, keys *[]interface{}, pu
 	case <-ctx.Done():
 		switch ctx.Err() {
 		case context.Canceled:
+			outcome = otel.OutcomeError
 			log.WithFields(logrus.Fields{
 				"prefix": mainPrefix,
 			}).Warning("The writing to ", pmp.GetName(), " have got canceled.")
 		case context.DeadlineExceeded:
+			outcome = otel.OutcomeTimeout
 			log.WithFields(logrus.Fields{
 				"prefix": mainPrefix,
 			}).Warning("Timeout Writing to: ", pmp.GetName())
 		}
 	}
+	records := int(handed.Load())
+	otel.Metrics().RecordPumpWrite(context.Background(), pumpIdentities[pmp], outcome, records, len(*keys)-records)
 	if job != nil {
 		job.Timing("purge_time_"+pmp.GetName(), time.Since(startTime).Nanoseconds())
 	}
