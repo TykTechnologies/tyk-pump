@@ -221,6 +221,7 @@ The Pump can export metrics about itself (not the analytics records it moves) ov
 - `tls` - TLS settings for the collector connection (`enable`, `insecure_skip_verify`, `ca_file`, `cert_file`, `key_file`, `min_version`, `max_version`).
 - `retry` - Retry settings for failed exports (`enabled`, `initial_interval`, `max_interval`, `max_elapsed_time`, in milliseconds).
 - `cardinality_limit` - Maximum number of attribute combinations per metric. Defaults to `2000`.
+- `health_metrics` - Exports the `tyk.pump.health` self-health gauge described below. Defaults to `true`; it only has an effect while `enabled` is `true`.
 
 Every setting can also be set through an environment variable. The Pump's variable is the Gateway's with the `TYK_GW_` prefix replaced by `TYK_PMP_`, and environment variables override the config file:
 
@@ -234,6 +235,7 @@ TYK_PMP_OPENTELEMETRY_METRICS_DEPLOYMENTENVIRONMENT=production
 TYK_PMP_OPENTELEMETRY_METRICS_EXPORTINTERVAL=60
 TYK_PMP_OPENTELEMETRY_METRICS_SHUTDOWNTIMEOUT=30
 TYK_PMP_OPENTELEMETRY_METRICS_TLS_ENABLE=false
+TYK_PMP_OPENTELEMETRY_METRICS_HEALTHMETRICS=true
 ```
 
 Every export carries these resource attributes:
@@ -251,6 +253,7 @@ The Pump exports these metrics:
 | Metric | Type | Unit | Prometheus name | Description |
 | --- | --- | --- | --- | --- |
 | `process.uptime` | gauge | `s` | `process_uptime_seconds` | Time the Pump process has been running |
+| `tyk.pump.health` | gauge | none | `tyk_pump_health` | `1` when the dependency's live health probe passes, `0` when it fails |
 
 For example, to alert when a Pump stops reporting, through a collector that exports to Prometheus with `resource_to_telemetry_conversion` enabled:
 
@@ -262,6 +265,31 @@ and to list the running Pump instances:
 
 ```
 count by (service_instance_id, deployment_environment) (process_uptime_seconds{service_name="tyk-pump"})
+```
+
+#### Self-health
+
+`tyk.pump.health` reports whether the Pump can reach its own dependencies, using the same `component` and `store` labels as `tyk_mdcb_health` and `tyk_dashboard_health`:
+
+| `component` | `store` | Probed dependency | Present when |
+| --- | --- | --- | --- |
+| `temporal_storage` | `redis` | The Redis connection the analytics and uptime purgers read from | always |
+| `uptime` | `mongo`, `postgres` or `mysql` | The uptime pump's datastore | `dont_purge_uptime_data` is `false` |
+
+Each value is a real ping, run at most once every 10 seconds with a 2 second timeout, whatever the export interval. A dependency that is down, hung, or never connected (for example an SQL uptime pump that could not connect at startup) reads `0`. The series is absent until the first probe finishes, never a placeholder. The analytics sinks are not probed. Set `health_metrics` to `false` to turn the probes and the gauge off.
+
+The `/health` endpoint is unchanged: it always answers `200 {"status": "ok"}` while the process is up, so a Redis outage does not restart the Pump.
+
+For example, to alert when any dependency of any Pump is down:
+
+```
+min(tyk_pump_health) == 0
+```
+
+or when a Pump loses Redis:
+
+```
+tyk_pump_health{component="temporal_storage"} == 0
 ```
 
 A misconfigured exporter never stops the Pump: it boots and pumps normally, logs one warning naming the problem, and exports no metrics. The StatsD instrumentation enabled by `TYK_INSTRUMENTATION=1` is independent and keeps working alongside OpenTelemetry.

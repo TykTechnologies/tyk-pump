@@ -65,6 +65,15 @@ type UptimePump interface {
 	WriteUptimeData(data []interface{})
 }
 
+// Pinger is implemented by pumps that can prove their backend is reachable.
+type Pinger interface {
+	// Ping makes one round trip to the backend, bounded by ctx.
+	Ping(ctx context.Context) error
+	// StoreName is the engine behind the pump (`mongo`, `postgres`, `mysql`),
+	// never a host, DSN or database name.
+	StoreName() string
+}
+
 func GetPumpByName(name string) (Pump, error) {
 
 	if pump, ok := AvailablePumps[strings.ToLower(name)]; ok && pump != nil {

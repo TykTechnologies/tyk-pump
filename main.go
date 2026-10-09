@@ -13,6 +13,7 @@ import (
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/analytics/demo"
+	"github.com/TykTechnologies/tyk-pump/internal/healthcheck"
 	"github.com/TykTechnologies/tyk-pump/internal/otel"
 	logger "github.com/TykTechnologies/tyk-pump/logger"
 	"github.com/TykTechnologies/tyk-pump/pumps"
@@ -515,6 +516,43 @@ func setupMetrics() {
 	}
 }
 
+// tyk.pump.health component and store label values for the Pump's own
+// dependencies.
+const (
+	healthComponentTemporalStorage = "temporal_storage"
+	healthComponentUptime          = "uptime"
+	healthStoreRedis               = "redis"
+)
+
+// setupHealthMetrics registers the tyk.pump.health gauge over the Pump's own
+// dependencies. It runs after the store and the pumps exist, so the probes
+// target live connections. With the family off nothing is built or probed;
+// a registration failure is logged, never fatal. /health is untouched.
+func setupHealthMetrics() {
+	m := otel.Metrics()
+	if !m.HealthEnabled() {
+		return
+	}
+	if err := m.RegisterHealthObserver(healthcheck.New(healthProbes()).HealthSamples); err != nil {
+		log.WithFields(logrus.Fields{
+			"prefix": mainPrefix,
+		}).WithError(err).Warn("Could not register the health gauge; tyk.pump.health will not be exported")
+	}
+}
+
+// healthProbes returns one probe for the Redis connector shared by the
+// analytics, uptime and version stores and, unless uptime purging is off, one
+// for the uptime pump's datastore. Analytics sinks are not probed.
+func healthProbes() []healthcheck.Probe {
+	probes := []healthcheck.Probe{{Component: healthComponentTemporalStorage, Store: healthStoreRedis, Ping: storage.Ping}}
+	if !SystemConfig.DontPurgeUptimeData {
+		if p, ok := UptimePump.(pumps.Pinger); ok {
+			probes = append(probes, healthcheck.Probe{Component: healthComponentUptime, Store: p.StoreName(), Ping: p.Ping})
+		}
+	}
+	return probes
+}
+
 // shutdownMetrics flushes pending metrics and stops the provider, bounded by
 // opentelemetry.metrics.shutdown_timeout. It is a no-op when metrics were never
 // enabled.
@@ -570,6 +608,8 @@ func main() {
 		shutdownMetrics()
 		return
 	}
+
+	setupHealthMetrics()
 
 	if SystemConfig.PurgeChunk > 0 {
 		log.WithField("PurgeChunk", SystemConfig.PurgeChunk).Info("PurgeChunk enabled")

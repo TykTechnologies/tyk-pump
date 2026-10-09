@@ -7,9 +7,11 @@ import (
 	"crypto/rsa"
 	"crypto/x509"
 	"encoding/base64"
+	"errors"
 	"fmt"
 	"regexp"
 	"strconv"
+	"sync"
 
 	"github.com/TykTechnologies/storage/persistent"
 	"github.com/TykTechnologies/storage/persistent/model"
@@ -33,6 +35,10 @@ type MongoPump struct {
 	store    persistent.PersistentStorage
 	dbConf   *MongoConf
 	CommonPumpConfig
+	// storeMu serialises Ping (health probe goroutine) with the uptime
+	// writes (purge goroutine): on a network error the storage driver
+	// reconnects in place, swapping the client the other one is using.
+	storeMu sync.Mutex
 }
 
 var (
@@ -375,6 +381,21 @@ func (m *MongoPump) connect() {
 	m.store = store
 }
 
+// Ping checks the Mongo deployment is reachable.
+func (m *MongoPump) Ping(ctx context.Context) error {
+	if m.store == nil {
+		return errors.New("mongo pump is not connected")
+	}
+	m.storeMu.Lock()
+	defer m.storeMu.Unlock()
+	return m.store.Ping(ctx)
+}
+
+// StoreName is `mongo` for both the mgo and mongo-go drivers.
+func (m *MongoPump) StoreName() string {
+	return "mongo"
+}
+
 func (m *MongoPump) WriteData(ctx context.Context, data []interface{}) error {
 	collectionName := m.dbConf.CollectionName
 	if collectionName == "" {
@@ -556,6 +577,8 @@ func (m *MongoPump) WriteUptimeData(data []interface{}) {
 
 	m.log.Debug("Writing data to ", m.dbConf.CollectionName)
 
+	m.storeMu.Lock()
+	defer m.storeMu.Unlock()
 	if err := m.store.Insert(context.Background(), keys...); err != nil {
 		m.log.Error("Problem inserting to mongo collection: ", err)
 	}

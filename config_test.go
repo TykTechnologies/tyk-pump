@@ -12,6 +12,8 @@ import (
 	"github.com/kelseyhightower/envconfig"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+
+	"github.com/TykTechnologies/tyk-pump/internal/otel"
 )
 
 func TestToUpperPumps(t *testing.T) {
@@ -447,9 +449,11 @@ var gatewayOpenTelemetryMetricsEnv = []string{
 }
 
 // pumpOnlyOpenTelemetryMetricsEnv are the Pump settings the Gateway does not
-// have. deployment_environment is shared with MDCB and the Dashboard.
+// have. deployment_environment and health_metrics are shared with MDCB and the
+// Dashboard.
 var pumpOnlyOpenTelemetryMetricsEnv = []string{
 	"TYK_PMP_OPENTELEMETRY_METRICS_DEPLOYMENTENVIRONMENT",
+	"TYK_PMP_OPENTELEMETRY_METRICS_HEALTHMETRICS",
 }
 
 // TestOpenTelemetryEnvVarParity is the guard for Gateway env-name parity. It
@@ -495,6 +499,7 @@ func TestOpenTelemetryEnvVarParity(t *testing.T) {
 		t.Setenv("TYK_PMP_OPENTELEMETRY_METRICS_RETRY_MAXELAPSEDTIME", "300")
 		t.Setenv("TYK_PMP_OPENTELEMETRY_METRICS_CARDINALITYLIMIT", "50")
 		t.Setenv("TYK_PMP_OPENTELEMETRY_METRICS_DEPLOYMENTENVIRONMENT", "staging")
+		t.Setenv("TYK_PMP_OPENTELEMETRY_METRICS_HEALTHMETRICS", "false")
 
 		cfg := &TykPumpConfiguration{}
 		require.NoError(t, envconfig.Process(ENV_PREVIX, cfg))
@@ -524,6 +529,46 @@ func TestOpenTelemetryEnvVarParity(t *testing.T) {
 		assert.Equal(t, 300, m.Retry.MaxElapsedTime)
 		assert.Equal(t, 50, m.CardinalityLimit)
 		assert.Equal(t, "staging", m.DeploymentEnvironment)
+		assert.False(t, cfg.OpenTelemetry.HealthMetricsEnabled())
+	})
+}
+
+func TestOpenTelemetryConfig_HealthMetrics(t *testing.T) {
+	load := func(t *testing.T, json string) otel.OpenTelemetry {
+		t.Helper()
+		path := writeConfigFile(t, json)
+		cfg := &TykPumpConfiguration{}
+		LoadConfig(&path, cfg)
+		return cfg.OpenTelemetry
+	}
+
+	t.Run("omitted means on", func(t *testing.T) {
+		c := load(t, `{"opentelemetry": {"metrics": {"enabled": true}}}`)
+		assert.Nil(t, c.Metrics.HealthMetrics)
+		assert.True(t, c.HealthMetricsEnabled())
+	})
+
+	t.Run("false in the file turns the family off", func(t *testing.T) {
+		c := load(t, `{"opentelemetry": {"metrics": {"enabled": true, "health_metrics": false}}}`)
+		assert.False(t, c.HealthMetricsEnabled())
+		assert.True(t, c.MetricsEnabled(), "only the family is off")
+	})
+
+	t.Run("metrics off wins", func(t *testing.T) {
+		c := load(t, `{"opentelemetry": {"metrics": {"enabled": false, "health_metrics": true}}}`)
+		assert.False(t, c.HealthMetricsEnabled())
+	})
+
+	t.Run("env false overrides file true", func(t *testing.T) {
+		t.Setenv("TYK_PMP_OPENTELEMETRY_METRICS_HEALTHMETRICS", "false")
+		c := load(t, `{"opentelemetry": {"metrics": {"enabled": true, "health_metrics": true}}}`)
+		assert.False(t, c.HealthMetricsEnabled())
+	})
+
+	t.Run("env true overrides file false", func(t *testing.T) {
+		t.Setenv("TYK_PMP_OPENTELEMETRY_METRICS_HEALTHMETRICS", "true")
+		c := load(t, `{"opentelemetry": {"metrics": {"enabled": true, "health_metrics": false}}}`)
+		assert.True(t, c.HealthMetricsEnabled())
 	})
 }
 

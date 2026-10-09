@@ -108,17 +108,24 @@ func targetInfoSelector() string {
 	return promtest.Selector("target_info", map[string]string{"job": promtest.ServiceName})
 }
 
+// compose runs a docker compose command against the profile's stack and
+// returns its combined output.
+func compose(t *testing.T, args ...string) string {
+	t.Helper()
+	project := envOr("PUMP_COMPOSE_PROJECT", "pump-metrics-"+profile())
+	cmd := exec.Command("docker", append([]string{"compose", "-p", project}, args...)...) //nolint:gosec // args come from the suite, not from input
+	cmd.Env = append(os.Environ(), "PUMP_PROFILE="+profile(), "COMPOSE_PROFILES="+profile())
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		t.Fatalf("docker compose %s: %v\n%s", strings.Join(args, " "), err, out)
+	}
+	return string(out)
+}
+
 // pumpLogs returns the Pump container's log so far.
 func pumpLogs(t *testing.T) string {
 	t.Helper()
-	project := envOr("PUMP_COMPOSE_PROJECT", "pump-metrics-"+profile())
-	cmd := exec.Command("docker", "compose", "-p", project, "logs", "--no-color", "--no-log-prefix", "tyk-pump")
-	cmd.Env = append(os.Environ(), "PUMP_PROFILE="+profile())
-	out, err := cmd.CombinedOutput()
-	if err != nil {
-		t.Fatalf("docker compose logs: %v\n%s", err, out)
-	}
-	return string(out)
+	return compose(t, "logs", "--no-color", "--no-log-prefix", "tyk-pump")
 }
 
 // waitForLog polls the Pump log until re matches and returns the match.

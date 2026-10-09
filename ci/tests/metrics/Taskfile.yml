@@ -13,7 +13,7 @@
 version: "3"
 
 vars:
-  PROFILES: default disabled misconfigured
+  PROFILES: default disabled misconfigured health-disabled uptime-disabled postgres
 
 env:
   PUMP_IMAGE: '{{.PUMP_IMAGE | default "internal/tyk-pump"}}'
@@ -49,19 +49,19 @@ tasks:
           PUMP_PROFILE: "{{.PUMP_PROFILE}}"
 
   setup:
-    desc: "bring up pump + redis + collector + prometheus for a profile"
+    desc: "bring up pump + redis + collector + prometheus (+ the profile's uptime datastore) for a profile"
     requires:
       vars: [PUMP_PROFILE]
     cmds:
       - echo "=== Setting up profile {{.PUMP_PROFILE}} (image $PUMP_IMAGE) ==="
-      - PUMP_PROFILE={{.PUMP_PROFILE}} docker compose -p pump-metrics-{{.PUMP_PROFILE}} up -d --wait --wait-timeout 180
+      - PUMP_PROFILE={{.PUMP_PROFILE}} COMPOSE_PROFILES={{.PUMP_PROFILE}} docker compose -p pump-metrics-{{.PUMP_PROFILE}} up -d --wait --wait-timeout 180
 
   test:
     desc: "run the e2e assertions against a running profile"
     requires:
       vars: [PUMP_PROFILE]
     cmds:
-      - PUMP_PROFILE={{.PUMP_PROFILE}} PUMP_COMPOSE_PROJECT=pump-metrics-{{.PUMP_PROFILE}} E2E_METRICS=1 go test -v -count=1 -timeout 300s .
+      - PUMP_PROFILE={{.PUMP_PROFILE}} COMPOSE_PROFILES={{.PUMP_PROFILE}} PUMP_COMPOSE_PROJECT=pump-metrics-{{.PUMP_PROFILE}} E2E_METRICS=1 go test -v -count=1 -timeout 300s .
 
   teardown:
     desc: "tear the profile's stack down"
@@ -69,12 +69,12 @@ tasks:
       vars: [PUMP_PROFILE]
     cmds:
       # Keep the Pump's log in the job output: it is what a failure is debugged from.
-      - PUMP_PROFILE={{.PUMP_PROFILE}} docker compose -p pump-metrics-{{.PUMP_PROFILE}} logs --no-color tyk-pump || true
-      - PUMP_PROFILE={{.PUMP_PROFILE}} docker compose -p pump-metrics-{{.PUMP_PROFILE}} down --remove-orphans --volumes
+      - PUMP_PROFILE={{.PUMP_PROFILE}} COMPOSE_PROFILES={{.PUMP_PROFILE}} docker compose -p pump-metrics-{{.PUMP_PROFILE}} logs --no-color tyk-pump || true
+      - PUMP_PROFILE={{.PUMP_PROFILE}} COMPOSE_PROFILES={{.PUMP_PROFILE}} docker compose -p pump-metrics-{{.PUMP_PROFILE}} down --remove-orphans --volumes
 
   logs:
     desc: "show the pump logs of a running profile"
     requires:
       vars: [PUMP_PROFILE]
     cmds:
-      - PUMP_PROFILE={{.PUMP_PROFILE}} docker compose -p pump-metrics-{{.PUMP_PROFILE}} logs tyk-pump
+      - PUMP_PROFILE={{.PUMP_PROFILE}} COMPOSE_PROFILES={{.PUMP_PROFILE}} docker compose -p pump-metrics-{{.PUMP_PROFILE}} logs tyk-pump

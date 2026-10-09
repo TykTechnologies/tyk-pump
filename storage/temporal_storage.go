@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -326,6 +327,19 @@ func (r *TemporalStorageHandler) SetKey(keyName, session string, timeout int64) 
 		return err
 	}
 	return nil
+}
+
+// Ping makes one round trip to the temporal storage behind every handler
+// (analytics, uptime and version store share one connector). It deliberately
+// skips the reconnect backoff of ensureConnection: backoff belongs to startup,
+// a health probe must answer within ctx. It fails when no connection was ever
+// established.
+func Ping(ctx context.Context) error {
+	conn := connectorSingleton
+	if conn == nil {
+		return errors.New("temporal storage is not connected")
+	}
+	return conn.Ping(ctx)
 }
 
 func (r *TemporalStorageHandler) ensureConnection() error {
