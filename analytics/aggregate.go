@@ -442,6 +442,39 @@ func (f *AnalyticsRecordAggregate) Dimensions() (dimensions []Dimension) {
 	return
 }
 
+func (g *GraphRecordAggregate) TableName() string {
+	if g.Mixed {
+		return GraphAggregateMixedCollectionName
+	}
+	return "z_tyk_graph_analyticz_aggregate_" + g.OrgID
+}
+
+func (g *GraphRecordAggregate) AsChange() (newUpdate model.DBM) {
+	newUpdate = model.DBM{
+		"$inc": model.DBM{},
+		"$set": model.DBM{},
+		"$max": model.DBM{},
+	}
+
+	for _, d := range g.Dimensions() {
+		newUpdate = g.AnalyticsRecordAggregate.generateBSONFromProperty(d.Name, d.Value, d.Counter, newUpdate)
+	}
+
+	newUpdate = g.AnalyticsRecordAggregate.generateBSONFromProperty("", "total", &g.Total, newUpdate)
+
+	asTime := g.TimeStamp
+	newTime := time.Date(asTime.Year(), asTime.Month(), asTime.Day(), asTime.Hour(), asTime.Minute(), 0, 0, asTime.Location())
+	newUpdate["$set"].(model.DBM)["timestamp"] = newTime
+	newUpdate["$set"].(model.DBM)["expireAt"] = g.ExpireAt
+	newUpdate["$set"].(model.DBM)["timeid.year"] = newTime.Year()
+	newUpdate["$set"].(model.DBM)["timeid.month"] = newTime.Month()
+	newUpdate["$set"].(model.DBM)["timeid.day"] = newTime.Day()
+	newUpdate["$set"].(model.DBM)["timeid.hour"] = newTime.Hour()
+	newUpdate["$set"].(model.DBM)["lasttime"] = g.LastTime
+
+	return newUpdate
+}
+
 func (f *AnalyticsRecordAggregate) AsChange() (newUpdate model.DBM) {
 	newUpdate = model.DBM{
 		"$inc": model.DBM{},
