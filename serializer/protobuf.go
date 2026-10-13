@@ -8,8 +8,7 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
-type ProtobufSerializer struct {
-}
+type ProtobufSerializer struct{}
 
 func (pb *ProtobufSerializer) GetSuffix() string {
 	return "_protobuf"
@@ -124,10 +123,14 @@ func (pb *ProtobufSerializer) TransformSingleRecordToProto(rec analytics.Analyti
 
 	if rec.MCPStats.IsMCP {
 		record.MCPStats = &analyticsproto.MCPStats{
-			IsMCP:         true,
-			JSONRPCMethod: rec.MCPStats.JSONRPCMethod,
-			PrimitiveType: rec.MCPStats.PrimitiveType,
-			PrimitiveName: rec.MCPStats.PrimitiveName,
+			JSONRPCErrorCode:         rec.MCPStats.JSONRPCErrorCode,
+			IsMCP:                    true,
+			JSONRPCMethod:            rec.MCPStats.JSONRPCMethod,
+			PrimitiveType:            rec.MCPStats.PrimitiveType,
+			PrimitiveName:            rec.MCPStats.PrimitiveName,
+			EffectiveProtocolVersion: rec.MCPStats.EffectiveProtocolVersion,
+			DeclaredProtocolVersion:  rec.MCPStats.DeclaredProtocolVersion,
+			ProtocolVersionSource:    rec.MCPStats.ProtocolVersionSource,
 		}
 	}
 
@@ -226,10 +229,14 @@ func (pb *ProtobufSerializer) TransformSingleProtoToAnalyticsRecord(rec *analyti
 
 	if rec.MCPStats != nil {
 		tmpRecord.MCPStats = analytics.MCPStats{
-			IsMCP:         rec.MCPStats.IsMCP,
-			JSONRPCMethod: rec.MCPStats.JSONRPCMethod,
-			PrimitiveType: rec.MCPStats.PrimitiveType,
-			PrimitiveName: rec.MCPStats.PrimitiveName,
+			JSONRPCErrorCode:         rec.MCPStats.JSONRPCErrorCode,
+			IsMCP:                    rec.MCPStats.IsMCP,
+			JSONRPCMethod:            rec.MCPStats.JSONRPCMethod,
+			PrimitiveType:            rec.MCPStats.PrimitiveType,
+			PrimitiveName:            rec.MCPStats.PrimitiveName,
+			EffectiveProtocolVersion: rec.MCPStats.EffectiveProtocolVersion,
+			DeclaredProtocolVersion:  rec.MCPStats.DeclaredProtocolVersion,
+			ProtocolVersionSource:    rec.MCPStats.ProtocolVersionSource,
 		}
 	}
 

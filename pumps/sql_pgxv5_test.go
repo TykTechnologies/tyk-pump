@@ -331,9 +331,11 @@ func TestConcurrentWrites_Postgres(t *testing.T) {
 }
 
 // TestConnectionPoolStats_Postgres documents the default pool settings after the pgx/v5
-// upgrade. tyk-pump intentionally does not call SetMaxOpenConns, so the default must
-// remain 0 (unlimited). This test acts as a canary: if a future driver version silently
-// imposes a default cap, this test will catch it.
+// upgrade. tyk-pump calls SetMaxOpenConns only when `postgres.max_open_connections` is
+// configured, so with an unset configuration the default must remain 0 (unlimited).
+// This test acts as a canary twice over: it catches a future driver version silently
+// imposing a default cap, and it catches the connection-pool options regressing into
+// something that is applied unconditionally.
 func TestConnectionPoolStats_Postgres(t *testing.T) {
 	skipTestIfNoPostgres(t)
 
@@ -350,7 +352,7 @@ func TestConnectionPoolStats_Postgres(t *testing.T) {
 
 	stats := sqlDB.Stats()
 	assert.Equal(t, 0, stats.MaxOpenConnections,
-		"tyk-pump does not configure MaxOpenConns; driver default must remain 0 (unlimited)")
+		"with no postgres.max_open_connections configured, the driver default must remain 0 (unlimited)")
 }
 
 // ── 5. Sharded Table Lifecycle ────────────────────────────────────────────────
