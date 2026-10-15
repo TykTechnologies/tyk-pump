@@ -576,7 +576,7 @@ jobs:
       mcp_manifest: ${{ steps.mcp_images.outputs.manifest }}
     steps:
       - name: Set test parameters
-        uses: TykTechnologies/github-actions/.github/actions/tests/test-controller@c3f38a1a21d8c9507b1902555ccf7b5ebe4d8da0
+        uses: TykTechnologies/github-actions/.github/actions/tests/test-controller@ae9b1fdfeb3c8e739ac99e7a99eb6b7d284a7fae
         id: params
         with:
           variation: ${{ env.VARIATION }}
@@ -616,7 +616,7 @@ jobs:
       - name: Resolve coordinated MCP API images
         if: github.event_name == 'pull_request'
         id: mcp_images
-        uses: TykTechnologies/github-actions/.github/actions/tests/resolve-mcp-images@c3f38a1a21d8c9507b1902555ccf7b5ebe4d8da0
+        uses: TykTechnologies/github-actions/.github/actions/tests/resolve-mcp-images@ae9b1fdfeb3c8e739ac99e7a99eb6b7d284a7fae
         with:
           github_token: ${{ steps.mcp-token.outputs.token }}
           registry: ${{ steps.mcp-ecr.outputs.registry }}
@@ -667,23 +667,24 @@ jobs:
           # Only ${{ github.actor }} has access
           # See https://github.com/mxschmitt/action-tmate#use-registered-public-ssh-keys
       - name: Fetch environment from tyk-pro
-        uses: TykTechnologies/github-actions/.github/actions/tests/checkout-tyk-pro@c3f38a1a21d8c9507b1902555ccf7b5ebe4d8da0
+        uses: TykTechnologies/github-actions/.github/actions/tests/checkout-tyk-pro@ae9b1fdfeb3c8e739ac99e7a99eb6b7d284a7fae
         with:
           org_gh_token: ${{ steps.app-token.outputs.token }}
           ref: ${{ matrix.envfiles.suite == 'mcp' && fromJSON(needs.test-controller-api.outputs.mcp_manifest || '{}').environment_sha || '' }}
       - name: Choose test code branch
-        uses: TykTechnologies/github-actions/.github/actions/tests/choose-test-branch@c3f38a1a21d8c9507b1902555ccf7b5ebe4d8da0
+        uses: TykTechnologies/github-actions/.github/actions/tests/choose-test-branch@ae9b1fdfeb3c8e739ac99e7a99eb6b7d284a7fae
         with:
           test_folder: api
           org_gh_token: ${{ steps.app-token.outputs.token }}
-          ref: ${{ matrix.envfiles.suite == 'mcp' && fromJSON(needs.test-controller-api.outputs.mcp_manifest || '{}').tested_shas.dashboard || '' }}
+          ref: ${{ fromJSON(needs.test-controller-api.outputs.mcp_manifest || '{}').tested_shas.dashboard || '' }}
       - name: Set up test environment
-        uses: TykTechnologies/github-actions/.github/actions/tests/env-up@c3f38a1a21d8c9507b1902555ccf7b5ebe4d8da0
+        uses: TykTechnologies/github-actions/.github/actions/tests/env-up@ae9b1fdfeb3c8e739ac99e7a99eb6b7d284a7fae
         timeout-minutes: 8
         id: env_up
         with:
           base_ref: ${{ env.BASE_REF }}
           tags: ${{ needs.goreleaser.outputs.ee_tags || needs.goreleaser.outputs.std_tags || format('{0}/tyk-ee:master', steps.ecr.outputs.registry) }}
+          dashboard_image: ${{ fromJSON(needs.test-controller-api.outputs.mcp_manifest || '{}').images.dashboard || '' }}
           github_token: ${{ steps.app-token.outputs.token }}
           TYK_DB_LICENSEKEY: ${{ secrets.DASH_LICENSE }}
           TYK_MDCB_LICENSE: ${{ secrets.MDCB_LICENSE }}
@@ -693,7 +694,7 @@ jobs:
           mcp_serializer: ${{ matrix.envfiles.serializer || 'msgpack' }}
           mcp_cache: ${{ matrix.envfiles.cache }}
       - name: Run API tests
-        uses: TykTechnologies/github-actions/.github/actions/tests/api-tests@c3f38a1a21d8c9507b1902555ccf7b5ebe4d8da0
+        uses: TykTechnologies/github-actions/.github/actions/tests/api-tests@ae9b1fdfeb3c8e739ac99e7a99eb6b7d284a7fae
         timeout-minutes: 25
         id: test_execution
         with:
@@ -705,7 +706,7 @@ jobs:
           shard_count: ${{ matrix.envfiles.shard_count || 1 }}
           shard_index: ${{ matrix.envfiles.shard_index || 0 }}
       - name: Generate test reports and collect logs
-        uses: TykTechnologies/github-actions/.github/actions/tests/reporting@c3f38a1a21d8c9507b1902555ccf7b5ebe4d8da0
+        uses: TykTechnologies/github-actions/.github/actions/tests/reporting@ae9b1fdfeb3c8e739ac99e7a99eb6b7d284a7fae
         if: always() && (steps.test_execution.conclusion != 'skipped' || matrix.envfiles.suite == 'mcp')
         # Bound this best-effort step: `docker compose logs` inside it can hang on
         # an unresponsive container and otherwise burn the whole job timeout.
@@ -738,7 +739,7 @@ jobs:
           permission-contents: read
           repositories: tyk-analytics
       - name: Require complete MCP API evidence
-        uses: TykTechnologies/github-actions/.github/actions/tests/mcp-evidence@c3f38a1a21d8c9507b1902555ccf7b5ebe4d8da0
+        uses: TykTechnologies/github-actions/.github/actions/tests/mcp-evidence@ae9b1fdfeb3c8e739ac99e7a99eb6b7d284a7fae
         with:
           github_token: ${{ steps.mcp-token.outputs.token }}
           manifest: ${{ needs.test-controller-api.outputs.mcp_manifest }}
