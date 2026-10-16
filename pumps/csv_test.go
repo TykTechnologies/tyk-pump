@@ -201,7 +201,7 @@ func TestCSVPump_WriteData(t *testing.T) {
 			var records []interface{}
 			if !tt.wantErr {
 				for i := 0; i < tt.args.numberOfRecords; i++ {
-					records = append(records, demo.GenerateRandomAnalyticRecord("orgid", false))
+					records = append(records, demo.GenerateRandomAnalyticRecord("orgid", false, 50))
 				}
 			} else {
 				records = append(records, "invalid record")
