@@ -3,12 +3,14 @@ package pumps
 import (
 	"context"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"testing"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/prometheus/client_golang/prometheus"
+	"github.com/prometheus/client_golang/prometheus/testutil"
 	"github.com/sirupsen/logrus"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -59,6 +61,89 @@ func TestPrometheusInitVec(t *testing.T) {
 				Labels:     []string{"response_code", "api_id"},
 			},
 			expectedErr: errors.New("invalid metric type:RandomType"),
+			isEnabled:   false,
+		},
+		{
+			testName: "Reserved tag name key",
+			customMetric: PrometheusMetric{
+				Name:       "testReservedTagMetric",
+				MetricType: counterType,
+				Labels:     []string{"tag_key"},
+			},
+			expectedErr: errors.New("reserved tag name:key"),
+			isEnabled:   false,
+		},
+		{
+			testName: "Reserved tag name org",
+			customMetric: PrometheusMetric{
+				Name:       "testReservedTagMetric",
+				MetricType: counterType,
+				Labels:     []string{"tag_org"},
+			},
+			expectedErr: errors.New("reserved tag name:org"),
+			isEnabled:   false,
+		},
+		{
+			testName: "Reserved tag name api",
+			customMetric: PrometheusMetric{
+				Name:       "testReservedTagMetric",
+				MetricType: counterType,
+				Labels:     []string{"tag_api"},
+			},
+			expectedErr: errors.New("reserved tag name:api"),
+			isEnabled:   false,
+		},
+		{
+			testName: "Reserved tag name pol",
+			customMetric: PrometheusMetric{
+				Name:       "testReservedTagMetric",
+				MetricType: counterType,
+				Labels:     []string{"tag_pol"},
+			},
+			expectedErr: errors.New("reserved tag name:pol"),
+			isEnabled:   false,
+		},
+		{
+			testName: "Reserved tag name dev",
+			customMetric: PrometheusMetric{
+				Name:       "testReservedTagMetric",
+				MetricType: counterType,
+				Labels:     []string{"tag_dev"},
+			},
+			expectedErr: errors.New("reserved tag name:dev"),
+			isEnabled:   false,
+		},
+		{
+			testName: "Reserved tag name trace_id",
+			customMetric: PrometheusMetric{
+				Name:       "testReservedTagMetric",
+				MetricType: counterType,
+				Labels:     []string{"tag_trace_id"},
+			},
+			expectedErr: errors.New("reserved tag name:trace_id"),
+			isEnabled:   false,
+		},
+		{
+			// gateway/handler_success.go's real trace tag prefix is "trace-id-", which tag_trace
+			// (prefix "trace-") would otherwise match and leak; "trace" must be reserved too,
+			// independently of "trace_id" (which blocks a tag shape that never occurs).
+			testName: "Reserved tag name trace",
+			customMetric: PrometheusMetric{
+				Name:       "testReservedTagMetric",
+				MetricType: counterType,
+				Labels:     []string{"tag_trace"},
+			},
+			expectedErr: errors.New("reserved tag name:trace"),
+			isEnabled:   false,
+		},
+		{
+			testName: "Reserved tag name with surrounding whitespace is trimmed before the check",
+			customMetric: PrometheusMetric{
+				Name:       "testReservedTagMetric",
+				MetricType: counterType,
+				Labels:     []string{"tag_ key "},
+			},
+			expectedErr: errors.New("reserved tag name:key"),
 			isEnabled:   false,
 		},
 	}
@@ -161,6 +246,22 @@ func TestPrometheusInitCustomMetrics(t *testing.T) {
 			},
 			expectedAllMetricsLen: 1,
 		},
+		{
+			testName: "one with reserved tag name",
+			metrics: []PrometheusMetric{
+				{
+					Name:       "test",
+					MetricType: counterType,
+					Labels:     []string{"api_name", "tag_key"},
+				},
+				{
+					Name:       "other_test",
+					MetricType: counterType,
+					Labels:     []string{"api_name", "api_key"},
+				},
+			},
+			expectedAllMetricsLen: 1,
+		},
 	}
 
 	for _, tc := range tcs {
@@ -174,9 +275,9 @@ func TestPrometheusInitCustomMetrics(t *testing.T) {
 			// this function do the unregistering for the metrics in the prometheus lib.
 			defer func() {
 				for i := range tc.metrics {
-					if tc.metrics[i].MetricType == counterType {
+					if tc.metrics[i].MetricType == counterType && tc.metrics[i].counterVec != nil {
 						prometheus.Unregister(tc.metrics[i].counterVec)
-					} else if tc.metrics[i].MetricType == histogramType {
+					} else if tc.metrics[i].MetricType == histogramType && tc.metrics[i].histogramVec != nil {
 						prometheus.Unregister(tc.metrics[i].histogramVec)
 					}
 				}
@@ -950,6 +1051,104 @@ func TestPrometheusGetLabelsValues_MCPLabels(t *testing.T) {
 	})
 }
 
+// TestPrometheusGetLabelsValues_TagLabels verifies that tag_<name> labels resolve to the
+// value of the first matching "<name>-" prefixed entry in the record's Tags, that a tag_<name>
+// label can never alias Tyk's own reserved bookkeeping tags, and that it CAN resolve against
+// any other tag on the record, including one an operator derived from a request header.
+func TestPrometheusGetLabelsValues_TagLabels(t *testing.T) {
+	t.Run("happy path", func(t *testing.T) {
+		metric := PrometheusMetric{
+			Name:       "test_tag_labels",
+			MetricType: counterType,
+			Labels:     []string{"tag_customer"},
+		}
+		record := analytics.AnalyticsRecord{Tags: []string{"customer-value"}}
+		got := metric.GetLabelsValues(record)
+		assert.Equal(t, []string{"value"}, got)
+	})
+
+	t.Run("no match returns empty string", func(t *testing.T) {
+		metric := PrometheusMetric{
+			Name:       "test_tag_labels",
+			MetricType: counterType,
+			Labels:     []string{"tag_noexists"},
+		}
+		record := analytics.AnalyticsRecord{Tags: []string{"customer-value"}}
+		got := metric.GetLabelsValues(record)
+		assert.Equal(t, []string{""}, got)
+	})
+
+	t.Run("ambiguity: first match wins", func(t *testing.T) {
+		metric := PrometheusMetric{
+			Name:       "test_tag_labels",
+			MetricType: counterType,
+			Labels:     []string{"tag_customer"},
+		}
+		record := analytics.AnalyticsRecord{Tags: []string{"customer-first", "customer-second"}}
+		got := metric.GetLabelsValues(record)
+		assert.Equal(t, []string{"first"}, got)
+	})
+
+	t.Run("histogram metric type resolves the same as counter", func(t *testing.T) {
+		metric := PrometheusMetric{
+			Name:       "test_tag_labels_histogram",
+			MetricType: histogramType,
+			Labels:     []string{"type", "tag_customer"},
+		}
+		record := analytics.AnalyticsRecord{Tags: []string{"customer-value"}}
+		got := metric.GetLabelsValues(record)
+		assert.Equal(t, []string{"value"}, got)
+	})
+
+	for _, obfuscate := range []bool{false, true} {
+		t.Run(fmt.Sprintf("reserved-name protection: tag_ never aliases decoded.APIKey via the 7 reserved names (ObfuscateAPIKeys=%v)", obfuscate), func(t *testing.T) {
+			// This proves only that reservedTagNames' 7 fixed entries keep tag_ resolution away
+			// from decoded.APIKey. It does not prove tag_<name> is safe against every sensitive
+			// value: see "resolves against an operator-configured header-derived tag" below.
+			metric := PrometheusMetric{
+				Name:             "test_tag_labels_credential_safety",
+				MetricType:       counterType,
+				Labels:           []string{"tag_customer", "key"},
+				ObfuscateAPIKeys: obfuscate,
+			}
+			record := analytics.AnalyticsRecord{
+				APIKey: "super-secret-api-key",
+				Tags:   []string{"customer-value"},
+			}
+			got := metric.GetLabelsValues(record)
+			require.Len(t, got, 2)
+
+			// tag_customer must resolve from Tags alone, independent of APIKey/ObfuscateAPIKeys.
+			assert.Equal(t, "value", got[0])
+			assert.NotEqual(t, record.APIKey, got[0])
+			assert.NotContains(t, got[0], record.APIKey)
+
+			// the pre-existing "key" label is the only path to the API key; tag_ labels never alias it.
+			if obfuscate {
+				assert.NotEqual(t, record.APIKey, got[1])
+			} else {
+				assert.Equal(t, record.APIKey, got[1])
+			}
+		})
+	}
+
+	t.Run("resolves against an operator-configured header-derived tag, including a sensitive one", func(t *testing.T) {
+		// reservedTagNames only knows about Tyk's own 7 internal bookkeeping prefixes. If an
+		// operator configures the Gateway to tag a request header (e.g. "authorization-<value>")
+		// and then adds a matching tag_<name> label, the label exposes that header's raw value
+		// verbatim — by design, and unrelated to the reserved-name check. Operators must not
+		// tag a sensitive header and also expose it via a matching tag_<name> label.
+		metric := PrometheusMetric{
+			Name:       "test_tag_labels_header_derived",
+			MetricType: counterType,
+			Labels:     []string{"tag_authorization"},
+		}
+		record := analytics.AnalyticsRecord{Tags: []string{"authorization-Bearer super-secret-token"}}
+		got := metric.GetLabelsValues(record)
+		assert.Equal(t, []string{"Bearer super-secret-token"}, got)
+	})
+}
+
 // TestPrometheusCreateBasicMetrics_IncludesMCPMetrics verifies that CreateBasicMetrics
 // TestPrometheusCreateBasicMetrics_DoesNotIncludeMCPMetrics verifies that CreateBasicMetrics
 // does not include MCP metrics, as they should be configured as custom metrics.
@@ -1191,4 +1390,97 @@ func TestProcessMetric_HistogramType_LatencyMetric(t *testing.T) {
 		RequestTime: 100,
 		Latency:     analytics.Latency{Upstream: 50, Gateway: 10},
 	})
+}
+
+// BenchmarkPrometheusPump_WriteData_TagLabel compares WriteData throughput for an
+// otherwise-identical counter metric with vs. without a tag_<name> label, to confirm the
+// extra Tags lookup doesn't introduce a meaningful regression.
+func BenchmarkPrometheusPump_WriteData_TagLabel(b *testing.B) {
+	// The matching "customer-" tag is deliberately last, after several internal/reserved-shaped
+	// tags, so the scan runs to worst case: tagValue is a linear scan over Tags.
+	newRecord := func() analytics.AnalyticsRecord {
+		return analytics.AnalyticsRecord{
+			APIID:        "api1",
+			ResponseCode: 200,
+			Tags: []string{
+				"key-abc", "org-abc", "api-abc", "pol-abc", "dev-abc", "trace-abc", "trace_id-abc",
+				"customer-value",
+			},
+		}
+	}
+	newBenchPump := func() PrometheusPump {
+		loggerInstance := logrus.New()
+		loggerInstance.Out = io.Discard
+		p := PrometheusPump{}
+		p.log = logrus.NewEntry(loggerInstance)
+		p.conf = &PrometheusConf{}
+		return p
+	}
+
+	b.Run("without_tag_label", func(b *testing.B) {
+		metric := &PrometheusMetric{
+			Name:       "bench_write_data_without_tag_label",
+			MetricType: counterType,
+			Labels:     []string{"api"},
+		}
+		require.NoError(b, metric.InitVec())
+		defer prometheus.Unregister(metric.counterVec)
+
+		p := newBenchPump()
+		p.allMetrics = []*PrometheusMetric{metric}
+		ctx := context.Background()
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			require.NoError(b, p.WriteData(ctx, []interface{}{newRecord()}))
+		}
+	})
+
+	b.Run("with_tag_label", func(b *testing.B) {
+		metric := &PrometheusMetric{
+			Name:       "bench_write_data_with_tag_label",
+			MetricType: counterType,
+			Labels:     []string{"api", "tag_customer"},
+		}
+		require.NoError(b, metric.InitVec())
+		defer prometheus.Unregister(metric.counterVec)
+
+		p := newBenchPump()
+		p.allMetrics = []*PrometheusMetric{metric}
+		ctx := context.Background()
+
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			require.NoError(b, p.WriteData(ctx, []interface{}{newRecord()}))
+		}
+	})
+}
+
+// TestPrometheusTagLabel_CardinalityGrowsWithDistinctValues demonstrates the cardinality
+// mechanism behind a tag_<name> label: each distinct tag value becomes its own Prometheus
+// time series. The unbounded-cardinality risk itself is documented in README.md, not guarded
+// against: the feature is opt-in and doesn't affect anyone who doesn't configure it, so a
+// hard cardinality cap was judged unnecessary.
+func TestPrometheusTagLabel_CardinalityGrowsWithDistinctValues(t *testing.T) {
+	metric := &PrometheusMetric{
+		Name:       "test_tag_label_cardinality",
+		MetricType: counterType,
+		Labels:     []string{"tag_customer"},
+	}
+	require.NoError(t, metric.InitVec())
+	defer prometheus.Unregister(metric.counterVec)
+
+	p := newTestPrometheusPump(t)
+	p.allMetrics = []*PrometheusMetric{metric}
+
+	const distinctValues = 5
+	for i := 0; i < distinctValues; i++ {
+		err := p.WriteData(context.Background(), []interface{}{
+			analytics.AnalyticsRecord{Tags: []string{fmt.Sprintf("customer-value%d", i)}},
+		})
+		require.NoError(t, err)
+	}
+
+	count := testutil.CollectAndCount(metric.counterVec)
+	assert.Equal(t, distinctValues, count)
 }
