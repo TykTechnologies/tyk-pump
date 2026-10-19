@@ -3,6 +3,7 @@ package pumps
 import (
 	"context"
 	"errors"
+	"os"
 	"strings"
 	"testing"
 	"time"
@@ -524,4 +525,165 @@ func TestMongoAggregatePump_SkipsMCPRecords(t *testing.T) {
 
 	err := pmp.WriteData(context.Background(), data)
 	assert.NoError(t, err, "all-MCP payload must short-circuit before touching the store")
+}
+
+// dottedAPIIDTestPump returns a mixed-collection aggregate pump using the driver
+// selected by MONGO_DRIVER, so both CI runs exercise their own driver.
+func dottedAPIIDTestPump(t *testing.T) *MongoAggregatePump {
+	t.Helper()
+	driver := persistent.Mgo
+	if os.Getenv("MONGO_DRIVER") == "mongo-go" {
+		driver = persistent.OfficialMongo
+	}
+
+	pmp := &MongoAggregatePump{}
+	require.NoError(t, pmp.Init(map[string]interface{}{
+		"mongo_url":                  "mongodb://localhost:27017/tyk_analytics",
+		"driver":                     driver,
+		"use_mixed_collection":       true,
+		"store_analytics_per_minute": false,
+	}))
+	t.Cleanup(func() {
+		assert.NoError(t, pmp.store.DropDatabase(context.Background()))
+	})
+	return pmp
+}
+
+func dottedAPIIDRecords(orgID string, ts time.Time, hitsPerAPI map[string]int) []interface{} {
+	var records []interface{}
+	for apiID, hits := range hitsPerAPI {
+		for i := 0; i < hits; i++ {
+			records = append(records, analytics.AnalyticsRecord{
+				APIID: apiID, APIName: "name-" + apiID, OrgID: orgID, TimeStamp: ts,
+				ResponseCode: 200, ExpireAt: time.Now().Add(24 * time.Hour),
+			})
+		}
+	}
+	return records
+}
+
+// queryAggregateBothCollections reads the hourly aggregate back from the org collection and the mixed collection.
+func queryAggregateBothCollections(t *testing.T, pmp *MongoAggregatePump, orgID string, hour time.Time) map[string]analytics.AnalyticsRecordAggregate {
+	t.Helper()
+	orgCollection, err := pmp.GetCollectionName(orgID)
+	require.NoError(t, err)
+
+	results := map[string]analytics.AnalyticsRecordAggregate{}
+	for _, collection := range []string{orgCollection, analytics.AgggregateMixedCollectionName} {
+		res := analytics.AnalyticsRecordAggregate{}
+		query := model.DBM{"orgid": orgID, "timestamp": hour}
+		require.NoError(t, pmp.store.Query(context.Background(), dummyObject{tableName: collection}, &res, query), collection)
+		results[collection] = res
+	}
+	return results
+}
+
+func listedAPIs(t *testing.T, res analytics.AnalyticsRecordAggregate) map[string]analytics.Counter {
+	t.Helper()
+	listed := map[string]analytics.Counter{}
+	for _, c := range res.Lists.APIID {
+		assert.NotEmpty(t, c.Identifier, "lists.apiid must not contain an entry with an empty API ID")
+		listed[c.Identifier] = c
+	}
+	return listed
+}
+
+func TestMongoAggregatePump_DottedAPIID(t *testing.T) {
+	pmp := dottedAPIIDTestPump(t)
+
+	orgID := "org-dotted"
+	ts := time.Date(2026, 10, 7, 10, 15, 0, 0, time.UTC)
+	records := dottedAPIIDRecords(orgID, ts, map[string]int{
+		"host.test.pl":   7,
+		"bc.example.com": 4,
+		"bc.other.com":   6,
+		"bc":             2,
+		"control-001":    3,
+	})
+	// Errors are stored under each API's own errormap, which must not be read as
+	// another API. "bc" has both an errormap and nested APIs.
+	for _, e := range []struct {
+		apiID string
+		code  int
+	}{{"host.test.pl", 404}, {"host.test.pl", 404}, {"host.test.pl", 500}, {"bc.example.com", 404}, {"bc", 500}} {
+		records = append(records, analytics.AnalyticsRecord{
+			APIID: e.apiID, APIName: "name-" + e.apiID, OrgID: orgID, TimeStamp: ts,
+			ResponseCode: e.code, ExpireAt: time.Now().Add(24 * time.Hour),
+		})
+	}
+	// WebSocket/network traffic is aggregated on a separate code path.
+	records = append(records, analytics.AnalyticsRecord{
+		APIID: "ws.example.com", APIName: "name-ws", OrgID: orgID, TimeStamp: ts,
+		ResponseCode: -1, Network: analytics.NetworkStats{BytesIn: 100},
+		ExpireAt: time.Now().Add(24 * time.Hour),
+	})
+	require.NoError(t, pmp.WriteData(context.Background(), records))
+
+	expected := map[string]struct {
+		hits, success, errors int
+		errorMap              map[string]int
+	}{
+		"host.test.pl":   {hits: 10, success: 7, errors: 3, errorMap: map[string]int{"404": 2, "500": 1}},
+		"bc.example.com": {hits: 5, success: 4, errors: 1, errorMap: map[string]int{"404": 1}},
+		"bc.other.com":   {hits: 6, success: 6, errorMap: map[string]int{}},
+		"bc":             {hits: 3, success: 2, errors: 1, errorMap: map[string]int{"500": 1}},
+		"control-001":    {hits: 3, success: 3, errorMap: map[string]int{}},
+	}
+	for collection, res := range queryAggregateBothCollections(t, pmp, orgID, ts.Truncate(time.Hour)) {
+		t.Run(collection, func(t *testing.T) {
+			listed := listedAPIs(t, res)
+			assert.Len(t, listed, 6)
+			assert.Len(t, res.APIID, 6)
+			for apiID, want := range expected {
+				assert.Equal(t, want.hits, listed[apiID].Hits, apiID)
+				assert.Equal(t, want.success, listed[apiID].Success, apiID)
+				assert.Equal(t, want.errors, listed[apiID].ErrorTotal, apiID)
+				assert.Equal(t, want.errorMap, listed[apiID].ErrorMap, apiID)
+				assert.True(t, listed[apiID].LastTime.Equal(ts), apiID)
+			}
+			assert.Equal(t, int64(100), listed["ws.example.com"].BytesIn)
+			assert.Equal(t, 27, res.Total.Hits)
+			assert.Equal(t, 5, res.Total.ErrorTotal)
+		})
+	}
+}
+
+func TestMongoAggregatePump_DottedAPIID_HealsOldHour(t *testing.T) {
+	pmp := dottedAPIIDTestPump(t)
+
+	orgID := "org-dotted-upgrade"
+	ts := time.Date(2026, 10, 7, 11, 15, 0, 0, time.UTC)
+	hour := ts.Truncate(time.Hour)
+
+	// Seed the hour as an affected Pump version leaves it: counters nested under
+	// apiid.host.test.pl, a counter-less "host" level, and an empty lists.apiid entry.
+	oldPumpState := model.DBM{
+		"$inc": model.DBM{"apiid.host.test.pl.hits": 7, "apiid.host.test.pl.success": 7},
+		"$set": model.DBM{
+			"apiid.host.test.pl.identifier": "host.test.pl",
+			"apiid.host.errorlist":          []interface{}{},
+			"apiid.host.latency":            0.0,
+			"apiid.host.requesttime":        0.0,
+			"apiid.host.upstreamlatency":    0.0,
+			"lists.apiid":                   []model.DBM{{"identifier": "", "hits": 0}},
+			"expireAt":                      time.Now().Add(24 * time.Hour),
+		},
+	}
+	for _, mixed := range []bool{false, true} {
+		row := &analytics.AnalyticsRecordAggregate{OrgID: orgID, Mixed: mixed}
+		require.NoError(t, pmp.store.Upsert(context.Background(), row, model.DBM{"orgid": orgID, "timestamp": hour}, oldPumpState))
+	}
+
+	records := dottedAPIIDRecords(orgID, ts, map[string]int{"host.test.pl": 7})
+	require.NoError(t, pmp.WriteData(context.Background(), records))
+
+	for collection, res := range queryAggregateBothCollections(t, pmp, orgID, hour) {
+		t.Run(collection, func(t *testing.T) {
+			listed := listedAPIs(t, res)
+			assert.Len(t, listed, 1)
+			assert.Equal(t, 14, listed["host.test.pl"].Hits)
+			assert.Equal(t, 14, listed["host.test.pl"].Success)
+			assert.NotContains(t, res.APIID, "host")
+		})
+	}
 }
