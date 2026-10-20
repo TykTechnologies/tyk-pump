@@ -131,7 +131,12 @@ func (p *HTTPPump) Init(config interface{}) error {
 	}
 	transport = transport.Clone()
 	transport.TLSClientConfig = tlsConfig
-	p.httpClient = &http.Client{Transport: transport}
+	p.httpClient = &http.Client{
+		Transport: transport,
+		// Redirects are not followed: a 307/308 would replay the records and every
+		// configured header to another location, possibly over plain http.
+		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
+	}
 
 	p.retry = retry.NewBackoffRetry("Failed writing data to "+httpPumpName, p.conf.MaxRetries, p.httpClient, p.log).AcceptAny2xx()
 

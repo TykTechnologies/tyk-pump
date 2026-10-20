@@ -1539,7 +1539,7 @@ The HTTP pump POSTs analytics records to any HTTP endpoint. Each request body is
 
 Records are sent in batches. A batch is closed when it reaches `batch_size` records or when the next record would take the uncompressed body past `max_body_bytes`. A failed batch is logged and dropped, and the remaining batches are still sent.
 
-A response with any 2xx status is a success. Network errors, 5xx and 429 responses are retried up to `max_retries` times with exponential backoff. Any other 4xx (for example 400, 401 or 413) is permanent: the batch is dropped without a retry. Set the base `timeout` option to bound the time spent on one purge, including retries.
+A response with any 2xx status is a success. Network errors, 5xx and 429 responses are retried up to `max_retries` times with exponential backoff. Any other 4xx (for example 400, 401 or 413) is permanent: the batch is dropped without a retry. Redirects are not followed, so the records and headers are never replayed to another location; a 3xx response is a permanent failure. Set the base `timeout` option to bound the time spent on one purge, including retries.
 
 Each HTTP pump has its own HTTP client, so several HTTP pumps with different TLS settings can run in the same Pump.
 

@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"encoding/pem"
+	"fmt"
 	"io"
 	"net/http"
 	"net/http/httptest"
@@ -425,4 +426,43 @@ func TestHTTPPump_TLSInstancesAreIndependent(t *testing.T) {
 	assert.Error(t, untrusted.WriteData(context.Background(), httpTestRecords(1)))
 
 	assert.Equal(t, 3, c.recordCount())
+}
+
+func TestHTTPPump_RedirectsAreNotFollowed(t *testing.T) {
+	target := &httpCollector{}
+	targetSrv := httptest.NewServer(target)
+	defer targetSrv.Close()
+
+	for _, status := range []int{http.StatusMovedPermanently, http.StatusTemporaryRedirect, http.StatusPermanentRedirect} {
+		t.Run(http.StatusText(status), func(t *testing.T) {
+			redirector := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+				http.Redirect(w, r, targetSrv.URL+"/elsewhere", status)
+			}))
+			defer redirector.Close()
+
+			p := newHTTPTestPump(t, map[string]interface{}{
+				"url":         redirector.URL,
+				"headers":     map[string]string{"X-Api-Key": "secret"},
+				"max_retries": 2,
+			})
+			err := p.WriteData(context.Background(), httpTestRecords(1))
+			assert.ErrorContains(t, err, fmt.Sprintf("status code %d", status))
+			assert.Empty(t, target.received(), "records and headers must not be replayed to the redirect target")
+		})
+	}
+}
+
+func TestHTTPPump_ErrorBodyIsBounded(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		if _, err := w.Write([]byte(strings.Repeat("x", 1<<20))); err != nil {
+			t.Log(err)
+		}
+	}))
+	defer srv.Close()
+
+	p := newHTTPTestPump(t, map[string]interface{}{"url": srv.URL})
+	err := p.WriteData(context.Background(), httpTestRecords(1))
+	require.Error(t, err)
+	assert.Less(t, len(err.Error()), 8<<10)
 }

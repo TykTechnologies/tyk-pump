@@ -15,6 +15,9 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// maxErrorBodyBytes caps how much of a failed response's body is read into the returned error.
+const maxErrorBodyBytes = 4 << 10
+
 type BackoffHTTPRetry struct {
 	logger     *logrus.Entry
 	httpclient *http.Client
@@ -87,7 +90,8 @@ func (s *BackoffHTTPRetry) Send(req *http.Request) error {
 			return nil
 		}
 
-		body, err := io.ReadAll(resp.Body)
+		// only a bounded prefix of an error body is kept, as it ends up in the logs
+		body, err := io.ReadAll(io.LimitReader(resp.Body, maxErrorBodyBytes))
 		if err != nil {
 			s.logger.WithError(err).Error("Failed to read resp body")
 			// attempt retry
