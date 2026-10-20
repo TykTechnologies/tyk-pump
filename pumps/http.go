@@ -14,6 +14,7 @@ import (
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/retry"
 	"github.com/mitchellh/mapstructure"
+	"golang.org/x/net/http/httpproxy"
 )
 
 const (
@@ -131,6 +132,11 @@ func (p *HTTPPump) Init(config interface{}) error {
 	}
 	transport = transport.Clone()
 	transport.TLSClientConfig = tlsConfig
+	// HTTP_PROXY, HTTPS_PROXY and NO_PROXY are read when the pump starts.
+	// http.ProxyFromEnvironment would read them once per process and cache
+	// them for every other client in it.
+	proxy := httpproxy.FromEnvironment().ProxyFunc()
+	transport.Proxy = func(r *http.Request) (*url.URL, error) { return proxy(r.URL) }
 	p.httpClient = &http.Client{
 		Transport: transport,
 		// Redirects are not followed: a 307/308 would replay the records and every

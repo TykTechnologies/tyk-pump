@@ -466,3 +466,28 @@ func TestHTTPPump_ErrorBodyIsBounded(t *testing.T) {
 	require.Error(t, err)
 	assert.Less(t, len(err.Error()), 8<<10)
 }
+
+// The pump honours HTTP_PROXY as it is when the pump starts, without going
+// through http.ProxyFromEnvironment, whose once-per-process cache would pin
+// the proxy settings for every other client (and test) in the process.
+func TestHTTPPump_ProxyFromEnvironment(t *testing.T) {
+	proxy := &httpCollector{}
+	proxySrv := httptest.NewServer(proxy)
+	defer proxySrv.Close()
+
+	t.Setenv("HTTP_PROXY", proxySrv.URL)
+	t.Setenv("NO_PROXY", "")
+	p := newHTTPTestPump(t, map[string]interface{}{"url": "http://collector.example.invalid/ingest"})
+	require.NoError(t, p.WriteData(context.Background(), httpTestRecords(2)))
+	assert.Equal(t, 2, proxy.recordCount(), "the request went through the proxy")
+
+	// A pump started after the proxy is unset connects directly.
+	t.Setenv("HTTP_PROXY", "")
+	direct := &httpCollector{}
+	directSrv := httptest.NewServer(direct)
+	defer directSrv.Close()
+	p = newHTTPTestPump(t, map[string]interface{}{"url": directSrv.URL})
+	require.NoError(t, p.WriteData(context.Background(), httpTestRecords(1)))
+	assert.Equal(t, 1, direct.recordCount())
+	assert.Equal(t, 2, proxy.recordCount())
+}
