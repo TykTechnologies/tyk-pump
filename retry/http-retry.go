@@ -20,6 +20,7 @@ type BackoffHTTPRetry struct {
 	httpclient *http.Client
 	errMsg     string
 	maxRetries uint64
+	any2xx     bool
 }
 
 type (
@@ -32,6 +33,19 @@ type (
 // 5xx or 429 status code in response.
 func NewBackoffRetry(errMsg string, maxRetries uint64, httpClient *http.Client, logger *logrus.Entry) *BackoffHTTPRetry {
 	return &BackoffHTTPRetry{errMsg: errMsg, maxRetries: maxRetries, httpclient: httpClient, logger: logger}
+}
+
+// AcceptAny2xx makes Send treat every 2xx status code as success. By default only 200 is a success.
+func (s *BackoffHTTPRetry) AcceptAny2xx() *BackoffHTTPRetry {
+	s.any2xx = true
+	return s
+}
+
+func (s *BackoffHTTPRetry) isSuccess(code int) bool {
+	if s.any2xx {
+		return code >= http.StatusOK && code < http.StatusMultipleChoices
+	}
+	return code == http.StatusOK
 }
 
 func (s *BackoffHTTPRetry) Send(req *http.Request) error {
@@ -69,7 +83,7 @@ func (s *BackoffHTTPRetry) Send(req *http.Request) error {
 			resp.Body.Close()
 		}()
 
-		if resp.StatusCode == http.StatusOK {
+		if s.isSuccess(resp.StatusCode) {
 			return nil
 		}
 
@@ -91,7 +105,9 @@ func (s *BackoffHTTPRetry) Send(req *http.Request) error {
 		return backoff.Permanent(err)
 	}
 
-	return backoff.RetryNotify(opFn, backoff.WithMaxRetries(backoff.NewExponentialBackOff(), s.maxRetries), func(err error, t time.Duration) {
+	// stop backing off once the request context is done, so a pump timeout is not exceeded while sleeping
+	b := backoff.WithContext(backoff.WithMaxRetries(backoff.NewExponentialBackOff(), s.maxRetries), req.Context())
+	return backoff.RetryNotify(opFn, b, func(err error, t time.Duration) {
 		s.logger.WithError(err).Warningf("%s retrying in %s", s.errMsg, t)
 	})
 }
