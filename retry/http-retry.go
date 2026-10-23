@@ -71,9 +71,14 @@ func (s *BackoffHTTPRetry) Send(req *http.Request) error {
 
 		t := time.Now()
 		resp, err := s.httpclient.Do(req)
-		s.logger.Debugf("Req %s took %s", req.URL, time.Since(t))
+		s.logger.Debugf("Req %s took %s", RedactURL(req.URL), time.Since(t))
 
 		if err != nil {
+			// the error ends up in the logs, so drop any credentials carried in the URL
+			var urlErr *url.Error
+			if errors.As(err, &urlErr) {
+				urlErr.URL = RedactURL(req.URL)
+			}
 			return s.handleErr(err)
 		}
 		defer func() {
@@ -114,6 +119,17 @@ func (s *BackoffHTTPRetry) Send(req *http.Request) error {
 	return backoff.RetryNotify(opFn, b, func(err error, t time.Duration) {
 		s.logger.WithError(err).Warningf("%s retrying in %s", s.errMsg, t)
 	})
+}
+
+// RedactURL returns u without its query, fragment and password, so it can be logged
+// without leaking a token passed as, for example, ?token=....
+func RedactURL(u *url.URL) string {
+	c := *u
+	c.RawQuery = ""
+	c.ForceQuery = false
+	c.Fragment = ""
+	c.RawFragment = ""
+	return c.Redacted()
 }
 
 func (s *BackoffHTTPRetry) handleErr(err error) error {

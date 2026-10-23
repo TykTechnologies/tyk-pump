@@ -127,6 +127,9 @@ func TestHTTPPump_Init(t *testing.T) {
 		p := newHTTPTestPump(t, map[string]interface{}{"url": "http://localhost:9999/ingest"})
 		assert.Equal(t, httpDefaultBatchSize, p.conf.BatchSize)
 		assert.Equal(t, httpDefaultMaxBodyBytes, p.conf.MaxBodyBytes)
+		assert.Equal(t, uint64(httpDefaultMaxRetries), *p.conf.MaxRetries)
+		assert.Equal(t, httpDefaultRequestTimeout, p.conf.RequestTimeout)
+		assert.Equal(t, time.Duration(httpDefaultRequestTimeout)*time.Second, p.httpClient.Timeout)
 		assert.Equal(t, "HTTP Pump", p.GetName())
 	})
 
@@ -260,11 +263,12 @@ func TestHTTPPump_MaxBodyBytes(t *testing.T) {
 
 func TestHTTPPump_StatusHandling(t *testing.T) {
 	tcs := []struct {
-		name         string
-		statuses     []int
-		maxRetries   int
-		wantRequests int
-		wantErr      bool
+		name           string
+		statuses       []int
+		maxRetries     int
+		defaultRetries bool
+		wantRequests   int
+		wantErr        bool
 	}{
 		{name: "200 is success", statuses: []int{200}, wantRequests: 1},
 		{name: "202 is success", statuses: []int{202}, wantRequests: 1},
@@ -275,7 +279,9 @@ func TestHTTPPump_StatusHandling(t *testing.T) {
 		{name: "503 is retried until success", statuses: []int{503, 503}, maxRetries: 3, wantRequests: 3},
 		{name: "429 is retried until success", statuses: []int{429}, maxRetries: 1, wantRequests: 2},
 		{name: "500 gives up after max_retries", statuses: []int{500, 500, 500}, maxRetries: 1, wantRequests: 2, wantErr: true},
-		{name: "no retries by default", statuses: []int{502}, wantRequests: 1, wantErr: true},
+		{name: "retried by default", statuses: []int{502, 503}, defaultRetries: true, wantRequests: 3},
+		{name: "gives up after the default retries", statuses: []int{502, 502, 502, 502}, defaultRetries: true, wantRequests: 4, wantErr: true},
+		{name: "max_retries 0 disables retries", statuses: []int{502}, maxRetries: 0, wantRequests: 1, wantErr: true},
 	}
 
 	for _, tc := range tcs {
@@ -285,7 +291,11 @@ func TestHTTPPump_StatusHandling(t *testing.T) {
 			srv := httptest.NewServer(c)
 			defer srv.Close()
 
-			p := newHTTPTestPump(t, map[string]interface{}{"url": srv.URL, "max_retries": tc.maxRetries})
+			conf := map[string]interface{}{"url": srv.URL}
+			if !tc.defaultRetries {
+				conf["max_retries"] = tc.maxRetries
+			}
+			p := newHTTPTestPump(t, conf)
 			err := p.WriteData(context.Background(), httpTestRecords(1))
 			if tc.wantErr {
 				assert.Error(t, err)
@@ -304,8 +314,25 @@ func TestHTTPPump_FailedBatchDoesNotStopTheRest(t *testing.T) {
 
 	p := newHTTPTestPump(t, map[string]interface{}{"url": srv.URL, "batch_size": 1, "max_retries": 2})
 	err := p.WriteData(context.Background(), httpTestRecords(2))
-	assert.Error(t, err)
+	assert.ErrorContains(t, err, "failed to send 1 of 2 batches (1 records)")
+	assert.ErrorContains(t, err, "status code 400")
 	assert.Len(t, c.received(), 2)
+}
+
+func TestHTTPPump_FailuresAreSummarised(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
+		w.WriteHeader(http.StatusBadRequest)
+		if _, err := w.Write([]byte("body-of-the-error")); err != nil {
+			t.Log(err)
+		}
+	}))
+	defer srv.Close()
+
+	p := newHTTPTestPump(t, map[string]interface{}{"url": srv.URL, "batch_size": 1})
+	err := p.WriteData(context.Background(), httpTestRecords(5))
+	assert.ErrorContains(t, err, "failed to send 5 of 5 batches (5 records)")
+	// only the first failure's response body is kept, however many batches fail
+	assert.Equal(t, 1, strings.Count(err.Error(), "body-of-the-error"))
 }
 
 func TestHTTPPump_ConnectionRefusedIsRetried(t *testing.T) {
@@ -335,6 +362,60 @@ func TestHTTPPump_TimeoutHonoured(t *testing.T) {
 	err := p.WriteData(ctx, httpTestRecords(3))
 	assert.Error(t, err)
 	assert.Less(t, time.Since(start), 2*time.Second)
+}
+
+// A server that accepts the connection but never answers must not block WriteData when
+// the base timeout isn't set.
+func TestHTTPPump_RequestTimeoutWithoutBaseTimeout(t *testing.T) {
+	release := make(chan struct{})
+	srv := httptest.NewServer(http.HandlerFunc(func(_ http.ResponseWriter, r *http.Request) {
+		select {
+		case <-release:
+		case <-r.Context().Done():
+		}
+	}))
+	defer srv.Close()
+	defer close(release)
+
+	p := newHTTPTestPump(t, map[string]interface{}{"url": srv.URL, "request_timeout": 1, "max_retries": 0})
+
+	done := make(chan error, 1)
+	go func() { done <- p.WriteData(context.Background(), httpTestRecords(1)) }()
+
+	select {
+	case err := <-done:
+		assert.ErrorContains(t, err, "Client.Timeout")
+	case <-time.After(5 * time.Second):
+		t.Fatal("WriteData did not return although the request timed out")
+	}
+}
+
+func TestHTTPPump_PendingRecordsAreNotSentOnDoneContext(t *testing.T) {
+	c := &httpCollector{}
+	srv := httptest.NewServer(c)
+	defer srv.Close()
+
+	p := newHTTPTestPump(t, map[string]interface{}{"url": srv.URL})
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	err := p.WriteData(ctx, httpTestRecords(3))
+	assert.ErrorIs(t, err, context.Canceled)
+	assert.ErrorContains(t, err, "3 records not sent")
+	assert.NotContains(t, err.Error(), "failed to send", "the pending batch must not be sent on a done context")
+	assert.Empty(t, c.received())
+}
+
+func TestHTTPPump_URLCredentialsAreNotLogged(t *testing.T) {
+	srv := httptest.NewServer(http.NotFoundHandler())
+	addr := srv.URL
+	srv.Close()
+
+	p := newHTTPTestPump(t, map[string]interface{}{"url": addr + "/ingest?token=SECRET", "max_retries": 0})
+	err := p.WriteData(context.Background(), httpTestRecords(1))
+	require.Error(t, err)
+	assert.NotContains(t, err.Error(), "SECRET")
+	assert.Contains(t, err.Error(), addr+"/ingest")
 }
 
 func TestHTTPPump_MCPOnly(t *testing.T) {
@@ -384,14 +465,16 @@ func TestHTTPPump_EnvOverride(t *testing.T) {
 	t.Setenv("TYK_PMP_PUMPS_HTTP_META_GZIP", "true")
 	t.Setenv("TYK_PMP_PUMPS_HTTP_META_MAXRETRIES", "4")
 	t.Setenv("TYK_PMP_PUMPS_HTTP_META_MCPONLY", "true")
+	t.Setenv("TYK_PMP_PUMPS_HTTP_META_REQUESTTIMEOUT", "7")
 
 	p := newHTTPTestPump(t, map[string]interface{}{"url": "http://overridden.invalid"})
 	assert.Equal(t, srv.URL, p.conf.URL)
 	assert.Equal(t, 2, p.conf.BatchSize)
 	assert.Equal(t, 100000, p.conf.MaxBodyBytes)
 	assert.True(t, p.conf.Gzip)
-	assert.Equal(t, uint64(4), p.conf.MaxRetries)
+	assert.Equal(t, uint64(4), *p.conf.MaxRetries)
 	assert.True(t, p.conf.MCPOnly)
+	assert.Equal(t, 7*time.Second, p.httpClient.Timeout)
 
 	require.NoError(t, p.WriteData(context.Background(), httpTestRecords(3)))
 	reqs := c.received()

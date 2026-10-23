@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics"
 	"github.com/TykTechnologies/tyk-pump/retry"
@@ -24,6 +25,9 @@ const (
 
 	httpDefaultBatchSize    = 500
 	httpDefaultMaxBodyBytes = 10 * 1024 * 1024
+	// a hung endpoint must not block the purge of every other pump when the base timeout isn't set
+	httpDefaultRequestTimeout = 30
+	httpDefaultMaxRetries     = 3
 )
 
 // HTTPPump sends analytics records to an HTTP endpoint as a JSON array of full records.
@@ -62,8 +66,12 @@ type HTTPPumpConf struct {
 	// Default value is `10485760` (10 MiB).
 	MaxBodyBytes int `json:"max_body_bytes" mapstructure:"max_body_bytes"`
 	// Maximum number of retries for a request that fails with a network error, a 5xx or a 429.
-	// Any other 4xx is permanent and the batch is dropped. Default value is `0`.
-	MaxRetries uint64 `json:"max_retries" mapstructure:"max_retries"`
+	// Any other 4xx is permanent and the batch is dropped. Set it to `0` to disable retries.
+	// Default value is `3`.
+	MaxRetries *uint64 `json:"max_retries" mapstructure:"max_retries"`
+	// Timeout in seconds of a single request attempt, including reading the response.
+	// It applies even when the base `timeout` option is not set. Default value is `30`.
+	RequestTimeout int `json:"request_timeout" mapstructure:"request_timeout"`
 	// Compress request bodies with gzip and send `Content-Encoding: gzip`. Default value is `false`.
 	Gzip bool `json:"gzip" mapstructure:"gzip"`
 	// Only send records of MCP traffic (records whose `mcp_stats.is_mcp` is true). Default value is `false`.
@@ -105,12 +113,21 @@ func (p *HTTPPump) Init(config interface{}) error {
 		return fmt.Errorf("http pump: url scheme must be http or https, got %q", u.Scheme)
 	}
 	p.endpoint = u.String()
+	// credentials belong in headers; a query string or password in the url is not logged
+	logEndpoint := retry.RedactURL(u)
 
 	if p.conf.BatchSize <= 0 {
 		p.conf.BatchSize = httpDefaultBatchSize
 	}
 	if p.conf.MaxBodyBytes <= 0 {
 		p.conf.MaxBodyBytes = httpDefaultMaxBodyBytes
+	}
+	if p.conf.MaxRetries == nil {
+		maxRetries := uint64(httpDefaultMaxRetries)
+		p.conf.MaxRetries = &maxRetries
+	}
+	if p.conf.RequestTimeout <= 0 {
+		p.conf.RequestTimeout = httpDefaultRequestTimeout
 	}
 
 	tlsConfig, err := NewTLSConfig(TLSConfig{
@@ -139,30 +156,37 @@ func (p *HTTPPump) Init(config interface{}) error {
 	transport.Proxy = func(r *http.Request) (*url.URL, error) { return proxy(r.URL) }
 	p.httpClient = &http.Client{
 		Transport: transport,
+		Timeout:   time.Duration(p.conf.RequestTimeout) * time.Second,
 		// Redirects are not followed: a 307/308 would replay the records and every
 		// configured header to another location, possibly over plain http.
 		CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse },
 	}
 
-	p.retry = retry.NewBackoffRetry("Failed writing data to "+httpPumpName, p.conf.MaxRetries, p.httpClient, p.log).AcceptAny2xx()
+	p.retry = retry.NewBackoffRetry("Failed writing data to "+httpPumpName, *p.conf.MaxRetries, p.httpClient, p.log).AcceptAny2xx()
 
-	p.log.Infof("%s Endpoint: %s", httpPumpName, u.Redacted())
+	p.log.Infof("%s Endpoint: %s", httpPumpName, logEndpoint)
 	p.log.Info(p.GetName() + " Initialized")
 
 	return nil
 }
 
 // WriteData sends the records in batches of at most batch_size records and max_body_bytes bytes.
-// A failed batch is logged and dropped, and the remaining batches are still sent.
+// A failed batch is dropped and the remaining batches are still sent. The returned error
+// summarises the failures, so it is logged once by the caller and not once per batch.
 func (p *HTTPPump) WriteData(ctx context.Context, data []interface{}) error {
 	p.log.Debug("Attempting to write ", len(data), " records...")
 
 	var (
-		body    bytes.Buffer
-		count   int
-		sent    int
-		errs    []error
-		dropped int
+		body          bytes.Buffer
+		count         int
+		sent          int
+		batches       int
+		failedBatches int
+		failedRecords int
+		firstErr      error
+		dropped       int
+		unsent        int
+		errs          []error
 	)
 
 	flush := func() {
@@ -170,9 +194,14 @@ func (p *HTTPPump) WriteData(ctx context.Context, data []interface{}) error {
 			return
 		}
 		body.WriteByte(']')
+		batches++
 		if err := p.send(ctx, body.Bytes()); err != nil {
-			p.log.WithError(err).Errorf("Failed to send %d records, dropping them", count)
-			errs = append(errs, err)
+			p.log.WithError(err).Debugf("Failed to send %d records, dropping them", count)
+			failedBatches++
+			failedRecords += count
+			if firstErr == nil {
+				firstErr = err
+			}
 		} else {
 			sent += count
 		}
@@ -180,9 +209,12 @@ func (p *HTTPPump) WriteData(ctx context.Context, data []interface{}) error {
 		count = 0
 	}
 
-	for _, v := range data {
+	for i, v := range data {
 		if ctx.Err() != nil {
-			errs = append(errs, ctx.Err())
+			// the pending batch is not sent on a context that is already done
+			unsent = count + len(data) - i
+			count = 0
+			errs = append(errs, fmt.Errorf("%d records not sent: %w", unsent, ctx.Err()))
 			break
 		}
 
@@ -222,6 +254,10 @@ func (p *HTTPPump) WriteData(ctx context.Context, data []interface{}) error {
 	}
 	flush()
 
+	if failedBatches > 0 {
+		errs = append(errs, fmt.Errorf("failed to send %d of %d batches (%d records), first error: %w",
+			failedBatches, batches, failedRecords, firstErr))
+	}
 	if dropped > 0 {
 		errs = append(errs, fmt.Errorf("dropped %d records larger than max_body_bytes", dropped))
 	}

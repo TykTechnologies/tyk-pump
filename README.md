@@ -1537,15 +1537,15 @@ TYK_PMP_PUMPS_KINESIS_META_KMSKEYID=your-kms-key-id
 
 The HTTP pump POSTs analytics records to any HTTP endpoint. Each request body is a JSON array of full analytics records, with the same field names as the [Tyk Analytics Schema](#tyk-analytics-schema) (`mcp_stats` and `graphql_stats` included), and `Content-Type: application/json`.
 
-Records are sent in batches. A batch is closed when it reaches `batch_size` records or when the next record would take the uncompressed body past `max_body_bytes`. A failed batch is logged and dropped, and the remaining batches are still sent.
+Records are sent in batches. A batch is closed when it reaches `batch_size` records or when the next record would take the uncompressed body past `max_body_bytes`. A failed batch is dropped, and the remaining batches are still sent. The error reported for a purge summarises the failed batches (how many, how many records, and the first error) rather than repeating every response.
 
-A response with any 2xx status is a success. Network errors, 5xx and 429 responses are retried up to `max_retries` times with exponential backoff. Any other 4xx (for example 400, 401 or 413) is permanent: the batch is dropped without a retry. Redirects are not followed, so the records and headers are never replayed to another location; a 3xx response is a permanent failure. Set the base `timeout` option to bound the time spent on one purge, including retries.
+A response with any 2xx status is a success. Network errors, timeouts, 5xx and 429 responses are retried up to `max_retries` times (3 by default) with exponential backoff. Any other 4xx (for example 400, 401 or 413) is permanent: the batch is dropped without a retry. Redirects are not followed, so the records and headers are never replayed to another location; a 3xx response is a permanent failure. Each request attempt is bounded by `request_timeout` (30 seconds by default), so an endpoint that never answers cannot block the other pumps. Set the base `timeout` option to also bound the time spent on one purge, including retries.
 
 Each HTTP pump has its own HTTP client, so several HTTP pumps with different TLS settings can run in the same Pump.
 
 #### Config Fields
 
-`url` - Endpoint the records are POSTed to. Must be `http` or `https`. Required.
+`url` - Endpoint the records are POSTed to. Must be `http` or `https`. Required. Put credentials in `headers`, not in the URL: the query string is never logged, but it is the wrong place for a secret.
 
 `headers` - Extra headers added to every request, for example an `Authorization` header. When set through the environment the format is `Name1:value1,Name2:value2`, so a value set that way cannot contain `,` or `:`.
 
@@ -1555,7 +1555,9 @@ Each HTTP pump has its own HTTP client, so several HTTP pumps with different TLS
 
 `gzip` - Compress request bodies with gzip and send `Content-Encoding: gzip`. Default `false`.
 
-`max_retries` - Maximum number of retries for network errors, 5xx and 429 responses. Default `0`.
+`max_retries` - Maximum number of retries for network errors, timeouts, 5xx and 429 responses. Set it to `0` to disable retries. Default `3`.
+
+`request_timeout` - Timeout in seconds of a single request attempt, including reading the response. It applies even when the base `timeout` is not set. Default `30`.
 
 `mcp_only` - Only send records of MCP traffic, i.e. records whose `mcp_stats.is_mcp` is `true`. Default `false`.
 
@@ -1589,6 +1591,7 @@ The [base pump configurations](#base-pump-configurations) (`filters`, `timeout`,
         "max_body_bytes": 10485760,
         "gzip": true,
         "max_retries": 3,
+        "request_timeout": 30,
         "mcp_only": false,
         "ssl_insecure_skip_verify": false,
         "ssl_ca_file": "",
@@ -1611,6 +1614,7 @@ TYK_PMP_PUMPS_HTTP_META_BATCHSIZE=500
 TYK_PMP_PUMPS_HTTP_META_MAXBODYBYTES=10485760
 TYK_PMP_PUMPS_HTTP_META_GZIP=true
 TYK_PMP_PUMPS_HTTP_META_MAXRETRIES=3
+TYK_PMP_PUMPS_HTTP_META_REQUESTTIMEOUT=30
 TYK_PMP_PUMPS_HTTP_META_MCPONLY=false
 TYK_PMP_PUMPS_HTTP_META_SSLINSECURESKIPVERIFY=false
 TYK_PMP_PUMPS_HTTP_META_SSLCAFILE=
