@@ -15,11 +15,15 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+// maxErrorBodyBytes caps how much of a failed response's body is read into the returned error.
+const maxErrorBodyBytes = 4 << 10
+
 type BackoffHTTPRetry struct {
 	logger     *logrus.Entry
 	httpclient *http.Client
 	errMsg     string
 	maxRetries uint64
+	any2xx     bool
 }
 
 type (
@@ -32,6 +36,19 @@ type (
 // 5xx or 429 status code in response.
 func NewBackoffRetry(errMsg string, maxRetries uint64, httpClient *http.Client, logger *logrus.Entry) *BackoffHTTPRetry {
 	return &BackoffHTTPRetry{errMsg: errMsg, maxRetries: maxRetries, httpclient: httpClient, logger: logger}
+}
+
+// AcceptAny2xx makes Send treat every 2xx status code as success. By default only 200 is a success.
+func (s *BackoffHTTPRetry) AcceptAny2xx() *BackoffHTTPRetry {
+	s.any2xx = true
+	return s
+}
+
+func (s *BackoffHTTPRetry) isSuccess(code int) bool {
+	if s.any2xx {
+		return code >= http.StatusOK && code < http.StatusMultipleChoices
+	}
+	return code == http.StatusOK
 }
 
 func (s *BackoffHTTPRetry) Send(req *http.Request) error {
@@ -54,9 +71,14 @@ func (s *BackoffHTTPRetry) Send(req *http.Request) error {
 
 		t := time.Now()
 		resp, err := s.httpclient.Do(req)
-		s.logger.Debugf("Req %s took %s", req.URL, time.Since(t))
+		s.logger.Debugf("Req %s took %s", RedactURL(req.URL), time.Since(t))
 
 		if err != nil {
+			// the error ends up in the logs, so drop any credentials carried in the URL
+			var urlErr *url.Error
+			if errors.As(err, &urlErr) {
+				urlErr.URL = RedactURL(req.URL)
+			}
 			return s.handleErr(err)
 		}
 		defer func() {
@@ -69,11 +91,12 @@ func (s *BackoffHTTPRetry) Send(req *http.Request) error {
 			resp.Body.Close()
 		}()
 
-		if resp.StatusCode == http.StatusOK {
+		if s.isSuccess(resp.StatusCode) {
 			return nil
 		}
 
-		body, err := io.ReadAll(resp.Body)
+		// only a bounded prefix of an error body is kept, as it ends up in the logs
+		body, err := io.ReadAll(io.LimitReader(resp.Body, maxErrorBodyBytes))
 		if err != nil {
 			s.logger.WithError(err).Error("Failed to read resp body")
 			// attempt retry
@@ -91,9 +114,22 @@ func (s *BackoffHTTPRetry) Send(req *http.Request) error {
 		return backoff.Permanent(err)
 	}
 
-	return backoff.RetryNotify(opFn, backoff.WithMaxRetries(backoff.NewExponentialBackOff(), s.maxRetries), func(err error, t time.Duration) {
+	// stop backing off once the request context is done, so a pump timeout is not exceeded while sleeping
+	b := backoff.WithContext(backoff.WithMaxRetries(backoff.NewExponentialBackOff(), s.maxRetries), req.Context())
+	return backoff.RetryNotify(opFn, b, func(err error, t time.Duration) {
 		s.logger.WithError(err).Warningf("%s retrying in %s", s.errMsg, t)
 	})
+}
+
+// RedactURL returns u without its query, fragment and password, so it can be logged
+// without leaking a token passed as, for example, ?token=....
+func RedactURL(u *url.URL) string {
+	c := *u
+	c.RawQuery = ""
+	c.ForceQuery = false
+	c.Fragment = ""
+	c.RawFragment = ""
+	return c.Redacted()
 }
 
 func (s *BackoffHTTPRetry) handleErr(err error) error {

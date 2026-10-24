@@ -3,6 +3,9 @@ package main
 import (
 	"bytes"
 	"context"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
 	"os"
 	"os/signal"
 	"sync"
@@ -233,6 +236,50 @@ func TestWriteDataWithFilters(t *testing.T) {
 			assert.Equal(t, tc.expectedCounterRequest, tc.mockedPump.CounterRequest)
 			assert.Len(t, keys, 6)
 		})
+	}
+}
+
+func TestWriteDataWithFilters_HTTPPump(t *testing.T) {
+	var (
+		mu       sync.Mutex
+		received []analytics.AnalyticsRecord
+	)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var records []analytics.AnalyticsRecord
+		if err := json.NewDecoder(r.Body).Decode(&records); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			return
+		}
+		mu.Lock()
+		received = append(received, records...)
+		mu.Unlock()
+		w.WriteHeader(http.StatusAccepted)
+	}))
+	defer srv.Close()
+
+	httpPump := &pumps.HTTPPump{}
+	assert.NoError(t, httpPump.Init(map[string]interface{}{"url": srv.URL, "mcp_only": true}))
+	httpPump.SetFilters(analytics.AnalyticsFilters{APIIDs: []string{"api123"}})
+	httpPump.SetOmitDetailedRecording(true)
+
+	Pumps = []pumps.Pump{httpPump}
+	defer func() { Pumps = nil }()
+
+	mcp := analytics.MCPStats{IsMCP: true, JSONRPCMethod: "tools/call", PrimitiveType: "tool", PrimitiveName: "t1"}
+	keys := []interface{}{
+		analytics.AnalyticsRecord{APIID: "api123", ResponseCode: 200, RawRequest: "cmF3", MCPStats: mcp},
+		analytics.AnalyticsRecord{APIID: "api111", ResponseCode: 200, MCPStats: mcp},
+		analytics.AnalyticsRecord{APIID: "api123", ResponseCode: 200},
+	}
+
+	writeToPumps(keys, instrument.NewJob("TestJob"), time.Now(), 2)
+
+	mu.Lock()
+	defer mu.Unlock()
+	if assert.Len(t, received, 1) {
+		assert.Equal(t, "api123", received[0].APIID)
+		assert.True(t, received[0].MCPStats.IsMCP)
+		assert.Empty(t, received[0].RawRequest, "omit_detailed_recording must apply")
 	}
 }
 
