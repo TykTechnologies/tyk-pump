@@ -1,0 +1,17 @@
+---
+version: "3"
+
+vars:
+  title: "# Tyk Pump"
+  root: TykPumpConfiguration
+
+tasks:
+  docs:
+    desc: "Generate markdown with schema-gen"
+    cmds:
+      - schema-gen extract -o - | schema-gen markdown -i - -o - --root {{.root}} --title "{{.title}}"
+
+  lint:
+    desc: "Lint godocs with schema-gen"
+    cmds:
+      - schema-gen extract -o - | schema-gen lint -i -
