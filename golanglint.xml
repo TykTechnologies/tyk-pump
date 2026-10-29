@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<checkstyle version="5.0">
+  <file name="pumps/sql_test.go">
+    <error column="0" line="383" message="File is not `gofumpt`-ed with `-extra`" severity="error" source="gofumpt"></error>
+  </file>
+</checkstyle>
