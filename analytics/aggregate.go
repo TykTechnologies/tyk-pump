@@ -99,7 +99,7 @@ type AnalyticsRecordAggregate struct {
 	Errors  map[string]*Counter
 
 	Versions map[string]*Counter
-	APIID    map[string]*Counter
+	APIID    APIIDCounters
 	OauthIDs map[string]*Counter
 	Geo      map[string]*Counter
 	Tags     map[string]*Counter
