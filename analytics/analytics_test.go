@@ -9,6 +9,7 @@ import (
 	"github.com/TykTechnologies/storage/persistent/model"
 	"github.com/fatih/structs"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestAnalyticsRecord_IsGraphRecord(t *testing.T) {
@@ -174,6 +175,82 @@ func TestAnalyticsRecord_GetLineValues(t *testing.T) {
 		if field.IsExported() && !field.IsZero() {
 			assert.Contains(t, fields, fmt.Sprint(field.Value()))
 		}
+	}
+}
+
+// csvCellForHeader returns the value GetLineValues writes in the column whose
+// GetFieldNames header is header. It also checks that the row and the header
+// have the same length, so CSV columns stay aligned with the header.
+func csvCellForHeader(t *testing.T, rec *AnalyticsRecord, header string) string {
+	t.Helper()
+
+	names := rec.GetFieldNames()
+	values := rec.GetLineValues()
+	require.Len(t, values, len(names), "GetLineValues must return one value per GetFieldNames header")
+
+	for i, name := range names {
+		if name == header {
+			return values[i]
+		}
+	}
+
+	t.Fatalf("header %q not found in GetFieldNames()", header)
+	return ""
+}
+
+// TT-10871: with "month" in ignore_fields the CSV pump wrote "%!Month(0)".
+func TestAnalyticsRecord_GetLineValues_IgnoredMonthIsBlank(t *testing.T) {
+	rec := &AnalyticsRecord{
+		Method:       "GET",
+		Host:         "example.com",
+		Path:         "/path",
+		APIID:        "api123",
+		OrgID:        "org123",
+		Day:          15,
+		Month:        time.March,
+		Year:         2026,
+		Hour:         10,
+		ResponseCode: 200,
+		TimeStamp:    time.Date(2026, time.March, 15, 10, 0, 0, 0, time.UTC),
+		Tags:         []string{"tag1"},
+	}
+
+	rec.RemoveIgnoredFields([]string{"month"})
+	require.Equal(t, time.Month(0), rec.Month, "precondition: RemoveIgnoredFields zeroes Month")
+
+	assert.Equal(t, "", csvCellForHeader(t, rec, "Month"))
+	// Neighbouring columns are untouched, so the row stays aligned.
+	assert.Equal(t, "15", csvCellForHeader(t, rec, "Day"))
+	assert.Equal(t, "2026", csvCellForHeader(t, rec, "Year"))
+
+	for _, cell := range rec.GetLineValues() {
+		assert.NotContains(t, cell, "%!Month(")
+	}
+}
+
+func TestAnalyticsRecord_GetLineValues_MonthCell(t *testing.T) {
+	tcs := []struct {
+		name  string
+		want  string
+		month time.Month
+	}{
+		{name: "valid month is written by name", month: time.March, want: "March"},
+		{name: "first valid month", month: time.January, want: "January"},
+		{name: "last valid month", month: time.December, want: "December"},
+		{name: "zero month is blank", month: time.Month(0), want: ""},
+		{name: "month above December is blank", month: time.Month(13), want: ""},
+		{name: "negative month is blank", month: time.Month(-1), want: ""},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.name, func(t *testing.T) {
+			rec := &AnalyticsRecord{Month: tc.month}
+
+			got := csvCellForHeader(t, rec, "Month")
+
+			assert.Equal(t, tc.want, got)
+			assert.NotContains(t, got, "%!Month(")
+		})
 	}
 }
 
