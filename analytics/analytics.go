@@ -260,12 +260,20 @@ func (g *GeoData) GetLineValues() []string {
 }
 
 func (a *AnalyticsRecord) GetLineValues() []string {
+	// time.Month.String() returns "%!Month(n)" for values outside
+	// January..December. Month is zero when "month" is in ignore_fields, so
+	// write a blank cell instead of the fmt artifact (TT-10871).
+	month := ""
+	if a.Month >= time.January && a.Month <= time.December {
+		month = a.Month.String()
+	}
+
 	fields := []string{}
 	fields = append(fields, a.Method, a.Host, a.Path, a.RawPath)
 	fields = append(fields, strconv.FormatUint(uint64(a.ContentLength), 10))
 	fields = append(fields, a.UserAgent)
 	fields = append(fields, strconv.FormatUint(uint64(a.Day), 10))
-	fields = append(fields, a.Month.String())
+	fields = append(fields, month)
 	fields = append(fields, strconv.FormatUint(uint64(a.Year), 10))
 	fields = append(fields, strconv.FormatUint(uint64(a.Hour), 10))
 	fields = append(fields, strconv.FormatUint(uint64(a.ResponseCode), 10))

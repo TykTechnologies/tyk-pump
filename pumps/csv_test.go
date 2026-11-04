@@ -1,16 +1,19 @@
 package pumps
 
 import (
+	"bytes"
 	"context"
 	"encoding/csv"
 	"fmt"
 	"os"
+	"path/filepath"
 	"reflect"
 	"testing"
 	"time"
 
 	"github.com/TykTechnologies/tyk-pump/analytics/demo"
 	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/require"
 )
 
 func TestCSVPump_New(t *testing.T) {
@@ -235,6 +238,49 @@ func TestCSVPump_WriteData(t *testing.T) {
 			assert.Equal(t, tt.args.numberOfRecords*2+1, totalRows)
 		})
 	}
+}
+
+// TT-10871: an ignored "month" must be written as a blank CSV cell,
+// not as "%!Month(0)".
+func TestCSVPump_WriteData_IgnoredMonthIsBlank(t *testing.T) {
+	// Use a private directory so this test does not share files with the
+	// other tests, which use "testingDirectory".
+	dir := t.TempDir()
+	conf := &CSVConf{CSVDir: dir}
+	c := &CSVPump{csvConf: conf}
+	require.NoError(t, c.Init(conf))
+
+	rec := demo.GenerateRandomAnalyticRecord("orgid", false)
+	rec.RemoveIgnoredFields([]string{"month"})
+
+	require.NoError(t, c.WriteData(context.Background(), []interface{}{rec}))
+
+	// Find the file with a glob instead of rebuilding the time-based name,
+	// so a test that runs across an hour boundary still finds it.
+	files, err := filepath.Glob(filepath.Join(dir, "*.csv"))
+	require.NoError(t, err)
+	require.Len(t, files, 1)
+
+	raw, err := os.ReadFile(files[0])
+	require.NoError(t, err)
+	assert.NotContains(t, string(raw), "%!Month(")
+
+	rows, err := csv.NewReader(bytes.NewReader(raw)).ReadAll()
+	require.NoError(t, err)
+	require.Len(t, rows, 2, "expected the header row and one record row")
+
+	header, row := rows[0], rows[1]
+	require.Len(t, row, len(header), "record row must stay aligned with the header")
+
+	monthIdx := -1
+	for i, name := range header {
+		if name == "Month" {
+			monthIdx = i
+			break
+		}
+	}
+	require.NotEqual(t, -1, monthIdx, `"Month" column missing from CSV header`)
+	assert.Equal(t, "", row[monthIdx])
 }
 
 func GetFileAndRows(fname string) (*os.File, int, error) {
