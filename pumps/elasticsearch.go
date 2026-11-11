@@ -47,6 +47,8 @@ const (
 	esMCPProtocolVersionSource = "protocol_version_source"
 	// esMCPJSONRPCErrorCode is the signed top-level JSON-RPC error code.
 	esMCPJSONRPCErrorCode = "jsonrpc_error_code"
+	// esMCPAggregatorAPIID is the MCP aggregator that routed the request; empty for direct traffic.
+	esMCPAggregatorAPIID = "aggregator_api_id"
 )
 
 // @PumpConf Elasticsearch
@@ -498,6 +500,7 @@ func getMapping(datum analytics.AnalyticsRecord, extendedStatistics, generateID,
 		mapping[esMCPEffectiveProtocolVersion] = record.MCPStats.EffectiveProtocolVersion
 		mapping[esMCPDeclaredProtocolVersion] = record.MCPStats.DeclaredProtocolVersion
 		mapping[esMCPProtocolVersionSource] = record.MCPStats.ProtocolVersionSource
+		mapping[esMCPAggregatorAPIID] = record.MCPStats.AggregatorAPIID
 	}
 
 	if generateID {

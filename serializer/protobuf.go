@@ -131,6 +131,7 @@ func (pb *ProtobufSerializer) TransformSingleRecordToProto(rec analytics.Analyti
 			EffectiveProtocolVersion: rec.MCPStats.EffectiveProtocolVersion,
 			DeclaredProtocolVersion:  rec.MCPStats.DeclaredProtocolVersion,
 			ProtocolVersionSource:    rec.MCPStats.ProtocolVersionSource,
+			AggregatorAPIID:          rec.MCPStats.AggregatorAPIID,
 		}
 	}
 
@@ -237,6 +238,7 @@ func (pb *ProtobufSerializer) TransformSingleProtoToAnalyticsRecord(rec *analyti
 			EffectiveProtocolVersion: rec.MCPStats.EffectiveProtocolVersion,
 			DeclaredProtocolVersion:  rec.MCPStats.DeclaredProtocolVersion,
 			ProtocolVersionSource:    rec.MCPStats.ProtocolVersionSource,
+			AggregatorAPIID:          rec.MCPStats.AggregatorAPIID,
 		}
 	}
 

@@ -480,3 +480,24 @@ func TestMCPSQLPump_WriteMCPBatch_BatchSizeOne(t *testing.T) {
 	pump.db.Count(&count)
 	assert.Equal(t, int64(5), count, "batch size 1 should still write all records")
 }
+
+func TestMCPSQLPump_PersistsAggregatorOrigin(t *testing.T) {
+	pump := newMCPSQLPumpWithSQLite(t, "", 100, false)
+	require.True(t, pump.db.Migrator().HasColumn(&analytics.MCPRecord{}, "aggregator_api_id"))
+	ts := time.Date(2025, 6, 15, 10, 0, 0, 0, time.UTC)
+
+	routed := mcpRecord(ts, "tools/call", "tool", "list_orders", 200)
+	routed.APIID = "orders-routed"
+	routed.MCPStats.AggregatorAPIID = "company-tools"
+	direct := mcpRecord(ts, "tools/call", "tool", "list_orders", 200)
+	direct.APIID = "orders-direct"
+	require.NoError(t, pump.WriteData(context.Background(), []interface{}{routed, direct}))
+
+	var results []analytics.MCPRecord
+	require.NoError(t, pump.db.Order("analytics_apiid").Find(&results).Error)
+	require.Len(t, results, 2)
+	assert.Equal(t, "orders-direct", results[0].AnalyticsRecord.APIID)
+	assert.Empty(t, results[0].AggregatorAPIID)
+	assert.Equal(t, "orders-routed", results[1].AnalyticsRecord.APIID)
+	assert.Equal(t, "company-tools", results[1].AggregatorAPIID)
+}
