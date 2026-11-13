@@ -24,6 +24,7 @@ func TestGetMapping_MCPFieldsForMCPRecord(t *testing.T) {
 			EffectiveProtocolVersion: "2026-07-28",
 			DeclaredProtocolVersion:  "2026-07-28",
 			ProtocolVersionSource:    "header_body",
+			AggregatorAPIID:          "company-tools",
 		},
 	}
 
@@ -38,6 +39,7 @@ func TestGetMapping_MCPFieldsForMCPRecord(t *testing.T) {
 	assert.Equal(t, "2026-07-28", mapping[esMCPEffectiveProtocolVersion])
 	assert.Equal(t, "2026-07-28", mapping[esMCPDeclaredProtocolVersion])
 	assert.Equal(t, "header_body", mapping[esMCPProtocolVersionSource])
+	assert.Equal(t, "company-tools", mapping[esMCPAggregatorAPIID])
 }
 
 // TestGetMapping_NoMCPFieldsForNonMCPRecord verifies backward compatibility:

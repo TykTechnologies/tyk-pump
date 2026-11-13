@@ -113,6 +113,7 @@ func TestSerializer_MCPStats_Roundtrip(t *testing.T) {
 					DeclaredProtocolVersion:  "2026-07-28",
 					ProtocolVersionSource:    "header_body",
 					JSONRPCErrorCode:         -33002,
+					AggregatorAPIID:          "company-tools",
 				},
 			}
 
@@ -146,6 +147,7 @@ func TestSerializer_ProtobufOlderMCPRecordDefaultsProtocolContext(t *testing.T) 
 	assert.Empty(t, decoded.MCPStats.EffectiveProtocolVersion)
 	assert.Empty(t, decoded.MCPStats.DeclaredProtocolVersion)
 	assert.Empty(t, decoded.MCPStats.ProtocolVersionSource)
+	assert.Empty(t, decoded.MCPStats.AggregatorAPIID)
 }
 
 func TestSerializer_NonMCP_NoMCPStats(t *testing.T) {
