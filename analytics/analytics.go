@@ -131,6 +131,9 @@ type MCPStats struct {
 	EffectiveProtocolVersion string `json:"effective_protocol_version"`
 	DeclaredProtocolVersion  string `json:"declared_protocol_version"`
 	ProtocolVersionSource    string `json:"protocol_version_source"`
+	// AggregatorAPIID is the MCP aggregator that routed this request in process; empty (and omitted from
+	// JSON) for direct traffic, so direct records serialise as before.
+	AggregatorAPIID string `json:"aggregator_api_id,omitempty"`
 }
 
 type GraphError struct {

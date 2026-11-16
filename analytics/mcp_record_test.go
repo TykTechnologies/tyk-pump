@@ -186,3 +186,56 @@ func TestMCPRecord_SetObjectID(t *testing.T) {
 	// SetObjectID is a no-op, so GetObjectID should still return ""
 	assert.Equal(t, model.ObjectID(""), r.GetObjectID())
 }
+
+func TestMCPStats_AggregatorOriginJSONRoundTrip(t *testing.T) {
+	stats := MCPStats{
+		IsMCP:           true,
+		JSONRPCMethod:   "tools/call",
+		PrimitiveType:   "tool",
+		PrimitiveName:   "list_orders",
+		AggregatorAPIID: "company-tools",
+	}
+
+	data, err := json.Marshal(stats)
+	require.NoError(t, err)
+
+	var raw map[string]interface{}
+	require.NoError(t, json.Unmarshal(data, &raw))
+	assert.Equal(t, "company-tools", raw["aggregator_api_id"])
+
+	var decoded MCPStats
+	require.NoError(t, json.Unmarshal(data, &decoded))
+	assert.Equal(t, stats, decoded)
+
+	var direct AnalyticsRecord
+	require.NoError(t, json.Unmarshal([]byte(`{"mcp_stats":{"is_mcp":true,"jsonrpc_method":"tools/call"}}`), &direct))
+	assert.Empty(t, direct.MCPStats.AggregatorAPIID, "records written before the field existed decode without an origin")
+
+	directJSON, err := json.Marshal(direct.MCPStats)
+	require.NoError(t, err)
+	assert.NotContains(t, string(directJSON), "aggregator_api_id", "direct traffic serialises exactly as before")
+}
+
+func TestMCPRecord_CarriesAggregatorOrigin(t *testing.T) {
+	record := AnalyticsRecord{
+		APIID: "orders",
+		MCPStats: MCPStats{
+			IsMCP:           true,
+			JSONRPCMethod:   "tools/list",
+			AggregatorAPIID: "company-tools",
+		},
+	}
+
+	converted := record.ToMCPRecord()
+	assert.Equal(t, "company-tools", converted.AggregatorAPIID)
+	assert.Equal(t, "tools/list", converted.JSONRPCMethod)
+
+	encoded, err := bson.Marshal(converted)
+	require.NoError(t, err)
+	var document bson.M
+	require.NoError(t, bson.Unmarshal(encoded, &document))
+	assert.Equal(t, "company-tools", document["aggregator_api_id"])
+
+	direct := AnalyticsRecord{MCPStats: MCPStats{IsMCP: true, JSONRPCMethod: "tools/call"}}
+	assert.Empty(t, direct.ToMCPRecord().AggregatorAPIID)
+}
