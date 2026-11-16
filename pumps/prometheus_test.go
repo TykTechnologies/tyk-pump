@@ -1192,3 +1192,57 @@ func TestProcessMetric_HistogramType_LatencyMetric(t *testing.T) {
 		Latency:     analytics.Latency{Upstream: 50, Gateway: 10},
 	})
 }
+
+func TestPrometheusInitVec_HistogramBuckets(t *testing.T) {
+	tcs := []struct {
+		testName        string
+		metricName      string
+		buckets         []float64
+		expectedBuckets []float64
+	}{
+		{
+			testName:        "custom buckets are used",
+			metricName:      "test_histogram_custom_buckets",
+			buckets:         []float64{100, 200, 500},
+			expectedBuckets: []float64{100, 200, 500},
+		},
+		{
+			testName:        "default buckets when none are set",
+			metricName:      "test_histogram_default_buckets",
+			buckets:         nil,
+			expectedBuckets: buckets,
+		},
+	}
+
+	for _, tc := range tcs {
+		t.Run(tc.testName, func(t *testing.T) {
+			metric := PrometheusMetric{
+				Name:       tc.metricName,
+				Help:       "test",
+				MetricType: histogramType,
+				Buckets:    tc.buckets,
+				Labels:     []string{"type", "api_id"},
+			}
+			require.NoError(t, metric.InitVec())
+			defer prometheus.Unregister(metric.histogramVec)
+
+			metric.histogramVec.WithLabelValues("total", "api_1").Observe(150)
+
+			families, err := prometheus.DefaultGatherer.Gather()
+			require.NoError(t, err)
+
+			var upperBounds []float64
+			for _, family := range families {
+				if family.GetName() != tc.metricName {
+					continue
+				}
+				require.Len(t, family.GetMetric(), 1)
+				for _, bucket := range family.GetMetric()[0].GetHistogram().GetBucket() {
+					upperBounds = append(upperBounds, bucket.GetUpperBound())
+				}
+			}
+
+			assert.Equal(t, tc.expectedBuckets, upperBounds)
+		})
+	}
+}
