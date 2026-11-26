@@ -110,4 +110,5 @@ message MCPStats {
   string DeclaredProtocolVersion = 6;
   string ProtocolVersionSource = 7;
   int64 JSONRPCErrorCode = 8;
+  string AggregatorAPIID = 9;
 }
